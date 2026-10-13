@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tokens de CLIENT_STYLES.md (presentacion oscura). -->
+<resources>
+    <color name="fondo">#FF111E2F</color>
+    <color name="panel_sobre_imagen">#99000000</color>
+    <color name="texto">#FFF1F5F9</color>
+    <color name="acento">#FF0EA5E9</color>
+    <color name="primario">#FF0369A1</color>
+    <color name="primario_presionado">#FF075985</color>
+    <color name="secundario">#FF475569</color>
+    <color name="secundario_presionado">#FF334155</color>
+    <color name="sobre_accion">#FFFFFFFF</color>
+    <color name="campo_fondo">#FFFFFFFF</color>
+    <color name="campo_texto">#FF0F172A</color>
+    <color name="campo_placeholder">#FF64748B</color>
+</resources>
