@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <!-- DOMINIO: nombre del proyecto (renombrar artifactId y name; el groupId/paquete ec.edu.monster no se cambia).
+         Si se renombra, actualizar también el context root en WEB-INF/glassfish-web.xml -->
+    <groupId>ec.edu.monster</groupId>
+    <artifactId>ClienteSoapWeb</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+    <name>Cliente SOAP web</name>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>21</maven.compiler.release>
+        <failOnMissingWebXml>false</failOnMissingWebXml>
+        <jakartaee>11.0.0</jakartaee>
+    </properties>
+    <dependencies>
+        <!-- Servlet, CDI, etc.: los aporta Payara 7 -->
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-api</artifactId>
+            <version>${jakartaee}</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- JAX-WS no viene en jakartaee-api 11: hace falta para compilar jakarta.jws / jakarta.xml.ws (y JAXB).
+             Con provided NO entra en el WAR: Payara aporta la implementación en ejecución. No quitarlo:
+             sin él, NetBeans deja de reconocer esos paquetes. (Al contrario que en escritorio, aquí no va jaxws-rt.) -->
+        <dependency>
+            <groupId>org.glassfish.metro</groupId>
+            <artifactId>webservices-rt</artifactId>
+            <version>4.0.6</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.12.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>

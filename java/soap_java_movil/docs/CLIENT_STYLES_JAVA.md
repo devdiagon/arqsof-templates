@@ -4,7 +4,7 @@ Define **un solo lenguaje visual** para clientes con interfaz gráfica en **escr
 Es **independiente del dominio** (no menciona qué hace la aplicación), del protocolo de comunicación y del lenguaje: sirve para cualquier proyecto cuyas pantallas combinen **acceso con credenciales, listas de acciones, formularios y resultados**.
 No aplica a clientes de consola.
 
-Aquí solo se define **cómo se ve**. El flujo, los textos concretos, las imágenes y las reglas de negocio de cada proyecto se documentan aparte (en el `PROJECT.md` del proyecto).
+Aquí solo se define **cómo se ve**. El flujo, los textos concretos, las imágenes y las reglas de negocio de cada proyecto se documentan aparte (en este repositorio: `CLIENTES_CONSTRUCT.md`, sección «Aplicación del estilo en este proyecto»).
 
 > Verificación: los **contrastes** de §2 se calcularon con la fórmula WCAG 2.x.
 
@@ -261,6 +261,20 @@ Disposición **dividida** (§7.0): rejilla de dos zonas a pantalla completa, con
 }
 ```
 `.contenedor { max-width: 480px }` queda solo para la variante de columna única (ancho < 900). La imagen usa `contain` (§6), nunca `cover`.
+
+Cada componente de §5 es un tag file (de `WEB-INF/tags`); en un JSP se declara una vez `<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>`.
+
+| Etiqueta | Componente (§) | Atributos principales |
+|---|---|---|
+| `<ui:pantalla titulo>` | Estructura de página, disposición dividida, fondo (§5.10, §7.0) | `titulo` (obligatorio). Incluye CSS, imagen y `app.js` |
+| `<ui:formulario accion>` | Formulario POST + indicador de progreso (§5.8) | `accion` (ruta del contexto), `clase` |
+| `<ui:encabezado>` | Encabezado de pantalla (§5.1) | `aplicacion="true"` en el acceso |
+| `<ui:campo id>` | Etiqueta + campo de texto (§5.3, §5.4) | `etiqueta`, `tipo`, `valor`, `placeholder`, `autocomplete`, `inputmode`, `invalido`, `autofocus` |
+| `<ui:selector id opciones>` | Etiqueta + selector (§5.5) | `etiqueta`, `opciones` (colección), `seleccionada` |
+| `<ui:mensaje mensaje>` | Panel de mensaje o resultado (§5.2); no se dibuja vacío | `tipo`: `error` (defecto), `exito`, `resultado` |
+| `<ui:boton>` | Botón primario / secundario (§5.6, §5.7) | `tipo`, `href` (enlace; sin él envía el formulario), `ancho`, `centrado`, `salida`, `deshabilitado` |
+| `<ui:lista-acciones elementos destino parametro>` | Lista de acciones (§5.9) con datos del servidor | un botón primario por elemento |
+| `<ui:cerrar-sesion/>` | Botón secundario de salida separado 32 (§5.7) | — |
 
 ### 7.3 Escritorio (Swing + FlatLaf)
 Dependencia: `com.formdev:flatlaf`. Presentación oscura → `FlatDarkLaf`; clara → `FlatLightLaf`. Un único punto de configuración al arrancar, **antes** de crear ventanas:
