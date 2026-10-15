@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_1.xsd"
+   version="6.1">
+
+    <!-- DOMINIO: nombre de la aplicación: título de la pestaña y de la pantalla de acceso (se lee con ${initParam.nombreAplicacion}). -->
+    <context-param>
+        <param-name>nombreAplicacion</param-name>
+        <param-value>Cliente REST</param-value>
+    </context-param>
+    <!-- Presentación: tema-oscuro (por defecto) o tema-claro. Ver docs/CLIENT_STYLES_JAVA.md §1 y §2.3 (la clara no usa imagen). -->
+    <context-param>
+        <param-name>tema</param-name>
+        <param-value>tema-oscuro</param-value>
+    </context-param>
+
+    <session-config>
+        <session-timeout>30</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+
+    <welcome-file-list>
+        <welcome-file>login</welcome-file>
+    </welcome-file-list>
+
+    <jsp-config>
+        <jsp-property-group>
+            <url-pattern>*.jsp</url-pattern>
+            <url-pattern>*.tag</url-pattern>
+            <page-encoding>UTF-8</page-encoding>
+            <trim-directive-whitespaces>true</trim-directive-whitespaces>
+        </jsp-property-group>
+    </jsp-config>
+</web-app>
