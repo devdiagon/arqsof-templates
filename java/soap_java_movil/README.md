@@ -6,7 +6,7 @@ claramente marcado lo que cambia con el **dominio**.
 
 - **Lenguaje:** Java (sin Kotlin ni Compose). **Vistas:** XML + ViewBinding. **Arquitectura:** MVC con `ViewModel` y `LiveData`.
 - **Transporte:** SOAP 1.1 armado a mano sobre `HttpURLConnection` (Android no incluye JAX-WS). Sin librerías de terceros.
-- **Estilo:** `docs/CLIENT_STYLES.md` (paleta oscura/clara, tipografía, medidas, componentes).
+- **Estilo:** `docs/CLIENT_STYLES_JAVA.md` (paleta oscura/clara, tipografía, medidas, componentes).
 - **Verificada** al crearla: `./gradlew assembleDebug testDebugUnitTest lintDebug` → BUILD SUCCESSFUL, 29 pruebas JUnit en verde, lint sin avisos.
   Además se comprobó en el emulador, apuntando temporalmente a un servidor real (el del Conversor de Unidades): login correcto → pantalla de ejemplo, y el
   transporte y el parser provienen de ese cliente móvil, que también se verificó en teléfono real. **Lo que no se ha ejecutado** es una operación de dominio
@@ -47,7 +47,7 @@ claramente marcado lo que cambia con el **dominio**.
 | **Transporte SOAP** | `ws/SoapXml`, `ws/ClienteSoapHttp`, `ws/ConfiguracionServicio` | `ConfiguracionServicio` siempre; `ClienteSoapHttp` y `ContratoWS` para **agregar operaciones** |
 | **DTO base** | `dto/RespuestaBaseDto`, `RespuestaListaDto` | Se agregan DTO del dominio al lado |
 | **Composición** | `AplicacionCliente`, `controlador/FabricaControladores`, `vista/Navegacion` | Se agregan servicios/controladores del dominio |
-| **Estilos** | `res/values/{colors,styles,themes}.xml`, `res/color/`, `res/drawable/`, `docs/CLIENT_STYLES.md` | Colores solo si se cambia de presentación; **no** se repiten valores en los layouts |
+| **Estilos** | `res/values/{colors,styles,themes}.xml`, `res/color/`, `res/drawable/`, `docs/CLIENT_STYLES_JAVA.md` | Colores solo si se cambia de presentación; **no** se repiten valores en los layouts |
 | **Pantalla de ejemplo (dominio)** | `vista/InicioActivity`, `controlador/InicioControlador`, `activity_inicio.xml`, textos `inicio_*` | **Se reemplaza** por las pantallas del dominio |
 | **Dominio (vacío)** | — | Nuevos `dto/`, `servicio/`, `controlador/`, `vista/`, layouts y textos |
 
@@ -106,7 +106,7 @@ Reglas que se repiten en todo dominio (ver `context/CLIENTES_CONSTRUCT.md` del r
 - Mostrar solo el **mensaje** del servidor, nunca el código. Textos propios del cliente **con tildes**.
 - **Nunca red en el hilo principal.** Los fallos de red no cierran la app.
 
-## 5. Estilos (resumen; detalle en `docs/CLIENT_STYLES.md`)
+## 5. Estilos (resumen; detalle en `docs/CLIENT_STYLES_JAVA.md`)
 
 Los layouts **solo referencian estilos**; márgenes laterales de `24dp` en el layout. Componentes disponibles:
 
@@ -120,7 +120,7 @@ Los layouts **solo referencian estilos**; márgenes laterales de `24dp` en el la
 
 - **Fondo:** `res/drawable-nodpi/fondo_app.jpeg` (opcional; imagen de referencia, recortada a pantalla completa) sobre el color `fondo` de respaldo. Es una imagen **de ejemplo**:
   sustituirla o quitar el `ImageView` de los layouts según el proyecto (no se usa imagen en la presentación clara).
-- **Presentación clara:** redefinir los mismos nombres de `colors.xml` con los valores de `CLIENT_STYLES.md` §2.3. No hay selector de tema.
+- **Presentación clara:** redefinir los mismos nombres de `colors.xml` con los valores de `CLIENT_STYLES_JAVA.md` §2.3. No hay selector de tema.
 - `fitsSystemWindows` reemplaza el `padding` del mismo `View`: usar márgenes en los hijos.
 - Los recursos de la biblioteca que una pantalla de ejemplo no usa están exentos del aviso `UnusedResources` en `app/lint.xml`.
 
