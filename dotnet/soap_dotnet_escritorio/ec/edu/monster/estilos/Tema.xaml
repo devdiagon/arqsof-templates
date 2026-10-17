@@ -1,0 +1,37 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Presentación oscura (CLIENT_STYLES_DOTNET.md §2). Las vistas solo referencian estos nombres. -->
+    <Color x:Key="ColorFondo">#1A1426</Color>
+    <SolidColorBrush x:Key="Fondo" Color="{StaticResource ColorFondo}" />
+    <SolidColorBrush x:Key="Superficie" Color="#271D3A" />
+    <SolidColorBrush x:Key="Texto" Color="#F5F3FF" />
+    <SolidColorBrush x:Key="TextoSecundario" Color="#B4A9CE" />
+    <SolidColorBrush x:Key="Borde" Color="#3B2D57" />
+    <SolidColorBrush x:Key="Acento" Color="#A78BFA" />
+    <SolidColorBrush x:Key="Primario" Color="#6D28D9" />
+    <SolidColorBrush x:Key="PrimarioPresionado" Color="#5B21B6" />
+    <SolidColorBrush x:Key="Secundario" Color="#4B4563" />
+    <SolidColorBrush x:Key="SecundarioPresionado" Color="#3A3550" />
+    <SolidColorBrush x:Key="SobreAccion" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="Error" Color="#F87171" />
+    <SolidColorBrush x:Key="Exito" Color="#4ADE80" />
+    <SolidColorBrush x:Key="CampoFondo" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="CampoTexto" Color="#1E1033" />
+    <SolidColorBrush x:Key="CampoPlaceholder" Color="#6B6280" />
+    <SolidColorBrush x:Key="Flecha" Color="#424242" />
+    <SolidColorBrush x:Key="Transparente" Color="Transparent" />
+
+    <!-- Medidas (§4): unidad base 4, un único radio -->
+    <CornerRadius x:Key="Radio">8</CornerRadius>
+    <Thickness x:Key="PaddingPanelTitulo">16</Thickness>
+    <Thickness x:Key="PaddingPanelMensaje">12</Thickness>
+    <Thickness x:Key="PaddingBoton">20,8</Thickness>
+    <Thickness x:Key="PaddingCampo">12</Thickness>
+    <sys:Double xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="AlturaControl">36</sys:Double>
+    <sys:Double xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="AnchoColumna">420</sys:Double>
+
+    <!-- Tipografía (§3, escritorio): Segoe UI -->
+    <FontFamily x:Key="FuenteBase">Segoe UI</FontFamily>
+
+</ResourceDictionary>

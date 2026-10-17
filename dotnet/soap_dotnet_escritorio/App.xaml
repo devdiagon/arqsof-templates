@@ -1,0 +1,16 @@
+﻿<Application x:Class="ec.edu.monster.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vista="clr-namespace:ec.edu.monster.vista">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Controles.xaml incorpora Tema.xaml -->
+                <ResourceDictionary Source="ec/edu/monster/estilos/Controles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <vista:NegacionConvertidor x:Key="Negacion" />
+            <BooleanToVisibilityConverter x:Key="BooleanAVisibilidad" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

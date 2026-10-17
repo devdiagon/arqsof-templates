@@ -1,0 +1,33 @@
+﻿<Window x:Class="ec.edu.monster.vista.VentanaPrincipal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ec.edu.monster.vista"
+        xmlns:ctl="clr-namespace:ec.edu.monster.controlador"
+        Title="{x:Static local:Textos.NombreAplicacion}" Width="1100" Height="720" MinWidth="1040" MinHeight="640"
+        WindowStartupLocation="CenterScreen" Style="{StaticResource VentanaBase}">
+    <!-- Disposición dividida (CLIENT_STYLES_DOTNET.md §7.0) con las zonas invertidas: imagen a la izquierda (560 fijo)
+         y la pantalla actual a la derecha, en una columna de 420 centrada. La imagen es de la ventana, no de cada pantalla. -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="560" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Image Grid.Column="0" Source="/ec/edu/monster/estaticos/fondo_app.png" Stretch="Uniform"
+               HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+        <ContentControl Grid.Column="1" Content="{Binding Actual}" Margin="24"
+                        MaxWidth="{StaticResource AnchoColumna}" VerticalAlignment="Center" Focusable="False">
+            <ContentControl.Resources>
+                <!-- Un DataTemplate por pantalla: controlador → vista -->
+                <DataTemplate DataType="{x:Type ctl:LoginControlador}">
+                    <local:LoginVista />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type ctl:InicioControlador}">
+                    <local:InicioVista />
+                </DataTemplate>
+                <!-- DOMINIO: un DataTemplate por pantalla del dominio -->
+            </ContentControl.Resources>
+        </ContentControl>
+    </Grid>
+</Window>
