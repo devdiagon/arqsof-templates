@@ -1,0 +1,62 @@
+# --- Visual Studio / IIS Express ---
+# .vs contiene el applicationhost.config de IIS Express (bindings, sitios) y el estado del IDE.
+# Se regenera; si se corrige a mano para móviles, guardar una copia fuera de git (ver README).
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# --- Salida de compilación ---
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+PublishScripts/
+*.publish.xml
+
+# --- Pruebas y cobertura ---
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+coverage/
+*.coverage
+*.coveragexml
+*.cobertura.xml
+
+# --- NuGet ---
+*.nupkg
+*.snupkg
+.nuget/packages/
+project.lock.json
+
+# --- Secretos y configuración local ---
+appsettings.Local.json
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.pem
+*.key
+
+# --- Herramientas ---
+.idea/
+.vscode/
+_ReSharper*/
+*.DotSettings.user
+.cr/
+*.log
+*.tmp
+*.bak
+
+# --- Sistema operativo ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# --- Archivos descargados de la Web (marca Zone.Identifier) ---
+*:Zone.Identifier

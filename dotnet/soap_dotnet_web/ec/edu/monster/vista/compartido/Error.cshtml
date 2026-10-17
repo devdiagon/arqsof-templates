@@ -1,0 +1,7 @@
+@model ErrorModelo
+@{
+    ViewData["Titulo"] = "Error";
+}
+<ui-encabezado>Error</ui-encabezado>
+<ui-mensaje mensaje="@Model.Mensaje" />
+<ui-boton href="@Url.Action("Index", "Inicio")" tipo="secundario" completo="true" salida="true">Volver</ui-boton>
