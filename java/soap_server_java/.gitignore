@@ -1,0 +1,35 @@
+# --- Maven ---
+target/
+dependency-reduced-pom.xml
+release.properties
+*.log
+
+# --- NetBeans (nb-configuration.xml sí se versiona; lo privado no) ---
+nbproject/private/
+nbactions.xml
+build/
+dist/
+
+# --- IntelliJ / Eclipse / VS Code ---
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+
+# --- Secretos y configuración local ---
+*.p12
+*.jks
+*.pem
+*.key
+*.env
+application-local.*
+
+# --- Sistema operativo ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+*:Zone.Identifier
