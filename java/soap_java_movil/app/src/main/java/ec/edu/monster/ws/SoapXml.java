@@ -38,19 +38,31 @@ public final class SoapXml {
 
     // ------------------------------------------------------------------ peticion
 
-    /** Arma el sobre de una operacion; los parametros salen en el orden del mapa, sin prefijo y con el texto escapado. */
+    /**
+     * Arma el sobre de una operacion; los parametros salen en el orden del mapa y con el texto escapado.
+     * Operacion y parametros van CALIFICADOS con el namespace del servicio (prefijo ns): lo exige la convencion
+     * (CONVENCION_SOAP.md, R3) y lo esperan por igual los servidores Java y .NET.
+     */
     public static String construirPeticion(String namespace, String operacion, Map<String, String> parametros) {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
                 .append("<S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Body>")
                 .append("<ns:").append(operacion).append(" xmlns:ns=\"").append(namespace).append("\">");
         for (Map.Entry<String, String> p : parametros.entrySet()) {
-            sb.append('<').append(p.getKey()).append('>')
+            sb.append("<ns:").append(p.getKey()).append('>')
                     .append(escapar(p.getValue()))
-                    .append("</").append(p.getKey()).append('>');
+                    .append("</ns:").append(p.getKey()).append('>');
         }
         sb.append("</ns:").append(operacion).append("></S:Body></S:Envelope>");
         return sb.toString();
+    }
+
+    /**
+     * Valor de la cabecera SOAPAction de una operacion: la URI {@code namespace + servicio + "/" + operacion}, entre
+     * comillas (convencion R4). Un servidor .NET rechaza la cabecera vacia con HTTP 500 (ActionNotSupported).
+     */
+    public static String accionSoap(String namespace, String servicio, String operacion) {
+        return "\"" + namespace + servicio + "/" + operacion + "\"";
     }
 
     // ------------------------------------------------------------------ respuestas listas para usar

@@ -7,40 +7,46 @@ import java.net.URI;
 import java.net.URL;
 import javax.xml.namespace.QName;
 
-/** Crea el proxy JAX-WS del servicio a partir de {@link ConfiguracionServicio}. No contiene nada del dominio. */
+/**
+ * Crea el proxy JAX-WS del servicio a partir de {@link ConfiguracionServicio}. No contiene nada del dominio.
+ * El puerto se obtiene por la INTERFAZ del contrato (no por el nombre del puerto, que cambia entre Java y .NET)
+ * y la URL del servicio se recibe completa.
+ */
 public final class ClienteWS {
-
-    private static final QName SERVICIO = new QName(ConfiguracionServicio.NAMESPACE, ConfiguracionServicio.NOMBRE_SERVICIO);
-    private static final QName PUERTO = new QName(ConfiguracionServicio.NAMESPACE, ConfiguracionServicio.NOMBRE_PUERTO);
 
     private ClienteWS() {
     }
 
-    /** Base configurada: propiedad {@code ws.base.url}, variable {@code WS_BASE_URL} o el valor por defecto. */
-    public static String baseConfigurada() {
-        String base = System.getProperty("ws.base.url");
-        if (base == null || base.isBlank()) {
-            base = System.getenv("WS_BASE_URL");
+    /** URL configurada: propiedad {@code ws.url}, variable {@code WS_URL} o el valor por defecto. */
+    public static String urlConfigurada() {
+        String url = System.getProperty("ws.url");
+        if (url == null || url.isBlank()) {
+            url = System.getenv("WS_URL");
         }
-        if (base == null || base.isBlank()) {
-            base = ConfiguracionServicio.BASE_POR_DEFECTO;
+        if (url == null || url.isBlank()) {
+            url = ConfiguracionServicio.URL_POR_DEFECTO;
         }
-        return base.trim().replaceAll("/+$", "");
+        return normalizarUrl(url);
+    }
+
+    static String normalizarUrl(String url) {
+        return url.trim().replaceAll("/+$", "");
     }
 
     public static ContratoWS crear() {
-        return crear(baseConfigurada());
+        return crear(urlConfigurada());
     }
 
     /**
      * Descarga el WSDL (por eso conviene llamarlo fuera del hilo de eventos). Lanza una excepción de JAX-WS
      * ({@code WebServiceException}) si el servidor no responde.
      */
-    public static ContratoWS crear(String baseUrl) {
-        String endpoint = baseUrl + "/" + ConfiguracionServicio.NOMBRE_SERVICIO;
+    public static ContratoWS crear(String urlServicio) {
+        String endpoint = normalizarUrl(urlServicio);
         try {
             URL wsdl = URI.create(endpoint + "?wsdl").toURL();
-            ContratoWS puerto = Service.create(wsdl, SERVICIO).getPort(PUERTO, ContratoWS.class);
+            QName servicio = new QName(ConfiguracionServicio.NAMESPACE, ConfiguracionServicio.NOMBRE_SERVICIO);
+            ContratoWS puerto = Service.create(wsdl, servicio).getPort(ContratoWS.class);
             BindingProvider proveedor = (BindingProvider) puerto;
             proveedor.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, endpoint);
             proveedor.getRequestContext().put("com.sun.xml.ws.connect.timeout", ConfiguracionServicio.TIMEOUT_MS);

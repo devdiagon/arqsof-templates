@@ -4,7 +4,7 @@
     <!-- DOMINIO: nombre del proyecto (renombrar artifactId y name; el groupId/paquete ec.edu.monster no se cambia).
          Si se renombra, actualizar también el context root en WEB-INF/glassfish-web.xml -->
     <groupId>ec.edu.monster</groupId>
-    <artifactId>ClienteSoapWeb</artifactId>
+    <artifactId>soap_java_web</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
     <name>Cliente SOAP web</name>

@@ -47,16 +47,16 @@ class ClienteWSTest {
     }
 
     @Test
-    void laBaseSeLimpiaDeBarrasFinales() {
-        String anterior = System.getProperty("ws.base.url");
+    void laUrlSeLimpiaDeBarrasFinalesYSeUsaCompleta() {
+        String anterior = System.getProperty("ws.url");
         try {
-            System.setProperty("ws.base.url", " http://host:8080/App// ");
-            assertEquals("http://host:8080/App", ClienteWS.baseConfigurada());
+            System.setProperty("ws.url", " http://host:5267/RutaLibre// ");
+            assertEquals("http://host:5267/RutaLibre", ClienteWS.urlConfigurada());
         } finally {
             if (anterior == null) {
-                System.clearProperty("ws.base.url");
+                System.clearProperty("ws.url");
             } else {
-                System.setProperty("ws.base.url", anterior);
+                System.setProperty("ws.url", anterior);
             }
         }
     }

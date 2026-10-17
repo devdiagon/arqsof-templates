@@ -24,7 +24,7 @@ public class AplicacionCliente extends Application {
     public void onCreate() {
         super.onCreate();
         Sesion sesion = new Sesion();
-        ContratoWS ws = new ClienteSoapHttp();
+        ContratoWS ws = new ClienteSoapHttp(getString(R.string.url_servicio));
         ServicioAutenticacion autenticacion = new ServicioAutenticacion(ws, sesion);
         fabrica = new FabricaControladores(autenticacion);
     }

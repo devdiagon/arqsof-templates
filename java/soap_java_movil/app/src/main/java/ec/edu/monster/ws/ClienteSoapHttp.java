@@ -27,14 +27,17 @@ public class ClienteSoapHttp implements ContratoWS {
 
     private final String urlServicio;
     private final String namespace;
+    private final String servicio;
 
-    public ClienteSoapHttp() {
-        this(ConfiguracionServicio.URL_SERVICIO, ConfiguracionServicio.NAMESPACE);
+    /** URL COMPLETA del servicio (la entrega res/values/config.xml: {@code getString(R.string.url_servicio)}). */
+    public ClienteSoapHttp(String urlServicio) {
+        this(urlServicio, ConfiguracionServicio.NAMESPACE, ConfiguracionServicio.NOMBRE_SERVICIO);
     }
 
-    public ClienteSoapHttp(String urlServicio, String namespace) {
+    public ClienteSoapHttp(String urlServicio, String namespace, String servicio) {
         this.urlServicio = urlServicio;
         this.namespace = namespace;
+        this.servicio = servicio;
     }
 
     @Override
@@ -69,7 +72,7 @@ public class ClienteSoapHttp implements ContratoWS {
             conexion.setRequestMethod("POST");
             conexion.setDoOutput(true);
             conexion.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
-            conexion.setRequestProperty("SOAPAction", "\"\"");
+            conexion.setRequestProperty("SOAPAction", SoapXml.accionSoap(namespace, servicio, operacion));
             conexion.setFixedLengthStreamingMode(cuerpo.length);
             try (OutputStream salida = conexion.getOutputStream()) {
                 salida.write(cuerpo);

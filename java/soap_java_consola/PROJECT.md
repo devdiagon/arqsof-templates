@@ -5,7 +5,7 @@
 
 ## 1. Contexto
 - **Dominio:** <qué hace el sistema>
-- **Servidor:** <nombre del servicio SOAP>, URL base `<BASE_POR_DEFECTO>`, servicio `<NOMBRE_SERVICIO>`, puerto `<NOMBRE_PUERTO>`, namespace `<NAMESPACE>`, WSDL `<URL>?wsdl`
+- **Servidor:** <nombre del servicio SOAP>, URL completa `<URL_POR_DEFECTO>`, servicio `<NOMBRE_SERVICIO>`, namespace `<NAMESPACE>`, WSDL `<URL>?wsdl` (tecnología del servidor: Java / .NET; cumple `CONVENCION_SOAP.md`)
 - **Documentos de referencia:** <ERS, ECUD, documentos de contexto del servidor>
 - **Operaciones del servidor usadas por el cliente:** <tabla operación / parámetros / respuesta / ¿requiere token?>
 - **Flujo, menús y textos de la consola** (los comparte con los otros clientes del proyecto): <opciones de cada menú, mensajes, formato del resultado>
@@ -13,9 +13,10 @@
 ## 2. Estado actual
 Plantilla base sin dominio: transporte (`ClienteWS`), tipos comunes y entrada/salida (`VistaBase`). Compila y pasa las pruebas de la plantilla; no tiene login ni menús.
 
-- [ ] Servidor configurado (`ClienteWS.BASE_POR_DEFECTO`, `namespace`, servicio y puerto en `Main`)
-- [ ] `artifactId` y `RespuestaBaseDto` (namespace) actualizados
-- [ ] Contrato y DTO de las operaciones del dominio (una fila por operación en §1)
+- [ ] Servidor configurado (`ClienteWS.URL_POR_DEFECTO`, `EspacioNombres.SERVICIO`, nombre del servicio en `Main`)
+- [ ] `artifactId` actualizado
+- [ ] Contrato (con `action` y `targetNamespace`) y DTO de las operaciones del dominio (una fila por operación en §1)
+- [ ] Pruebas de conformidad adaptadas al contrato real (modelo: `ConvencionClienteTest`) y retirados los ejemplos (`ContratoEjemplo`, `RespuestaEcoDto`) si ya no sirven
 - [ ] Login verificado contra el servidor real
 - [ ] Servicios, vistas y controladores del dominio construidos y conectados en `Main`
 - [ ] Servidor apagado / timeout probado

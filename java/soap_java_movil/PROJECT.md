@@ -5,14 +5,15 @@
 
 ## 1. Contexto
 - **Dominio:** <qué hace el sistema>
-- **Servidor:** <nombre del servicio SOAP>, URL `<URL_SERVICIO>`, namespace `<NAMESPACE>`, WSDL `<URL>?wsdl`
+- **Servidor:** <nombre del servicio SOAP>, URL completa `<url_servicio>`, servicio `<NOMBRE_SERVICIO>`, namespace `<NAMESPACE>`, WSDL `<URL>?wsdl` (tecnología del servidor: Java / .NET; cumple `CONVENCION_SOAP.md`)
 - **Documentos de referencia:** <ERS, ECUD, documentos de contexto del servidor>
 - **Operaciones del servidor usadas por el cliente:** <tabla operación / parámetros / respuesta / ¿requiere token?>
 
 ## 2. Estado actual
 Plantilla base sin dominio: login funcional (`LoginActivity`) y pantalla de ejemplo (`InicioActivity`). Compila y pasa las pruebas de la plantilla.
 
-- [ ] Servidor configurado (`ConfiguracionServicio`, `network_security_config.xml`)
+- [ ] Servidor configurado (`res/values/config.xml` → `url_servicio`, `ConfiguracionServicio`: `NAMESPACE` y `NOMBRE_SERVICIO`, `network_security_config.xml`)
+- [ ] Pruebas de conformidad (`ConvencionClienteTest`) adaptadas a las operaciones reales
 - [ ] Login verificado contra el servidor real (emulador)
 - [ ] Operaciones del dominio incorporadas (una fila por operación en §1)
 - [ ] Pantallas del dominio construidas

@@ -5,7 +5,7 @@
 
 ## 1. Contexto
 - **Dominio:** <qué hace el sistema>
-- **Servidor:** <nombre del servicio SOAP>, URL base `<BASE_POR_DEFECTO>`, servicio `<NOMBRE_SERVICIO>`, namespace `<NAMESPACE>`, WSDL `<URL>?wsdl`
+- **Servidor:** <nombre del servicio SOAP>, URL completa `<URL_POR_DEFECTO>`, servicio `<NOMBRE_SERVICIO>`, namespace `<NAMESPACE>`, WSDL `<URL>?wsdl` (tecnología del servidor: Java / .NET; cumple `CONVENCION_SOAP.md`)
 - **Documentos de referencia:** <ERS, ECUD, documentos de contexto del servidor>
 - **Operaciones del servidor usadas por el cliente:** <tabla operación / parámetros / respuesta / ¿requiere token?>
 - **Flujo y textos de las pantallas** (los comparte con los otros clientes del proyecto): <títulos, etiquetas, formato del resultado>
@@ -13,7 +13,8 @@
 ## 2. Estado actual
 Plantilla base sin dominio: login funcional (`LoginVista`) y pantalla de ejemplo (`InicioVista`). Compila y pasa las pruebas de la plantilla.
 
-- [ ] Servidor configurado (`ConfiguracionServicio`)
+- [ ] Servidor configurado (`ConfiguracionServicio`: `URL_POR_DEFECTO`, `NOMBRE_SERVICIO`, `NAMESPACE`) y `artifactId` actualizado
+- [ ] Contrato (con `action` y `targetNamespace`) y pruebas de conformidad (`ConvencionClienteTest`) adaptados a las operaciones reales
 - [ ] Login verificado contra el servidor real
 - [ ] Operaciones del dominio incorporadas (una fila por operación en §1)
 - [ ] Pantallas del dominio construidas

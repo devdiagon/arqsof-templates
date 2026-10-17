@@ -14,27 +14,27 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.Test;
 
-/** Las respuestas son del formato real que devuelven los servidores de esta familia (Payara, JAX-WS). */
+/** Las respuestas son del formato que devuelven los servidores de esta familia: elementos calificados con el namespace del servicio. */
 public class SoapXmlTest {
 
     private static final String CAB = "<?xml version='1.0' encoding='UTF-8'?><S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Body>";
     private static final String PIE = "</S:Body></S:Envelope>";
 
     private static final String LOGIN_OK = CAB
-            + "<ns2:loginResponse xmlns:ns2=\"http://ws.monster.edu.ec/\"><respuesta><estado>OK</estado><codigo>200</codigo>"
+            + "<ns2:loginResponse xmlns:ns2=\"http://CAMBIAR.namespace/\"><respuesta><estado>OK</estado><codigo>200</codigo>"
             + "<mensaje>Ingreso realizado correctamente</mensaje><token>99537fe655084389acc1de0e2829f0af</token></respuesta></ns2:loginResponse>" + PIE;
 
     private static final String LOGIN_ERROR = CAB
-            + "<ns2:loginResponse xmlns:ns2=\"http://ws.monster.edu.ec/\"><respuesta><estado>ERROR</estado><codigo>AUTH-001</codigo>"
+            + "<ns2:loginResponse xmlns:ns2=\"http://CAMBIAR.namespace/\"><respuesta><estado>ERROR</estado><codigo>AUTH-001</codigo>"
             + "<mensaje>Usuario o contrasenia incorrectos</mensaje></respuesta></ns2:loginResponse>" + PIE;
 
     private static final String LISTA_OK = CAB
-            + "<ns2:obtenerItemsResponse xmlns:ns2=\"http://ws.monster.edu.ec/\"><respuesta><estado>OK</estado><codigo>200</codigo>"
+            + "<ns2:obtenerItemsResponse xmlns:ns2=\"http://CAMBIAR.namespace/\"><respuesta><estado>OK</estado><codigo>200</codigo>"
             + "<mensaje>Consulta realizada correctamente</mensaje><elementos><elemento>Uno</elemento><elemento>Dos</elemento>"
             + "<elemento>Tres</elemento></elementos></respuesta></ns2:obtenerItemsResponse>" + PIE;
 
     private static final String LISTA_ERROR = CAB
-            + "<ns2:obtenerItemsResponse xmlns:ns2=\"http://ws.monster.edu.ec/\"><respuesta><estado>ERROR</estado><codigo>AUTH-002</codigo>"
+            + "<ns2:obtenerItemsResponse xmlns:ns2=\"http://CAMBIAR.namespace/\"><respuesta><estado>ERROR</estado><codigo>AUTH-002</codigo>"
             + "<mensaje>Token invalido, acceso no autorizado</mensaje><elementos/></respuesta></ns2:obtenerItemsResponse>" + PIE;
 
     private static final String FAULT = CAB
@@ -78,6 +78,22 @@ public class SoapXmlTest {
     }
 
     @Test
+    public void leeUnaRespuestaConCamposCalificadosEnNamespacePorDefecto() {
+        // Forma tipica de un servidor .NET (DataContract): todo en el namespace del servicio, sin prefijos.
+        String xml = CAB + "<loginResponse xmlns=\"http://CAMBIAR.namespace/\"><respuesta><estado>OK</estado><codigo>200</codigo>"
+                + "<mensaje>ok</mensaje><token>T9</token></respuesta></loginResponse>" + PIE;
+        RespuestaLoginDto r = SoapXml.leerLogin(xml);
+        assertTrue(r.esOk());
+        assertEquals("T9", r.getToken());
+    }
+
+    @Test
+    public void laSoapActionEsLaUriDeLaOperacionEntreComillas() {
+        assertEquals("\"http://CAMBIAR.namespace/WSServicio/login\"",
+                SoapXml.accionSoap("http://CAMBIAR.namespace/", "WSServicio", "login"));
+    }
+
+    @Test
     public void faultEsFalloDeComunicacion() {
         ExcepcionServicio e = assertThrows(ExcepcionServicio.class, () -> SoapXml.leerLogin(FAULT));
         assertEquals(ExcepcionServicio.RED, e.getCodigo());
@@ -92,14 +108,14 @@ public class SoapXmlTest {
     }
 
     @Test
-    public void peticionRespetaElOrdenYElNamespace() {
+    public void peticionRespetaElOrdenYCalificaLosParametros() {
         Map<String, String> p = new LinkedHashMap<>();
         p.put("usuario", "admin");
         p.put("contrasenia", "clave");
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                 + "<S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Body>"
-                + "<ns:login xmlns:ns=\"http://ws.monster.edu.ec/\"><usuario>admin</usuario><contrasenia>clave</contrasenia></ns:login>"
-                + "</S:Body></S:Envelope>", SoapXml.construirPeticion("http://ws.monster.edu.ec/", "login", p));
+                + "<ns:login xmlns:ns=\"http://CAMBIAR.namespace/\"><ns:usuario>admin</ns:usuario><ns:contrasenia>clave</ns:contrasenia></ns:login>"
+                + "</S:Body></S:Envelope>", SoapXml.construirPeticion("http://CAMBIAR.namespace/", "login", p));
     }
 
     @Test
@@ -113,8 +129,8 @@ public class SoapXmlTest {
         Map<String, String> p = new LinkedHashMap<>();
         p.put("contrasenia", "a&b<c>\"d'");
         p.put("nombre", "Kilómetro");
-        String xml = SoapXml.construirPeticion("http://ws.monster.edu.ec/", "login", p);
-        assertTrue(xml.contains("<contrasenia>a&amp;b&lt;c&gt;&quot;d&apos;</contrasenia>"));
-        assertTrue(xml.contains("<nombre>Kilómetro</nombre>"));
+        String xml = SoapXml.construirPeticion("http://CAMBIAR.namespace/", "login", p);
+        assertTrue(xml.contains("<ns:contrasenia>a&amp;b&lt;c&gt;&quot;d&apos;</ns:contrasenia>"));
+        assertTrue(xml.contains("<ns:nombre>Kilómetro</ns:nombre>"));
     }
 }

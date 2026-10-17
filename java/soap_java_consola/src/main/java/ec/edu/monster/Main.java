@@ -18,9 +18,9 @@ public class Main {
         System.setErr(new PrintStream(System.err, true, StandardCharsets.UTF_8));
         try {
             Sesion sesion = new Sesion();
-            // TODO: contrato = ClienteWS.crear(Contrato.class, NAMESPACE, "Servicio", "ServicioPort");
+            // TODO: contrato = ClienteWS.crear(Contrato.class, EspacioNombres.SERVICIO, "Servicio");
             //       crear servicio(contrato, sesion), vistas y controladores, y alternar según su enum Resultado
-            System.out.println("Plantilla lista. WS: " + ClienteWS.baseConfigurada()
+            System.out.println("Plantilla lista. WS: " + ClienteWS.urlConfigurada()
                     + " (sesion: " + (sesion.getToken() != null) + ")");
         } catch (RuntimeException e) {
             System.err.println("No fue posible iniciar el cliente: " + e.getMessage());

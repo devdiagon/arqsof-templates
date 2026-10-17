@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- DOMINIO: nombre del proyecto (renombrar artifactId y name; el groupId/paquete ec.edu.monster no se cambia) -->
     <groupId>ec.edu.monster</groupId>
-    <artifactId>ClienteSoapEscritorio</artifactId>
+    <artifactId>soap_java_escritorio</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Cliente SOAP de escritorio</name>
