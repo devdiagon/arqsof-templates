@@ -70,7 +70,9 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">
+		<!-- No se compilan en Android, pero siguen visibles en el Explorador de soluciones (que muestra el destino activo) -->
 		<Compile Remove="ec\edu\monster\pruebas\**" />
+		<None Include="ec\edu\monster\pruebas\**\*.cs" />
 	</ItemGroup>
 
 </Project>
