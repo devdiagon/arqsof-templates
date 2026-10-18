@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:ctl="clr-namespace:ec.edu.monster.controlador"
+             xmlns:vista="clr-namespace:ec.edu.monster.vista"
+             x:Class="ec.edu.monster.vista.LoginVista"
+             x:DataType="ctl:LoginControlador"
+             ControlTemplate="{StaticResource PlantillaPagina}"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16" VerticalOptions="Center"
+                             IsEnabled="{Binding Ocupado, Converter={StaticResource Negacion}}">
+            <Border Style="{StaticResource Panel}">
+                <Label Text="{x:Static vista:Textos.NombreAplicacion}" Style="{StaticResource TituloAplicacion}" />
+            </Border>
+
+            <!-- El texto del campo es el placeholder: no lleva etiqueta encima -->
+            <Border Style="{StaticResource Campo}" Margin="0,8,0,0">
+                <Entry Text="{Binding Usuario}" Placeholder="Usuario" ReturnType="Next" />
+            </Border>
+
+            <Border Style="{StaticResource Campo}">
+                <Entry x:Name="Contrasenia" Placeholder="Contraseña" IsPassword="True" ReturnType="Done" />
+            </Border>
+
+            <vista:PanelMensaje Texto="{Binding Mensaje}" IsVisible="{Binding HayMensaje}" />
+
+            <Button Text="Iniciar sesión" Command="{Binding IniciarSesion}" Style="{StaticResource BotonPrimario}"
+                    HorizontalOptions="Center" Margin="0,8,0,0" />
+
+            <ActivityIndicator IsRunning="{Binding Ocupado}" IsVisible="{Binding Ocupado}" HorizontalOptions="Center" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
