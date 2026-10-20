@@ -15,6 +15,26 @@ Se intentó antes lo contrario —copiar el WSDL de Java en el servidor .NET y d
 
 ---
 
+## 0.1 Estrategia de implementación por plataforma (resumen)
+
+Visión general; el detalle está en §3 (servidor) y §4 (cliente).
+
+| | Java (Jakarta EE / JAX-WS) | .NET (CoreWCF / WCF cliente) |
+|---|---|---|
+| **Servidor** | *Code-first*: clase `@WebService` con las operaciones; el WSDL lo genera Metro al desplegar en Payara. La plataforma **no** cumple R3/R4 por defecto: hay que **declararlo** (`package-info.java` y `action`/`targetNamespace` en cada `@WebMethod`) | *Code-first*: interfaz `[ServiceContract]` + implementación; el WSDL lo genera CoreWCF. R3/R4 se cumplen **por defecto**; solo se fijan nombres y el `Namespace` del contrato, del binding y de los `DataContract` |
+| **Cliente de escritorio, consola, web** | **Proxy generado** (a) con `wsimport` (`jaxws-maven-plugin`) desde la copia del WSDL en el repositorio, envuelto por una clase propia del cliente | **Proxy generado** (a) con `dotnet-svcutil` desde la copia del WSDL en el repositorio (`Reference.cs`), envuelto por una clase propia del cliente |
+| **Cliente móvil** | Android: **sobre XML a mano** (c), porque no hay JAX-WS en Android | MAUI: proxy generado (a), igual que los demás clientes .NET |
+| **Envoltorio del proxy** | Interfaz propia del cliente (p. ej. `ClienteConversor`) implementada por `ClienteWSConversor`; el resto del cliente (servicio, controladores, vistas) **no ve** las clases generadas | Interfaz `IClienteConversor` implementada por `ClienteWSConversor` |
+| **URL (R9)** | Constante con la **URL completa** del servicio; método `crear(String urlCompleta)` que fija `ENDPOINT_ADDRESS_PROPERTY`; sobrescribible con propiedad/variable de entorno | Constante con la URL completa en `ConfiguracionServicio`; sobrescribible con variable de entorno |
+| **WSDL en ejecución** | No se descarga: el proxy usa la copia empaquetada (`wsdlLocation` en el classpath) | No se usa: solo sirve para generar |
+| **Cambio de contrato** | Desplegar el servidor → copiar el WSDL nuevo al repositorio → `mvn generate-sources` → actualizar el envoltorio | Desplegar el servidor → copiar el WSDL nuevo → regenerar `Reference.cs` → actualizar el envoltorio |
+
+**Por qué Android se queda a mano:** Android no incluye JAX-WS, así que `wsimport` no aplica y no hay un generador oficial. Las alternativas (ksoap2-android, sin mantenimiento; Retrofit con conversor XML; generadores tipo wsdl2code) no ahorran trabajo real y añaden dependencias. Un armador de sobres pequeño y probado (`SoapXml`) es la opción más simple.
+
+Consecuencias: (1) los dos lenguajes siguen el **mismo** patrón de cliente, así que un cambio de contrato se aplica igual en ambos; (2) el código generado no se edita a mano, y los errores de escritura en `action`/namespaces desaparecen del cliente; (3) cualquier cliente apunta a cualquier servidor cambiando solo la URL completa.
+
+---
+
 ## 1. Reglas del contrato
 
 | # | Regla | Por qué |
@@ -92,7 +112,7 @@ Orden de preferencia: **(a) generar** desde el WSDL, **(b) contrato a mano** con
 
 | Cliente | Qué hacer |
 |---|---|
-| **(a) Generado** (`wsimport` / `jaxws-maven-plugin`, `dotnet-svcutil` / *WCF Web Service Reference*) | Guardar una copia del WSDL en el repositorio y generar desde ella. Fijar el endpoint por configuración (R9); no usar la URL fija del código generado. En Java, si el XSD trae `nillable`, usar un archivo de binding con `generateElementProperty="false"` para evitar `JAXBElement<String>`. |
+| **(a) Generado** (`wsimport` / `jaxws-maven-plugin`, `dotnet-svcutil` / *WCF Web Service Reference*) | Guardar una copia del WSDL en el repositorio y generar desde ella. Fijar el endpoint por configuración (R9); no usar la URL fija del código generado. En Java, apuntar `wsdlLocation` a la copia del classpath para que el proxy no descargue el WSDL al crearse. En Java, si el XSD trae `nillable`, usar un archivo de binding con `generateElementProperty="false"` para evitar `JAXBElement<String>`. |
 | **(b) JAX-WS a mano** (Java) | Misma interfaz con `@WebService`, `@WebMethod(action=…)`, `@WebResult` y `@WebParam` con `targetNamespace`, y **el mismo `package-info.java`** en los DTO (§3.1). Crear el puerto con `Service.create(wsdlUrl, qnameServicio).getPort(Interfaz.class)` (**sin** `QName` de puerto) y fijar `ENDPOINT_ADDRESS_PROPERTY` con la URL completa (R9, R10). Timeouts con las propiedades del runtime. |
 | **(b) WCF a mano** (.NET) | Mismo `[ServiceContract]`/`[DataContract]` del servidor, `BasicHttpBinding` y `EndpointAddress` desde configuración. |
 | **(c) Sobre a mano** (Android, `HttpURLConnection`/`HttpClient`) | Petición: operación en el TNS con prefijo (`<ns:op xmlns:ns="<TNS>">`) y **cada parámetro con el mismo prefijo** (`<ns:usuario>`); cabecera `SOAPAction` con la URI de la operación (R4); `Content-Type: text/xml; charset=utf-8`. Respuesta: leer por **nombre local**, ignorando prefijos y namespaces; aceptar HTTP 200 y 500 (el 500 trae un Fault, que se trata como fallo de comunicación). URL en un recurso de configuración. HTTP sin cifrar: `network_security_config` con el host de desarrollo. |
@@ -143,10 +163,12 @@ Reglas comunes a todos los clientes:
 
 ## 8. Estado en este proyecto (servicio "conversor de unidades")
 
+Contrato: 9 operaciones tras el catálogo ampliado (2026-10-20): `login`, `obtenerCategorias`, `obtenerUnidades`, `convertirLongitud`, `convertirMasa`, `convertirTemperatura`, `convertirVolumen`, `convertirTiempo`, `convertirArea`. Los cambios concretos por proyecto están en `soap_java/ACTUALIZACION_CATALOGO.md` y `soap_dotnet/ACTUALIZACION_CATALOGO.md`.
+
 | Componente | Estado de la convención |
 |---|---|
-| Servidor Java (Payara) | Aplicada (§3.1): `package-info.java` + `targetNamespace` y `action` en las 6 operaciones |
-| Clientes Java: consola, escritorio, web | Aplicada (§4, JAX-WS a mano): mismas anotaciones, `package-info`, `getPort(Interfaz)`, `crearConEndpoint(url)`. **Pendiente (opcional):** que `crear()` lea una URL completa (`ws.url`); hoy toma una base y añade `/<Servicio>`, válido para Payara pero no para la ruta de .NET (R9) |
-| Cliente móvil Android | Aplicada (§4 c): parámetros con prefijo, `SOAPAction` por operación, URL en `res/values/config.xml` |
+| Servidor Java (Payara) | Aplicada (§3.1): `package-info.java` + `targetNamespace` y `action` en cada operación (las 9 del contrato, incluidas `convertirVolumen`, `convertirTiempo` y `convertirArea`) |
+| Clientes Java: consola, escritorio, web | Aplicada (§0.1, §4 a): **proxy generado** con `wsimport` (`jaxws-maven-plugin`) desde la copia del WSDL en `src/main/resources/wsdl`, envuelto por `ClienteConversor`/`ClienteWSConversor` (en las plantillas, `ClienteServicio`/`ClienteWS`); URL completa por `-Dws.url` / `WS_URL` (R9). Ya no hay contrato a mano ni `dto/package-info.java` |
+| Cliente móvil Android | Aplicada (§4 c): parámetros con prefijo, `SOAPAction` por operación, URL en `res/values/config.xml`. Se mantiene a mano |
 | Servidor .NET (CoreWCF) | Aplicada con el código idiomático (§3.2), con los mismos textos de login que Java. Única diferencia conocida: números de más de ~28 dígitos |
-| Clientes .NET (consola, escritorio, web, móvil) | Por construir; se generan desde el WSDL (§4 a) |
+| Clientes .NET (consola, WPF, MVC, MAUI) | **Construidos** con proxy generado por `dotnet-svcutil` (§4 a) desde `wsdl/WSConversorUnidades.wsdl`, envuelto por `IClienteConversor`/`ClienteWSConversor`, URL completa en `ConfiguracionServicio` |
