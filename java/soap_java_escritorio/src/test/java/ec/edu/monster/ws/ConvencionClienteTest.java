@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ec.edu.monster.dto.RespuestaLoginDto;
+import ec.edu.monster.ws.generado.RespuestaLogin;
 import jakarta.jws.WebMethod;
 import jakarta.jws.WebParam;
 import jakarta.jws.WebResult;
@@ -29,16 +30,18 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Node;
 
 /**
- * Pruebas de CONFORMIDAD del cliente con CONVENCION_SOAP.md, sobre el {@link ContratoWS} real. Se publica un servidor
+ * Pruebas de CONFORMIDAD del cliente con CONVENCION_SOAP.md, sobre el proxy generado. Se publica un servidor
  * falso que sigue la convención y se mide lo que el cliente ENVÍA y lo que ENTIENDE:
  *  - los parámetros viajan calificados con el namespace del servicio (R3) y la SOAPAction es la URI de la operación (R4);
- *  - los campos de la respuesta (calificados) llegan con valor, no nulos (dto/package-info.java);
+ *  - los campos de la respuesta (calificados) llegan con valor, no nulos (el proxy generado desde el WSDL);
  *  - el puerto se obtiene por la interfaz y la URL completa se acepta tal cual (R9, R10).
  * Si una falla, el servidor (Java o .NET) rechazaría o no entendería al cliente. Al agregar operaciones, repetir el patrón.
  */
 class ConvencionClienteTest {
 
-    private static final String TNS = ConfiguracionServicio.NAMESPACE;
+    // Los mismos valores que src/main/resources/wsdl/WSServicio.wsdl (DOMINIO: cambiarlos junto con el WSDL)
+    private static final String TNS = "http://CAMBIAR.namespace/";
+    private static final String SERVICIO = "WSServicio";
 
     private static Endpoint endpoint;
     private static String url;
@@ -47,15 +50,15 @@ class ConvencionClienteTest {
     private static volatile String campoRespuesta;
 
     /** Servidor falso: misma forma que un servidor real que cumple la convención (mismo portType que el contrato del cliente). */
-    @WebService(name = ConfiguracionServicio.NOMBRE_SERVICIO, serviceName = ConfiguracionServicio.NOMBRE_SERVICIO,
-            targetNamespace = ConfiguracionServicio.NAMESPACE)
+    @WebService(name = SERVICIO, serviceName = SERVICIO,
+            targetNamespace = TNS)
     public static class ServidorFalso {
-        @WebMethod(operationName = "login", action = ConfiguracionServicio.NAMESPACE + ConfiguracionServicio.NOMBRE_SERVICIO + "/login")
-        @WebResult(name = "respuesta", targetNamespace = ConfiguracionServicio.NAMESPACE)
-        public RespuestaLoginDto login(
-                @WebParam(name = "usuario", targetNamespace = ConfiguracionServicio.NAMESPACE) String usuario,
-                @WebParam(name = "contrasenia", targetNamespace = ConfiguracionServicio.NAMESPACE) String contrasenia) {
-            RespuestaLoginDto r = new RespuestaLoginDto();
+        @WebMethod(operationName = "login", action = TNS + SERVICIO + "/login")
+        @WebResult(name = "respuesta", targetNamespace = TNS)
+        public RespuestaLogin login(
+                @WebParam(name = "usuario", targetNamespace = TNS) String usuario,
+                @WebParam(name = "contrasenia", targetNamespace = TNS) String contrasenia) {
+            RespuestaLogin r = new RespuestaLogin();
             if (usuario == null || usuario.isBlank() || contrasenia == null || contrasenia.isBlank()) {
                 r.setEstado("ERROR");
                 r.setCodigo("AUTH-001");
@@ -139,7 +142,7 @@ class ConvencionClienteTest {
         try (ServerSocket s = new ServerSocket(0)) {
             puerto = s.getLocalPort();
         }
-        url = "http://localhost:" + puerto + "/prueba/" + ConfiguracionServicio.NOMBRE_SERVICIO;
+        url = "http://localhost:" + puerto + "/prueba/" + SERVICIO;
         endpoint = Endpoint.create(new ServidorFalso());
         List<Handler> cadena = new ArrayList<>();
         cadena.add(new Captura());
@@ -160,12 +163,12 @@ class ConvencionClienteTest {
 
         assertEquals(TNS, hijosRecibidos.get("usuario"), "R3: el parámetro debe ir calificado con el namespace del servicio");
         assertEquals(TNS, hijosRecibidos.get("contrasenia"));
-        assertEquals("\"" + ConfiguracionServicio.accion("login") + "\"", accionRecibida, "R4: SOAPAction con la URI de la operación");
+        assertEquals("\"" + TNS + SERVICIO + "/login" + "\"", accionRecibida, "R4: SOAPAction con la URI de la operación");
     }
 
     @Test
     void losCamposDeLaRespuestaViajanCalificadosYElClienteLosEntiende() {
-        // Si falta dto/package-info.java los DTO salen sin calificar y un servidor .NET los dejaria vacios (R3).
+        // Si el WSDL no declara los campos calificados, un servidor .NET los dejaria vacios (R3).
         ClienteWS.crear(url).login("u", "c");
         assertEquals(TNS, campoRespuesta, "R3: los campos de la respuesta deben ir calificados con el namespace del servicio");
     }

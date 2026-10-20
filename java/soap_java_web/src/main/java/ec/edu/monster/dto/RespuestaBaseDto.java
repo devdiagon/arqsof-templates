@@ -1,17 +1,11 @@
 package ec.edu.monster.dto;
 
-import ec.edu.monster.ws.ConfiguracionServicio;
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlSeeAlso;
-import jakarta.xml.bind.annotation.XmlType;
-
 /**
+ * Forma común de toda respuesta del servidor (regla R6 de CONVENCION_SOAP.md): estado (OK/ERROR), codigo y mensaje.
+ * Es un POJO del cliente: lo llena {@code ws/ClienteWS} copiando la respuesta que genera wsimport. Los DTO de cada operación la extienden.
+ *
  * @author: Frederick Tipán
  */
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "RespuestaBase", namespace = ConfiguracionServicio.NAMESPACE)
-@XmlSeeAlso({RespuestaLoginDto.class, RespuestaListaDto.class})   // DOMINIO: agregar aquí cada DTO nuevo
 public class RespuestaBaseDto {
 
     protected String estado;

@@ -11,7 +11,7 @@ import ec.edu.monster.vista.Textos;
 import ec.edu.monster.vista.VentanaPrincipal;
 import ec.edu.monster.vista.estilo.EstilosUi;
 import ec.edu.monster.ws.ClienteWS;
-import ec.edu.monster.ws.ContratoWS;
+import ec.edu.monster.ws.ClienteServicio;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -25,9 +25,9 @@ import javax.swing.SwingUtilities;
 public class Main {
 
     public static void main(String[] args) {
-        ContratoWS contrato;
+        ClienteServicio contrato;
         try {
-            // Descarga el WSDL: se hace antes de abrir la ventana para no congelar la interfaz.
+            // Crea el proxy (usa el WSDL del classpath, no hay descarga) antes de abrir la ventana.
             contrato = ClienteWS.crear();
         } catch (RuntimeException e) {
             SwingUtilities.invokeLater(() -> {
@@ -39,11 +39,11 @@ public class Main {
             });
             return;
         }
-        ContratoWS servicioWs = contrato;
+        ClienteServicio servicioWs = contrato;
         SwingUtilities.invokeLater(() -> iniciar(servicioWs));
     }
 
-    private static void iniciar(ContratoWS contrato) {
+    private static void iniciar(ClienteServicio contrato) {
         EstilosUi.instalarLookAndFeel();   // antes de crear cualquier componente
 
         Sesion sesion = new Sesion();   // una sola para toda la aplicación: la comparten todos los servicios

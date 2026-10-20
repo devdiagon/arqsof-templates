@@ -26,6 +26,52 @@
     </dependencies>
     <build>
         <plugins>
+            <!-- wsimport (proxy generado). El WSDL va empaquetado en el classpath: NO se descarga en ejecución. Ver README §4.
+                 1) Proxy de PRUEBAS: genera ec.edu.monster.ws.ejemplo desde src/test/resources/wsdl/WSEjemplo.wsdl (modelo de ConvencionClienteTest).
+                 2) Proxy del PROYECTO: copiar el WSDL del servidor a src/main/resources/wsdl y DESCOMENTAR la segunda ejecución. -->
+            <plugin>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>jaxws-maven-plugin</artifactId>
+                <version>4.0.2</version>
+                <executions>
+                    <execution>
+                        <id>generar-proxy-ejemplo</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>wsimport-test</goal>
+                        </goals>
+                        <configuration>
+                            <wsdlDirectory>${project.basedir}/src/test/resources/wsdl</wsdlDirectory>
+                            <wsdlFiles>
+                                <wsdlFile>WSEjemplo.wsdl</wsdlFile>
+                            </wsdlFiles>
+                            <packageName>ec.edu.monster.ws.ejemplo</packageName>
+                            <wsdlLocation>/wsdl/WSEjemplo.wsdl</wsdlLocation>
+                            <xnocompile>true</xnocompile>
+                            <keep>true</keep>
+                        </configuration>
+                    </execution>
+                    <!--
+                    <execution>
+                        <id>generar-proxy</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>wsimport</goal>
+                        </goals>
+                        <configuration>
+                            <wsdlDirectory>${project.basedir}/src/main/resources/wsdl</wsdlDirectory>
+                            <wsdlFiles>
+                                <wsdlFile>CAMBIAR_Servicio.wsdl</wsdlFile>
+                            </wsdlFiles>
+                            <packageName>ec.edu.monster.ws.generado</packageName>
+                            <wsdlLocation>/wsdl/CAMBIAR_Servicio.wsdl</wsdlLocation>
+                            <xnocompile>true</xnocompile>
+                            <keep>true</keep>
+                        </configuration>
+                    </execution>
+                    -->
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

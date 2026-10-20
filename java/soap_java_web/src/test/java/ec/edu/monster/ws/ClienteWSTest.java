@@ -9,12 +9,12 @@ import org.junit.jupiter.api.Test;
 
 class ClienteWSTest {
 
-    private static final ContratoWS PUERTO_FALSO = (usuario, contrasenia) -> new RespuestaLoginDto();
+    private static final ClienteServicio PUERTO_FALSO = (usuario, contrasenia) -> new RespuestaLoginDto();
 
     @Test
     void creaElPuertoUnaSolaVezYLoReutiliza() {
         AtomicInteger creaciones = new AtomicInteger();
-        ContratoWS contrato = ClienteWS.perezoso(() -> {
+        ClienteServicio contrato = ClienteWS.perezoso(() -> {
             creaciones.incrementAndGet();
             return PUERTO_FALSO;
         });
@@ -27,7 +27,7 @@ class ClienteWSTest {
     @Test
     void siLaCreacionFallaReintentaEnLaSiguienteLlamada() {
         AtomicInteger intentos = new AtomicInteger();
-        ContratoWS contrato = ClienteWS.perezoso(() -> {
+        ClienteServicio contrato = ClienteWS.perezoso(() -> {
             if (intentos.incrementAndGet() == 1) {
                 throw new WebServiceException("servidor apagado");
             }
@@ -40,7 +40,7 @@ class ClienteWSTest {
 
     @Test
     void laExcepcionDelPuertoLlegaSinEnvolver() {
-        ContratoWS contrato = ClienteWS.perezoso(() -> (usuario, contrasenia) -> {
+        ClienteServicio contrato = ClienteWS.perezoso(() -> (usuario, contrasenia) -> {
             throw new WebServiceException("sin red");
         });
         assertEquals("sin red", assertThrows(WebServiceException.class, () -> contrato.login("u", "c")).getMessage());

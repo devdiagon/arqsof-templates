@@ -1,19 +1,12 @@
 package ec.edu.monster.dto;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlType;
-
 /**
- * Forma común de toda respuesta del servidor (regla R6 de CONVENCION_SOAP.md): {@code estado} (OK/ERROR),
- * {@code codigo} y {@code mensaje}. Los DTO de cada operación la extienden y se declaran en {@code @XmlSeeAlso}.
- * El nombre del tipo ({@code name}) es el del complexType del WSDL: forma parte del contrato (R5), no del código Java.
- * El namespace sale de {@code package-info.java} ({@link EspacioNombres#SERVICIO}).
+ * Forma común de toda respuesta del servidor (regla R6 de CONVENCION_SOAP.md): {@code estado} (OK/ERROR), {@code codigo} y {@code mensaje}.
+ * Es un POJO del cliente: el envoltorio de {@code ws} lo llena copiando la respuesta que genera wsimport. Los DTO de cada
+ * operación del dominio la extienden.
  *
  * @author: Frederick Tipán
  */
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "RespuestaBase", namespace = EspacioNombres.SERVICIO)
 public class RespuestaBaseDto {
 
     protected String estado;

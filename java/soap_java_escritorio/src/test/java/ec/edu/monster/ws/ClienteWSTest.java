@@ -1,7 +1,9 @@
 package ec.edu.monster.ws;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import jakarta.xml.ws.WebServiceException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -33,8 +35,10 @@ class ClienteWSTest {
     }
 
     @Test
-    void laSoapActionSigueLaConvencion() {
-        assertEquals(ConfiguracionServicio.NAMESPACE + ConfiguracionServicio.NOMBRE_SERVICIO + "/login",
-                ConfiguracionServicio.accion("login"));
+    void crearNoNecesitaElServidorYElFalloLlegaAlLlamar() {
+        // El WSDL va empaquetado: crear el cliente no abre ninguna conexión. Con el servidor apagado falla la llamada.
+        ClienteServicio cliente = ClienteWS.crear("http://localhost:1/inexistente");
+
+        assertThrows(WebServiceException.class, () -> cliente.login("u", "c"));
     }
 }

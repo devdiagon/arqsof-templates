@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ec.edu.monster.dto.EspacioNombres;
-import ec.edu.monster.dto.RespuestaEcoDto;
+import ec.edu.monster.ws.ejemplo.RespuestaEco;
+import ec.edu.monster.ws.ejemplo.WSEjemplo;
+import ec.edu.monster.ws.ejemplo.WSEjemplo_Service;
 import jakarta.jws.WebMethod;
 import jakarta.jws.WebParam;
 import jakarta.jws.WebResult;
@@ -31,15 +32,19 @@ import org.w3c.dom.Node;
 
 /**
  * Pruebas de CONFORMIDAD del cliente con CONVENCION_SOAP.md. Se publica un servidor falso que sigue la convención
- * (como lo haría el servidor real) y se mide lo que el cliente ENVÍA y lo que ENTIENDE:
+ * (como lo haría el servidor real) y se mide lo que el cliente ENVÍA y lo que ENTIENDE. El cliente es el proxy que
+ * {@code wsimport-test} genera desde {@code src/test/resources/wsdl/WSEjemplo.wsdl} (paquete {@code ec.edu.monster.ws.ejemplo}),
+ * configurado con {@link ClienteWS}:
  *  - los parámetros viajan calificados con el namespace del servicio (R3) y la SOAPAction es la URI de la operación (R4);
- *  - los campos de la respuesta (calificados) llegan con valor, no nulos (package-info.java);
- *  - el puerto se obtiene por la interfaz y la URL completa se acepta tal cual (R9, R10).
+ *  - los campos de la respuesta (calificados) llegan con valor, no nulos;
+ *  - el puerto se obtiene de la clase de servicio generada y la URL completa se acepta tal cual (R9, R10).
  * Si una falla, el servidor (Java o .NET) rechazaría o no entendería al cliente. Sirve de modelo para las pruebas del dominio.
  */
 class ConvencionClienteTest {
 
-    private static final String TNS = EspacioNombres.SERVICIO;
+    // Los mismos valores que src/test/resources/wsdl/WSEjemplo.wsdl
+    private static final String TNS = "http://CAMBIAR.namespace/";
+    private static final String SERVICIO = "WSEjemplo";
 
     private static Endpoint endpoint;
     private static String url;
@@ -49,14 +54,14 @@ class ConvencionClienteTest {
 
     /**
      * Servidor falso: misma forma que un servidor real que cumple la convención. El {@code name} (portType) es el
-     * mismo que el del contrato del cliente: {@code getPort(Interfaz)} los empareja por ese nombre.
+     * mismo que el del WSDL del cliente.
      */
-    @WebService(name = "WSEjemplo", serviceName = "WSEjemplo", targetNamespace = EspacioNombres.SERVICIO)
+    @WebService(name = SERVICIO, serviceName = SERVICIO, targetNamespace = TNS)
     public static class ServidorFalso {
-        @WebMethod(operationName = "eco", action = EspacioNombres.SERVICIO + "WSEjemplo/eco")
-        @WebResult(name = "respuesta", targetNamespace = EspacioNombres.SERVICIO)
-        public RespuestaEcoDto eco(@WebParam(name = "texto", targetNamespace = EspacioNombres.SERVICIO) String texto) {
-            RespuestaEcoDto r = new RespuestaEcoDto();
+        @WebMethod(operationName = "eco", action = TNS + SERVICIO + "/eco")
+        @WebResult(name = "respuesta", targetNamespace = TNS)
+        public RespuestaEco eco(@WebParam(name = "texto", targetNamespace = TNS) String texto) {
+            RespuestaEco r = new RespuestaEco();
             if (texto == null || texto.isBlank()) {
                 r.setEstado("ERROR");
                 r.setCodigo("DATO-001");
@@ -140,7 +145,7 @@ class ConvencionClienteTest {
         try (ServerSocket s = new ServerSocket(0)) {
             puerto = s.getLocalPort();
         }
-        url = "http://localhost:" + puerto + "/prueba/WSEjemplo";
+        url = "http://localhost:" + puerto + "/prueba/" + SERVICIO;
         endpoint = Endpoint.create(new ServidorFalso());
         List<Handler> cadena = new ArrayList<>();
         cadena.add(new Captura());
@@ -155,8 +160,8 @@ class ConvencionClienteTest {
         }
     }
 
-    private static ContratoEjemplo cliente() {
-        return ClienteWS.crearConEndpoint(ContratoEjemplo.class, TNS, "WSEjemplo", url);
+    private static WSEjemplo cliente() {
+        return ClienteWS.configurar(new WSEjemplo_Service().getWSEjemploPort(), url);
     }
 
     @Test
@@ -164,39 +169,39 @@ class ConvencionClienteTest {
         cliente().eco("hola");
 
         assertEquals(TNS, hijosRecibidos.get("texto"), "R3: el parámetro debe ir calificado con el namespace del servicio");
-        assertEquals("\"" + TNS + "WSEjemplo/eco\"", accionRecibida, "R4: SOAPAction con la URI de la operación");
+        assertEquals("\"" + TNS + SERVICIO + "/eco\"", accionRecibida, "R4: SOAPAction con la URI de la operación");
     }
 
     @Test
     void losCamposDeLaRespuestaViajanCalificadosYElClienteLosEntiende() {
-        // Si falta dto/package-info.java los DTO salen sin calificar y un servidor .NET los dejaria vacios (R3).
+        // Si el WSDL no declara los campos calificados, un servidor .NET los dejaria vacios (R3).
         cliente().eco("hola");
         assertEquals(TNS, campoRespuesta, "R3: los campos de la respuesta deben ir calificados con el namespace del servicio");
     }
 
     @Test
     void elClienteEntiendeUnaRespuestaConCamposCalificados() {
-        RespuestaEcoDto r = cliente().eco("hola");
+        RespuestaEco r = cliente().eco("hola");
 
         assertNotNull(r);
-        assertTrue(r.esOk());
+        assertEquals("OK", r.getEstado());
         assertEquals("200", r.getCodigo());
         assertEquals("hola", r.getTexto());
     }
 
     @Test
     void unaRespuestaDeErrorLlegaConSuCodigoYMensaje() {
-        RespuestaEcoDto r = cliente().eco("  ");
+        RespuestaEco r = cliente().eco("  ");
 
-        assertFalse(r.esOk());
+        assertFalse("OK".equals(r.getEstado()));
         assertEquals("DATO-001", r.getCodigo());
         assertEquals("El texto es obligatorio", r.getMensaje());
     }
 
     @Test
     void laUrlCompletaSeAceptaConBarrasFinales() {
-        RespuestaEcoDto r = ClienteWS.crearConEndpoint(ContratoEjemplo.class, TNS, "WSEjemplo", url + "//").eco("x");
+        RespuestaEco r = ClienteWS.configurar(new WSEjemplo_Service().getWSEjemploPort(), url + "//").eco("x");
 
-        assertTrue(r.esOk());
+        assertTrue("OK".equals(r.getEstado()));
     }
 }

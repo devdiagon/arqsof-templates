@@ -2,14 +2,14 @@ package ec.edu.monster.servicio;
 
 import ec.edu.monster.excepciones.ExcepcionServicio;
 import ec.edu.monster.modelo.Sesion;
-import ec.edu.monster.ws.ContratoWS;
+import ec.edu.monster.ws.ClienteServicio;
 
 /** Caso de uso compartido: iniciar sesión. Valida lo trivial (campos vacíos) y deja el token en la Sesion. */
 public class ServicioAutenticacion extends ServicioBase {
 
-    private final ContratoWS ws;
+    private final ClienteServicio ws;
 
-    public ServicioAutenticacion(ContratoWS ws, Sesion sesion) {
+    public ServicioAutenticacion(ClienteServicio ws, Sesion sesion) {
         super(sesion);
         this.ws = ws;
     }

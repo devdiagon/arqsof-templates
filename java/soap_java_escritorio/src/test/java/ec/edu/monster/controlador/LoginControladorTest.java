@@ -6,7 +6,7 @@ import ec.edu.monster.dto.RespuestaLoginDto;
 import ec.edu.monster.modelo.Sesion;
 import ec.edu.monster.servicio.ServicioAutenticacion;
 import ec.edu.monster.vista.LoginVista;
-import ec.edu.monster.ws.ContratoWS;
+import ec.edu.monster.ws.ClienteServicio;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
@@ -22,8 +22,8 @@ class LoginControladorTest {
 
     /** Doble del contrato: acepta solo el usuario «admin». */
     private void preparar() throws Exception {
-        ContratoWS falso = (ContratoWS) Proxy.newProxyInstance(
-                ContratoWS.class.getClassLoader(), new Class<?>[]{ContratoWS.class},
+        ClienteServicio falso = (ClienteServicio) Proxy.newProxyInstance(
+                ClienteServicio.class.getClassLoader(), new Class<?>[]{ClienteServicio.class},
                 (proxy, m, args) -> {
                     llamadasAlServidor.incrementAndGet();
                     RespuestaLoginDto r = new RespuestaLoginDto();

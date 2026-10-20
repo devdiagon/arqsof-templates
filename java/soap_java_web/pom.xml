@@ -40,6 +40,32 @@
     </dependencies>
     <build>
         <plugins>
+            <!-- wsimport: genera el proxy (ec.edu.monster.ws.generado) desde src/main/resources/wsdl al ejecutar generate-sources;
+                 el WSDL se empaqueta en el classpath y NO se descarga en ejecución. Ver README §4. -->
+            <plugin>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>jaxws-maven-plugin</artifactId>
+                <version>4.0.2</version>
+                <executions>
+                    <execution>
+                        <id>generar-proxy</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>wsimport</goal>
+                        </goals>
+                        <configuration>
+                            <wsdlDirectory>${project.basedir}/src/main/resources/wsdl</wsdlDirectory>
+                            <wsdlFiles>
+                                <wsdlFile>WSServicio.wsdl</wsdlFile>
+                            </wsdlFiles>
+                            <packageName>ec.edu.monster.ws.generado</packageName>
+                            <wsdlLocation>/wsdl/WSServicio.wsdl</wsdlLocation>
+                            <xnocompile>true</xnocompile>
+                            <keep>true</keep>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

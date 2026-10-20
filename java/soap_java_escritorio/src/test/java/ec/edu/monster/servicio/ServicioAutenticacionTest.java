@@ -6,7 +6,7 @@ import ec.edu.monster.dto.RespuestaBaseDto;
 import ec.edu.monster.dto.RespuestaLoginDto;
 import ec.edu.monster.excepciones.ExcepcionServicio;
 import ec.edu.monster.modelo.Sesion;
-import ec.edu.monster.ws.ContratoWS;
+import ec.edu.monster.ws.ClienteServicio;
 import jakarta.xml.ws.WebServiceException;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +17,7 @@ class ServicioAutenticacionTest {
     private RuntimeException fallo;
     private final Sesion sesion = new Sesion();
 
-    private final ContratoWS falso = (usuario, contrasenia) -> {
+    private final ClienteServicio falso = (usuario, contrasenia) -> {
         llamadas++;
         if (fallo != null) {
             throw fallo;

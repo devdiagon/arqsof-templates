@@ -2,6 +2,8 @@ package ec.edu.monster.ws;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ec.edu.monster.ws.ejemplo.WSEjemplo_Service;
+import jakarta.xml.ws.BindingProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,5 +32,12 @@ class ClienteWSTest {
         org.junit.jupiter.api.Assumptions.assumeTrue(System.getenv("WS_URL") == null);
 
         assertEquals(ClienteWS.URL_POR_DEFECTO, ClienteWS.urlConfigurada());
+    }
+
+    @Test
+    void configurarFijaLaUrlCompletaSinAnadirRutas() {
+        BindingProvider puerto = (BindingProvider) ClienteWS.configurar(new WSEjemplo_Service().getWSEjemploPort(), " http://h:1/Ruta// ");
+
+        assertEquals("http://h:1/Ruta", puerto.getRequestContext().get(BindingProvider.ENDPOINT_ADDRESS_PROPERTY));
     }
 }

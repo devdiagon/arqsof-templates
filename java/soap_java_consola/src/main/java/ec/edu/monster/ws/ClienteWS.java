@@ -1,21 +1,23 @@
 package ec.edu.monster.ws;
 
 import jakarta.xml.ws.BindingProvider;
-import jakarta.xml.ws.Service;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import javax.xml.namespace.QName;
+import java.util.Map;
 
 /**
- * Fábrica genérica del puerto JAX-WS: lee el WSDL, fija el endpoint y los timeouts.
- * Cada proyecto aporta su interfaz de contrato (con @WebService) y el nombre del servicio.
+ * Configuración genérica del proxy que genera {@code wsimport}: fija la URL completa del servicio y los timeouts.
+ * No conoce el dominio: cada proyecto aporta su clase de servicio generada y su interfaz propia (ver README §4).
+ *
+ * <pre>
+ * ClienteX cliente = new ClienteWSX(ClienteWS.configurar(new WSX_Service().getWSXPort()));
+ * </pre>
  *
  * Convención (CONVENCION_SOAP.md):
  *  - R9: la URL del servicio se recibe COMPLETA por configuración y no se asume su forma. La ruta de un servidor Java
  *        (/Contexto/Servicio) y la de uno .NET (/RutaLibre) son distintas; cambiar de servidor es cambiar solo esta URL.
- *  - R10: el puerto se pide por la INTERFAZ ({@code getPort(contrato)}), nunca por el nombre del puerto, porque lo
- *        decide la plataforma del servidor (Metro: {@code <Servicio>Port}; CoreWCF: {@code <Binding>_<Contrato>}).
+ *  - R10: el puerto se pide a la clase de servicio generada, nunca por el nombre del puerto, porque lo decide la plataforma
+ *        del servidor (Metro: {@code <Servicio>Port}; CoreWCF: {@code <Binding>_<Contrato>}).
+ *  - El WSDL va empaquetado en el classpath ({@code wsdlLocation} del proxy): NO se descarga al crear el puerto, así que crearlo
+ *        funciona con el servidor apagado; el fallo llega al llamar a una operación, como {@code WebServiceException}.
  *
  * @author: Frederick Tipán
  */
@@ -47,29 +49,23 @@ public final class ClienteWS {
         return url.trim().replaceAll("/+$", "");
     }
 
-    /**
-     * @param contrato       interfaz anotada con @WebService (con las anotaciones de la convención)
-     * @param espacioNombres targetNamespace del servicio ({@link ec.edu.monster.dto.EspacioNombres#SERVICIO})
-     * @param servicio       nombre del servicio en el WSDL ({@code <wsdl:service name="...">})
-     */
-    public static <T> T crear(Class<T> contrato, String espacioNombres, String servicio) {
-        return crearConEndpoint(contrato, espacioNombres, servicio, urlConfigurada());
+    /** Configura el puerto generado con la URL de {@link #urlConfigurada()}. */
+    public static <P> P configurar(P puerto) {
+        return configurar(puerto, urlConfigurada());
     }
 
-    /** Igual que {@link #crear(Class, String, String)} pero con la URL completa del servicio indicada. */
-    public static <T> T crearConEndpoint(Class<T> contrato, String espacioNombres, String servicio, String urlServicio) {
-        String endpoint = normalizarUrl(urlServicio);
-        try {
-            URL wsdl = URI.create(endpoint + "?wsdl").toURL();
-            T proxy = Service.create(wsdl, new QName(espacioNombres, servicio)).getPort(contrato);
-            BindingProvider proveedor = (BindingProvider) proxy;
-            // La dirección del soap:address del WSDL se ignora: manda la URL configurada.
-            proveedor.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, endpoint);
-            proveedor.getRequestContext().put("com.sun.xml.ws.connect.timeout", TIMEOUT_MS);
-            proveedor.getRequestContext().put("com.sun.xml.ws.request.timeout", TIMEOUT_MS);
-            return proxy;
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("URL del servicio invalida: " + endpoint, e);
-        }
+    /**
+     * Configura el puerto generado con la URL completa indicada y los timeouts.
+     *
+     * @param puerto      lo que devuelve {@code new X_Service().getXPort()} (implementa {@link BindingProvider})
+     * @param urlServicio URL completa del servicio (Payara, .NET, IIS...); no se le añade ninguna ruta
+     */
+    public static <P> P configurar(P puerto, String urlServicio) {
+        Map<String, Object> contexto = ((BindingProvider) puerto).getRequestContext();
+        // La dirección del soap:address del WSDL se ignora: manda la URL configurada.
+        contexto.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, normalizarUrl(urlServicio));
+        contexto.put("com.sun.xml.ws.connect.timeout", TIMEOUT_MS);
+        contexto.put("com.sun.xml.ws.request.timeout", TIMEOUT_MS);
+        return puerto;
     }
 }

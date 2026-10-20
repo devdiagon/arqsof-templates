@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:tns="http://CAMBIAR.namespace/" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" version="1.0" targetNamespace="http://CAMBIAR.namespace/">
+
+<xs:element name="eco" type="tns:eco"/>
+
+<xs:element name="ecoResponse" type="tns:ecoResponse"/>
+
+<xs:complexType name="eco">
+<xs:sequence>
+<xs:element name="texto" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="ecoResponse">
+<xs:sequence>
+<xs:element name="respuesta" type="tns:RespuestaEco" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="RespuestaBase">
+<xs:sequence>
+<xs:element name="estado" type="xs:string" minOccurs="0"/>
+<xs:element name="codigo" type="xs:string" minOccurs="0"/>
+<xs:element name="mensaje" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="RespuestaEco">
+<xs:complexContent>
+<xs:extension base="tns:RespuestaBase">
+<xs:sequence>
+<xs:element name="texto" type="xs:string" minOccurs="0"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+
+</xs:schema>
