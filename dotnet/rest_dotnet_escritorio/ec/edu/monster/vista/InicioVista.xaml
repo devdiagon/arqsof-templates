@@ -1,0 +1,14 @@
+<UserControl x:Class="ec.edu.monster.vista.InicioVista"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="False">
+    <!-- DOMINIO: pantalla de ejemplo. Se reemplaza por las pantallas del dominio. -->
+    <StackPanel>
+        <Border Style="{StaticResource PanelEncabezado}">
+            <TextBlock Text="Inicio" Style="{StaticResource TextoTitulo}" />
+        </Border>
+
+        <Button Content="Cerrar sesión" Command="{Binding CerrarSesion}" Style="{StaticResource BotonSecundario}"
+                Margin="0,32,0,0" />
+    </StackPanel>
+</UserControl>

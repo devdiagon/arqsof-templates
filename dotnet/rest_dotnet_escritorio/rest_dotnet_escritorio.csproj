@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>ec.edu.monster</RootNamespace>
+    <!-- Las pruebas viven en este mismo proyecto (ec.edu.monster.pruebas): el punto de entrada lo genera App.xaml -->
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Imagen decorativa de la ventana (docs/CLIENT_STYLES_DOTNET.md §6); sustituirla conservando el nombre -->
+    <Resource Include="ec\edu\monster\estaticos\fondo_app.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="System.Net.Http" />
+  </ItemGroup>
+
+  <!-- El transporte HTTP/JSON (System.Net.Http.Json) viene en el SDK: solo se agregan paquetes de pruebas. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+</Project>
