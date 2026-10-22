@@ -136,7 +136,7 @@ Reglas que se repiten en todo dominio:
 ## 6. Servidor y ejecución
 
 - **Servidor por defecto:** `ConfiguracionServicio.UrlPorDefecto` (URL completa). Sin recompilar: variable de entorno `WS_URL`
-  (PowerShell: `$env:WS_URL = "http://192.168.1.10:57592/Ruta"; dotnet run`; Bash: `WS_URL=http://… dotnet run`).
+  (PowerShell: `$env:WS_URL = "http://<ip>:57592/Ruta"; dotnet run`; Bash: `WS_URL=http://… dotnet run`).
 - **HTTP y HTTPS:** el esquema de la URL decide el modo de seguridad del binding (`ClienteWS.CrearBinding`): `http://` sin seguridad, `https://` con seguridad de transporte. **HTTPS exige un certificado de servidor válido y de confianza** (en desarrollo, `dotnet dev-certs https --trust`, y que el nombre al que se conecta, `localhost` o la IP, esté en el certificado).
   La validación del certificado **no** se desactiva en el cliente. Si falla, el cliente solo muestra «No se pudo comunicar con el servidor» (no distingue la causa).
 - **El WSDL no se usa en ejecución:** un cliente WCF no lo descarga; usa el binding y la URL indicados. Con el servidor apagado el proxy se crea igual y la llamada falla con `RED`.

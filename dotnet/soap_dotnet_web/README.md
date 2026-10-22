@@ -208,7 +208,7 @@ Las vistas **solo usan los componentes** `ui-*`; no escriben clases, estilos ni 
 ## 6. Servidor y ejecución
 
 - **Servidor SOAP por defecto:** `ConfiguracionServicio.UrlPorDefecto` (URL completa). Sin recompilar: variable de entorno `WS_URL`
-  (PowerShell: `$env:WS_URL = "http://192.168.1.10:57592/Ruta"; dotnet run --launch-profile http`).
+  (PowerShell: `$env:WS_URL = "http://<ip>:57592/Ruta"; dotnet run --launch-profile http`).
 - **HTTP y HTTPS:** el esquema de la URL decide el modo de seguridad del binding (`ClienteWS.CrearBinding`): `http://` sin seguridad, `https://` con seguridad de transporte. **HTTPS exige un certificado de servidor válido y de confianza** (en desarrollo, `dotnet dev-certs https --trust`, y que el nombre al que se conecta esté en el certificado).
   La validación del certificado **no** se desactiva en el cliente. Si falla, el cliente solo muestra «No se pudo comunicar con el servidor» (no distingue la causa).
 - **El WSDL no se usa en ejecución:** un cliente WCF no lo descarga; usa el binding y la URL indicados. Con el servidor SOAP apagado la aplicación arranca igual y la llamada falla con `RED` tras el tiempo límite (10 s).
