@@ -1,0 +1,18 @@
+@model AccesoModelo
+@{
+    ViewData["Titulo"] = "Acceso";
+    var hayMensaje = !string.IsNullOrWhiteSpace(Model.Mensaje);
+}
+<ui-encabezado aplicacion="true">@Textos.NombreAplicacion</ui-encabezado>
+
+<ui-formulario accion="Acceder" controlador="Acceso">
+    <ui-campo id="Usuario" etiqueta="Usuario" valor="@Model.Usuario" autocomplete="username"
+              autofocus="@(Model.Usuario.Length == 0)" />
+    @* La contraseña nunca se devuelve a la vista, aunque el acceso falle *@
+    <ui-campo id="Contrasenia" etiqueta="Contraseña" tipo="password" autocomplete="current-password"
+              autofocus="@(Model.Usuario.Length > 0)" />
+
+    <ui-mensaje mensaje="@Model.Mensaje" />
+
+    <ui-boton>Iniciar sesión</ui-boton>
+</ui-formulario>

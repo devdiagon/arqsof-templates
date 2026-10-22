@@ -1,0 +1,198 @@
+/* Estilos del cliente web (CLIENT_STYLES_DOTNET.md §2 a §7.2). Presentación clara fija; no hay selector de tema.
+   Las vistas solo usan las clases de los componentes (ui-*): no colorean ni dimensionan elementos sueltos. */
+
+/* ---- Tokens ---- */
+:root {
+    --radio: 8px;
+    --primario: #6D28D9;
+    --primario-p: #5B21B6;
+    --secundario: #4B4563;
+    --secundario-p: #3A3550;
+    --acento: #A78BFA;
+    --sobre-accion: #FFFFFF;
+    --campo-fondo: #FFFFFF;
+    --campo-texto: #1E1033;
+    --campo-placeholder: #6B6280;
+    --campo-borde: #6B6280;
+    --ancho-columna: 420px;
+    --ancho-imagen: 560px;   /* ancho de la zona de contenido */
+}
+
+/* Presentación clara (§2.3). */
+.tema-claro {
+    --fondo: #F7F5FC;
+    --superficie: #FFFFFF;
+    --texto: #1E1033;
+    --texto-sec: #4C4263;
+    --borde: #D9D2EA;
+    --error: #B91C1C;
+    --exito: #15803D;
+    --foco: #6D28D9;
+}
+
+/* ---- Base ---- */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--texto);
+    font: 400 16px/1.4 "Inter", "Segoe UI", Roboto, system-ui, -apple-system, Arial, sans-serif;
+}
+
+h1 { margin: 0; }
+
+/* ---- Disposición dividida (§7.0): pantalla a la izquierda, imagen a la derecha ---- */
+.pagina {
+    display: grid;
+    grid-template-columns: var(--ancho-imagen) 1fr;   /* 560 de contenido; el resto es la imagen */
+    min-height: 100vh;
+    background: var(--fondo);
+}
+
+.zona-imagen {
+    background: url("../img/fondo_app.png") center / contain no-repeat;
+}
+
+.zona-contenido {
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.columna { width: 100%; max-width: var(--ancho-columna); }
+
+/* Bajo el mínimo del escritorio: columna única, sin imagen (§7.2) */
+@media (max-width: 899px) {
+    .pagina { grid-template-columns: 1fr; }
+    .zona-imagen { display: none; }
+}
+
+/* ---- Encabezado (§5.1) ---- */
+.panel-encabezado {
+    padding: 16px;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+}
+.texto-titulo { font-size: 28px; font-weight: 700; }
+.texto-titulo-app { font-size: 32px; font-weight: 700; text-align: center; }
+
+/* ---- Mensaje / resultado (§5.2) ---- */
+.panel-mensaje {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    border-left: 4px solid var(--borde);
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+.panel-mensaje--error { border-left-color: var(--error); }
+.panel-mensaje--exito { border-left-color: var(--exito); }
+.panel-mensaje--resultado {
+    min-height: 72px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* ---- Formulario, etiquetas y campos (§5.3, §5.4) ---- */
+.formulario__controles { margin: 0; padding: 0; border: 0; min-width: 0; }
+
+.etiqueta {
+    display: block;
+    margin: 16px 0 6px;
+    font-size: 14px;
+    font-weight: 700;
+}
+.formulario__controles > .etiqueta:first-child { margin-top: 24px; }
+
+.campo {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 12px;
+    background: var(--campo-fondo);
+    color: var(--campo-texto);
+    border: 1px solid var(--campo-borde);
+    border-radius: var(--radio);
+    font: inherit;
+}
+.campo::placeholder { color: var(--campo-placeholder); }
+.campo:focus { outline: 2px solid var(--foco); outline-offset: 0; }
+.campo--invalido { outline: 2px solid var(--error); }
+.campo:disabled { opacity: .6; }
+
+/* ---- Selector (§5.5): campo con flecha 24 × 24 #424242 a 12 del borde derecho ---- */
+.selector { position: relative; }
+.selector .campo {
+    appearance: none;
+    padding-right: 40px;
+    cursor: pointer;
+}
+.selector::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    width: 24px;
+    height: 24px;
+    transform: translateY(-50%);
+    background: #424242;
+    clip-path: polygon(22% 36%, 78% 36%, 50% 68%);
+    pointer-events: none;
+}
+.selector option { background: var(--campo-fondo); color: var(--campo-texto); }
+
+/* ---- Botones (§5.6, §5.7) ---- */
+.boton {
+    display: block;
+    min-height: 44px;
+    margin: 24px auto 0;
+    padding: 10px 20px;
+    border: 0;
+    border-radius: var(--radio);
+    color: var(--sobre-accion);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+.boton--primario { background: var(--primario); }
+.boton--primario:hover { background: var(--primario-p); }
+.boton--secundario { background: var(--secundario); }
+.boton--secundario:hover { background: var(--secundario-p); }
+.boton--completo { width: 100%; }
+.boton--salida { margin-top: 32px; }
+.boton:disabled { opacity: .6; cursor: default; }
+.boton:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+.formulario__controles:disabled .boton { opacity: .6; cursor: default; }
+
+/* ---- Lista de acciones (§5.9): botones primarios de ancho completo separados 16 ---- */
+.lista-acciones {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+}
+.lista-acciones .boton { margin: 0; }
+
+/* ---- Indicador de progreso (§5.8) ---- */
+.progreso {
+    width: 40px;
+    height: 40px;
+    margin: 16px auto 0;
+    border: 4px solid var(--borde);
+    border-top-color: var(--acento);
+    border-radius: 50%;
+    animation: giro .8s linear infinite;
+}
+.progreso[hidden] { display: none; }
+@keyframes giro { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .progreso { animation-duration: 3s; } }
