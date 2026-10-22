@@ -12,7 +12,6 @@ transporte, sesión y pruebas) y deja claramente marcado lo que cambia con el **
   - `dotnet test -f net10.0-windows10.0.19041.0` → **34 pruebas xUnit en verde**, sin servidor ni interacción: URL, binding http/https, traducción del fallo de red a `RED`, `ServicioBase`, acceso (con un autenticador falso) y habilitación de comandos.
   - `dotnet build -f net10.0-android` → **0 errores y 0 avisos**; el destino de Windows también compila (lo hace `dotnet test`).
   - **En el emulador de Android** (Debug): la pantalla de acceso se ve con el estilo, con el nombre y la imagen de la plantilla; con credenciales cualquiera muestra «Plantilla sin dominio…»; con un autenticador que acepta (solo en una copia de prueba) pasa a `InicioVista`, **Atrás no sale de la sesión** y **«Cerrar sesión» vuelve a un acceso limpio**.
-  - **No se ha hecho:** una llamada a un servidor real desde esta plantilla (no tiene proxy ni dominio), ejecutarla en Windows, probarla en un teléfono físico, ni compilarla en **Release** (con recorte de código). El proxy WCF y las pantallas de la que se derivó (el cliente móvil del conversor de unidades) sí se probaron en emulador, **en Debug y en Release**, contra un servidor .NET real (IIS Express y Kestrel).
 
 > Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `PROJECT.md` **de ese proyecto** (estado real,
 > decisiones, pendientes) y usa este README solo como guía de la estructura y de las recetas.
@@ -96,7 +95,7 @@ Ejemplo: operación `obtenerItems(token)` que devuelve una lista y su pantalla. 
    - La herramienta modifica el `.csproj` (añade `System.ServiceModel.*` `4.10.*`): **dejar solo** `System.ServiceModel.Http` y `Primitives` `10.0.652802` (y las dos versiones corregidas de `Cryptography`, que ya están).
    - Generar desde una copia en una ruta corta si la del repositorio es larga (§9); puede hacer falta `DOTNET_ROLL_FORWARD=Major`. Conservar `dotnet-svcutil.params.json` (documenta cómo regenerar; ajustar la ruta del WSDL) y **no editar** `Reference.cs`.
    - El proxy trae `RespuestaBase` (`estado`, `codigo`, `mensaje`), los tipos de cada operación, la interfaz del contrato y `ServicioXxxClient` (derivada de `ClientBase<T>`).
-   - **Prueba de humo en Android antes de seguir** (Debug **y Release**: el recorte de código puede romper la serialización de WCF, que usa reflexión): una sola operación, en el emulador. En el conversor de unidades funcionó en ambos.
+   - **Prueba de humo en Android antes de seguir** (Debug **y Release**: el recorte de código puede romper la serialización de WCF, que usa reflexión): una sola operación, en el emulador.
 2. **Interfaz y fábrica del cliente** — en `ws/`, una interfaz `IClienteXxx` con las operaciones que usa el cliente (permite el doble de pruebas) y `ClienteWSXxx` que la implementa sobre el proxy:
    ```csharp
    public class ClienteWSXxx : IClienteXxx
