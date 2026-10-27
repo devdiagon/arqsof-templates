@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Zona de estado (docs/PANTALLAS.md 3): muestra de una en una el indicador de ocupado con su texto, un error o un exito.
+  Se incluye bajo los botones; el texto y el fondo los pone vista/ZonaEstado.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <ProgressBar
+        android:id="@+id/progreso"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:indeterminateTint="@color/acento"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/txtOcupado"
+        style="@style/Estado.Indicador"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/txtMensaje"
+        style="@style/Mensaje"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+</LinearLayout>

@@ -23,6 +23,7 @@ public final class Textos {
     public static final String SESION_NO_VALIDA = "Su sesión ya no es válida, inicie sesión nuevamente";
 
     /** Pantalla de acceso, para los proyectos que definen autenticación (LoginActivity). */
+    public static final String TITULO_LOGIN = "Inicio de sesión";
     public static final String USUARIO = "Usuario";
     public static final String CLAVE = "Clave";
     public static final String INICIAR_SESION = "Iniciar sesión";

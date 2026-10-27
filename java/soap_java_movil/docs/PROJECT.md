@@ -12,8 +12,9 @@
 - **Fuente canónica del núcleo:** <consola SOAP del proyecto y versión copiada de `dto`, `excepciones`, `modelo`, `servicios` y de las interfaces `…Cliente` de `ws`>
 
 ## 2. Estado actual
-Plantilla base sin dominio, alineada con `ARQUITECTURA_CLIENTE.md`: transporte SOAP a mano (`ClienteSoapHttp`, `SoapXml`), traducción de fallos de red (`TraductorRed`), verificación de la envoltura (`ServicioBase`), tipos comunes (`RespuestaBaseDto`, `ExcepcionServicio` con `RED` y `SRV-000`), molde de controlador (`ControladorBase`), `Textos`, estilos, una pantalla inicial de ejemplo (`InicioActivity`) y una pantalla de acceso pasiva (`LoginActivity`, sin controlador). Compila y pasa las pruebas de la plantilla; no tiene login conectado ni pantallas de dominio.
+Plantilla base sin dominio, alineada con `ARQUITECTURA_CLIENTE.md`: transporte SOAP a mano (`ClienteSoapHttp`, `SoapXml`), traducción de fallos de red (`TraductorRed`), verificación de la envoltura (`ServicioBase`), tipos comunes (`RespuestaBaseDto`, `ExcepcionServicio` con `RED` y `SRV-000`), molde de controlador (`ControladorBase`), zona de estado (`ZonaEstado`), `Textos`, estilos, andamiaje de pruebas manuales (`Verificador`, `PruebasWs`), una pantalla inicial de ejemplo (`InicioActivity`) y una pantalla de acceso pasiva (`LoginActivity`, sin controlador). Compila y pasa las pruebas de la plantilla; no tiene login conectado ni pantallas de dominio.
 
+- [ ] `docs/PANTALLAS.md` completado antes de construir las pantallas (esqueleto de la plantilla)
 - [ ] Servidor configurado (`res/values/config.xml` → `url_servicio`, `network_security_config.xml`)
 - [ ] Núcleo copiado de la consola (`dto`, `excepciones`, `modelo`, `servicios` e interfaces `…Cliente`), sin diferencias (`diff -r`), y `Textos` con los valores compartidos de la especificación
 - [ ] `ws` reescrito: `XClienteWS` por servicio sobre `ClienteSoapHttp`/`SoapXml`, con el XML real del servidor en `SoapXmlTest` (una fila por operación en §1)
@@ -21,11 +22,11 @@ Plantilla base sin dominio, alineada con `ARQUITECTURA_CLIENTE.md`: transporte S
 - [ ] Verificación manual del contrato hecha y registrada (`docs/CONVENCION_PRUEBAS.md` §6.3)
 - [ ] Si el proyecto tiene login: controlador de `LoginActivity` y sesión definida en `modelo` y login verificado contra el servidor real
 - [ ] Servicios, controladores y pantallas del dominio construidos y conectados en `AplicacionCliente` y `FabricaControladores`
+- [ ] Pruebas manuales (`ec.edu.monster.pruebas`): `PruebasServicio` del dominio agregada a `PruebasTodas`, hasta 15 réplicas en total, ejecutadas desde el IDE
 - [ ] Probado en el emulador y en un teléfono real
 - [ ] Servidor apagado / timeout probado
 - [ ] Si el proyecto tiene login: credenciales inválidas muestran el mensaje del servidor y no inician sesión
 - [ ] Rotación de pantalla, teclado y tildes/«ñ» probados
-- [ ] Pruebas manuales (`ec.edu.monster.pruebas`) generadas y ejecutadas desde el IDE
 
 ## 3. Decisiones tomadas
 | Tema | Decisión | Motivo |

@@ -47,6 +47,10 @@ public class ControladorBaseTest {
             super(ejecutor, "inicial");
         }
 
+        void avisar(String mensaje) {
+            informar(mensaje);
+        }
+
         void consultar(String codigo, java.util.function.Supplier<String> servicio) {
             if (vacio(codigo)) {
                 rechazar(Textos.campoObligatorio("Código de cuenta"));
@@ -83,6 +87,30 @@ public class ControladorBaseTest {
         assertEquals("El campo código de cuenta es obligatorio", estado(c).mensaje);
         assertTrue(estado(c).error);
         assertEquals("inicial", estado(c).datos);
+    }
+
+    @Test
+    public void informarMuestraUnMensajeQueNoEsErrorYConservaLosDatos() {
+        ControladorDePrueba c = new ControladorDePrueba(Runnable::run);
+
+        c.avisar("Sesión cerrada");
+
+        assertEquals("Sesión cerrada", estado(c).mensaje);
+        assertFalse(estado(c).error);
+        assertEquals("inicial", estado(c).datos);
+    }
+
+    @Test
+    public void unaValidacionOUnAvisoNoInterrumpenUnaLlamadaEnCurso() {
+        EjecutorManual ejecutor = new EjecutorManual();
+        ControladorDePrueba c = new ControladorDePrueba(ejecutor);
+        c.consultar("00100001", () -> "saldo");
+
+        c.consultar("", () -> "x");
+        c.avisar("aviso");
+
+        assertTrue(estado(c).ocupado);
+        assertEquals(Textos.CONSULTANDO, estado(c).mensaje);
     }
 
     @Test

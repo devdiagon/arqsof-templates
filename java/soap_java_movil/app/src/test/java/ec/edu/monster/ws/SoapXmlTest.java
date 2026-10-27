@@ -11,6 +11,7 @@ import ec.edu.monster.excepciones.ExcepcionServicio;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.w3c.dom.Element;
@@ -77,6 +78,20 @@ public class SoapXmlTest {
     public void listaVaciaOAusenteLlegaVaciaYNoNula() {
         assertEquals(Collections.emptyList(), SoapXml.lista(SoapXml.extraerRespuesta(ERROR), "items", "item"));
         assertEquals(Collections.emptyList(), SoapXml.lista(SoapXml.extraerRespuesta(OK), "otraLista", "item"));
+    }
+
+    @Test
+    public void elementosTraeLosObjetosDeUnaListaEnOrdenYPermiteLeerSusCampos() {
+        String xml = ServidorFalso.sobre("<opResponse xmlns=\"" + TNS + "\"><respuesta><estado>OK</estado>"
+                + "<filas><fila><a>1</a><b>x</b></fila><fila><a>2</a></fila></filas></respuesta></opResponse>");
+
+        List<Element> filas = SoapXml.elementos(SoapXml.extraerRespuesta(xml), "filas", "fila");
+
+        assertEquals(2, filas.size());
+        assertEquals("1", SoapXml.texto(filas.get(0), "a"));
+        assertEquals("x", SoapXml.texto(filas.get(0), "b"));
+        assertNull("un campo opcional ausente es nulo", SoapXml.texto(filas.get(1), "b"));
+        assertEquals(Collections.emptyList(), SoapXml.elementos(SoapXml.extraerRespuesta(ERROR), "items", "item"));
     }
 
     @Test

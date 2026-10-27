@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Panel de mensaje con barra izquierda de exito (docs/PANTALLAS.md 3). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/exito" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+    <item android:left="4dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/panel_sobre_imagen" />
+            <corners android:bottomRightRadius="8dp" android:topRightRadius="8dp" />
+        </shape>
+    </item>
+</layer-list>

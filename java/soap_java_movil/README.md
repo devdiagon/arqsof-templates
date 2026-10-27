@@ -14,7 +14,7 @@ Sigue `ARQUITECTURA_CLIENTE.md` (v1) y `ESPECIFICACION_CLIENTES.md`. Si este REA
 - **Convención SOAP:** sigue `docs/CONVENCION_SOAP.md` (TNS fijo `http://ws.monster.edu.ec/`, R2; sobre a mano: §4 c). Pruebas: `docs/CONVENCION_PRUEBAS.md`.
 - **Autenticación:** **fuera de la plantilla base.** Todo proyecto define su login y su sesión (en `modelo`). La plantilla deja el punto de enganche: `InicioActivity` (pantalla inicial, es la de entrada)
   y `LoginActivity`, una pantalla de acceso **pasiva** (sin controlador) lista para usar.
-- **Verificada:** `./gradlew testDebugUnitTest lintDebug assembleDebug` → BUILD SUCCESSFUL, **43 pruebas JUnit en verde** (molde de controlador, verificación de la envoltura, traducción de red y de respuesta ilegible,
+- **Verificada:** `./gradlew testDebugUnitTest lintDebug assembleDebug` → BUILD SUCCESSFUL, **46 pruebas JUnit en verde** (molde de controlador, verificación de la envoltura, traducción de red y de respuesta ilegible, lectura y armado del XML y 6 de conformidad de ejemplo contra un servidor HTTP falso local), lint sin avisos y las 5 pruebas manuales (`ec.edu.monster.pruebas`) en verde ejecutando su `main` en una JVM. **No se ha ejecutado:** la app en el emulador o en un teléfono, ni contra un servidor real del dominio.
   lectura y armado del XML y 6 de conformidad de ejemplo contra un servidor HTTP falso local) y lint sin avisos. **No se ha ejecutado:** la app en el emulador o en un teléfono, ni contra un servidor real del dominio.
 
 > Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `docs/PROJECT.md` **de ese proyecto** (estado real,
@@ -52,6 +52,8 @@ Sigue `ARQUITECTURA_CLIENTE.md` (v1) y `ESPECIFICACION_CLIENTES.md`. Si este REA
 | **DTO base** | `dto/RespuestaBaseDto` (POJO sin anotaciones) | Se agregan DTO del dominio al lado |
 | **Molde de controlador** | `controlador/ControladorBase` (`ejecutar`: segundo plano, estado «ocupado», segunda acción ignorada, error como mensaje; `rechazar`: validación) | No; los controladores del dominio la extienden |
 | **Composición** | `AplicacionCliente`, `controlador/FabricaControladores` | Se agregan clientes, servicios y controladores del dominio |
+| **Zona de estado y teclado** | `res/layout/zona_estado.xml`, `res/drawable/mensaje_{error,exito}_fondo.xml`, `vista/ZonaEstado`, `vista/Teclado` (ver `docs/PANTALLAS.md` §2) | No; las pantallas del dominio las incluyen/usan |
+| **Pruebas manuales** | `pruebas/Verificador`, `pruebas/PruebasWs`, `pruebas/PruebasTodas` (§9) | `PruebasTodas` para agregar las del dominio |
 | **Estilos** | `res/values/{colors,styles,themes}.xml`, `res/color/`, `res/drawable/`, `docs/CLIENT_STYLES_JAVA.md` | Colores solo si se cambia de presentación; **no** se repiten valores en los layouts |
 | **Textos** | `vista/Textos` | `NOMBRE_APLICACION` y los textos del dominio |
 | **Punto de enganche** | `vista/InicioActivity` + `activity_inicio.xml` (pantalla inicial de ejemplo), `vista/LoginActivity` + `activity_login.xml` (pasiva, sin controlador) | Se reemplazan/usan según el proyecto |
@@ -70,10 +72,11 @@ app/src/main/java/ec/edu/monster/
 ├── servicios/     ServicioBase                     única capa que conoce la interfaz del cliente y los dto
 ├── ws/            ConfiguracionServicio, TraductorRed, ClienteSoapHttp, SoapXml      + XCliente / XClienteWS por proyecto
 ├── controlador/   ControladorBase, FabricaControladores        + un controlador (ViewModel) por pantalla
-└── vista/         Textos, InicioActivity, LoginActivity        + una Activity por pantalla
+├── vista/         Textos, ZonaEstado, Teclado, InicioActivity, LoginActivity        + una Activity por pantalla
+└── pruebas/       Verificador, PruebasWs, PruebasTodas        pruebas manuales (§9)
 app/src/main/res/                       layouts, estilos (values, color, drawable), config.xml (URL), network_security_config.xml
 app/src/test/java/ec/edu/monster/       JUnit 4 local (sin emulador ni servidor), misma estructura
-docs/                                   CLIENT_STYLES_JAVA, CONVENCION_SOAP, CONVENCION_PRUEBAS, PROJECT
+docs/                                   CLIENT_STYLES_JAVA, CONVENCION_SOAP, CONVENCION_PRUEBAS, PANTALLAS, PROJECT
 ```
 
 Dependencias: `vista → controlador → servicios → ws | dto`; `modelo`, `dto` y `excepciones` son transversales.
@@ -97,7 +100,7 @@ Siempre en este orden, de abajo hacia arriba. Ejemplo: `obtenerItems(codigo)` de
            Element r = soap.enviar("obtenerItems", SoapXml.parametros("codigo", codigo));
            RespuestaItemsDto dto = new RespuestaItemsDto();
            SoapXml.llenarBase(dto, r);
-           dto.setItems(SoapXml.lista(r, "items", "item"));      // listas: llegan vacías, nunca ausentes
+           dto.setItems(SoapXml.lista(r, "items", "item"));      // lista de textos; para objetos con campos: SoapXml.elementos(...)
            return dto;
        }
    }
@@ -123,7 +126,8 @@ Reglas que se repiten en todo dominio:
 - Todo dato viaja como **texto**; los decimales con **punto**.
 - Mostrar solo el **mensaje**, nunca el código. Textos con tildes, centralizados en `Textos` y **los mismos en todos los clientes** del proyecto.
 - **Nunca red en el hilo principal.** Los fallos de red no cierran la app.
-- Las pruebas manuales del proyecto (`ec.edu.monster.pruebas`, en `app/src/main/java`) se generan al final con `JAVA_TESTS_CONVENTIONS.md`; la plantilla no las trae.
+- Al enviar un formulario, ocultar el teclado (`Teclado.ocultar(this)`): con el teclado abierto tapa la zona de estado.
+- Las pruebas manuales del proyecto se agregan al paquete `pruebas` (§9).
 
 ## 5. Estilos (resumen; detalle en `docs/CLIENT_STYLES_JAVA.md`)
 
@@ -136,6 +140,7 @@ Los layouts **solo referencian estilos**; márgenes laterales de `24dp` en el la
 | `Panel`, `Panel.Titulo`, `Panel.Resultado` | Mensaje, encabezado de pantalla y resultado |
 | `Etiqueta`, `Campo`, `Selector` | Etiqueta de campo, campo de texto y lista desplegable (`item_spinner.xml` para el adaptador) |
 | `ProgressBar` con `@color/acento` | Indicador de carga; deshabilitar los controles mientras dura |
+| `zona_estado` + `ZonaEstado` | Zona de estado bajo los botones: indicador de ocupado, error o éxito, de uno en uno (`mostrar(ocupado, mensaje, error)`) |
 
 - **Fondo:** `res/drawable-nodpi/fondo_app.jpeg` (opcional; imagen de referencia, recortada a pantalla completa) sobre el color `fondo` de respaldo. Es una imagen **de ejemplo**:
   sustituirla o quitar el `ImageView` de los layouts según el proyecto (no se usa imagen en la presentación clara).
@@ -190,3 +195,28 @@ Si el servidor no cumple alguno de estos puntos, el cambio se limita a `ws` y `d
 - Todo dato viaja como texto (R7); los errores de negocio van en el cuerpo con HTTP 200 (R8); un `Fault`, HTTP distinto de 200/500 o la falta de respuesta son `RED`; un cuerpo vacío o que no es el XML esperado es `SRV-000`.
 - Si el servidor usa **cabecera SOAP** para credenciales, WS-Security u otro estilo, ampliar `ClienteSoapHttp` / `SoapXml.construirPeticion`.
 - Para un servicio **REST** se reutiliza todo salvo `ws/` y `dto/` (`servicios` solo depende de la interfaz del cliente).
+
+## 9. Pruebas manuales (`ec.edu.monster.pruebas`)
+
+Requisito de todos los proyectos (`JAVA_TESTS_CONVENTIONS.md`): clases con `main` que replican métodos JUnit de `src/test`, hasta **15 en total** (`min(15, JUnit significativos)`). La plantilla trae el andamiaje en `app/src/main/java/ec/edu/monster/pruebas/`:
+
+| Clase | Para qué |
+|---|---|
+| `Verificador` | Sustituto de las aserciones de JUnit (`igual`, `verdadero`, `falso`, `lanza`); corre cada prueba sin detener a las demás e imprime `[OK]`/`[FALLO]` |
+| `PruebasWs` | 5 réplicas de `TraductorRedTest` y `SoapXmlTest` (traducción de red, Fault, respuesta ilegible, armado de la petición); no dependen del dominio y quedan como parte de las 15 |
+| `PruebasTodas` | Las ejecuta juntas, numeradas de corrido; el proyecto agrega aquí sus clases |
+
+Para el dominio: crear `PruebasServicio` (con dobles de las interfaces `XCliente`, que registran cada llamada) y agregarla a `PruebasTodas`; cada clase expone `static Verificador ejecutar(int primera)` y el Javadoc de cada prueba nombra el método JUnit que replica. **Solo Java puro** (sin `android.*`) y sin red ni servidor: los controladores usan `LiveData` y no corren sin el entorno de Android, así que no tienen prueba manual. Se ejecutan con *Run File* sobre la clase en Android Studio. Las `[Fatal Error]` del parser XML que aparecen en la salida de `PruebasWs` son la salida de error esperada ante los cuerpos inválidos que la prueba envía a propósito.
+
+## 10. Problemas frecuentes
+
+| Síntoma | Causa / solución |
+|---|---|
+| `CLEARTEXT communication … not permitted` | Falta el host en `res/xml/network_security_config.xml` (§6) |
+| La app no conecta desde el emulador | Usar `10.0.2.2`, no `localhost`; el servidor debe estar en marcha en la PC |
+| El mensaje de error no se ve al enviar un formulario | El teclado lo tapa: llamar a `Teclado.ocultar(this)` al enviar |
+| Lint: `Missing accessibility label` / `LabelFor` en un layout | Las etiquetas y los `hint` se ponen desde `Textos` (en código), no en el XML: agregar el layout a la excepción `LabelFor` de `app/lint.xml` |
+| Lint: `SetTextI18n` / `DefaultLocale` | No concatenar textos en `setText`: agregar un método con `String.format` a `Textos`, y usar `Locale.ROOT` en conversiones y formatos de números |
+| `Unresolved reference` / no existe `ActivityXBinding` | ViewBinding genera la clase desde el nombre del layout (`activity_x.xml` → `ActivityXBinding`); sincronizar Gradle |
+| El emulador muestra un diálogo «Try out your stylus» y no acepta texto desde `adb` | Desactivar el lápiz de Gboard: `adb shell settings put secure stylus_handwriting_enabled 0` |
+| Gradle no encuentra el SDK | Definir `ANDROID_HOME` o abrir el proyecto una vez en Android Studio (crea `local.properties`) |

@@ -133,6 +133,25 @@ public final class SoapXml {
         return valores;
     }
 
+    /**
+     * Elementos "item" (hijos directos) dentro del hijo "contenedor", para listas de objetos con varios campos
+     * (cada uno se lee con {@link #texto}); lista vacía si el contenedor falta o viene vacío.
+     */
+    public static List<Element> elementos(Element padre, String contenedor, String item) {
+        List<Element> valores = new ArrayList<>();
+        Element c = hijo(padre, contenedor);
+        if (c != null) {
+            NodeList hijos = c.getChildNodes();
+            for (int i = 0; i < hijos.getLength(); i++) {
+                Node n = hijos.item(i);
+                if (n instanceof Element && item.equals(nombreLocal(n))) {
+                    valores.add((Element) n);
+                }
+            }
+        }
+        return valores;
+    }
+
     // ------------------------------------------------------------------ internos
 
     /** Escapa los cinco caracteres reservados de XML y descarta los caracteres de control no válidos. */

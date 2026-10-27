@@ -75,9 +75,26 @@ public abstract class ControladorBase<D> extends ViewModel {
         return new Estado<>(false, mensaje, true, datos);
     }
 
-    /** Muestra un error de validación sin llamar al servicio y conserva los datos. Solo desde el hilo principal. */
+    /**
+     * Muestra un error de validación sin llamar al servicio y conserva los datos. Se ignora si hay una llamada en curso.
+     * Solo desde el hilo principal.
+     */
     protected final void rechazar(String mensaje) {
-        estado.setValue(fallo(estado.getValue().datos, mensaje));
+        Estado<D> actual = estado.getValue();
+        if (!actual.ocupado) {
+            estado.setValue(fallo(actual.datos, mensaje));
+        }
+    }
+
+    /**
+     * Muestra un mensaje de éxito o informativo sin llamar al servicio y conserva los datos. Se ignora si hay una
+     * llamada en curso. Solo desde el hilo principal.
+     */
+    protected final void informar(String mensaje) {
+        Estado<D> actual = estado.getValue();
+        if (!actual.ocupado) {
+            estado.setValue(exito(actual.datos, mensaje));
+        }
     }
 
     /**
