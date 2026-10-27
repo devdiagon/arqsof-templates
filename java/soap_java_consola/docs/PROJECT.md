@@ -16,7 +16,8 @@ Plantilla base sin dominio, alineada con `ARQUITECTURA_CLIENTE.md`: configuraci�
 - [ ] Servidor configurado (`ConfiguracionServicio.URL_POR_DEFECTO`) y WSDL + `.xsd` del servidor ya actualizado copiados a `src/main/resources/wsdl`
 - [ ] `artifactId` actualizado
 - [ ] Proxy generado (ejecución `generar-proxy` del `pom.xml` descomentada, `mvn generate-sources`), interfaz propia `XCliente`, envoltorio `XClienteWS`, DTO propios y servicios (`extends ServicioBase`) de las operaciones del dominio (una fila por operación en §1)
-- [ ] Pruebas de conformidad adaptadas al contrato real (modelo: `ConvencionClienteTest`) y retirados los ejemplos (`src/test/resources/wsdl/WSEjemplo.*` y la ejecución `generar-proxy-ejemplo` del `pom.xml`) si ya no sirven
+- [ ] Retirados los ejemplos de conformidad (`ConvencionClienteTest`, `src/test/resources/wsdl/WSEjemplo.*` y la ejecución `generar-proxy-ejemplo` del `pom.xml`): las pruebas de conformidad están fuera de alcance (`docs/CONVENCION_PRUEBAS.md` §8)
+- [ ] Verificación manual del contrato hecha y registrada (`docs/CONVENCION_PRUEBAS.md` §6.3)
 - [ ] Si el proyecto tiene login: sesión definida en `modelo` y login verificado contra el servidor real
 - [ ] Servicios, vistas y controladores del dominio construidos y conectados en `Main`
 - [ ] Servidor apagado / timeout probado

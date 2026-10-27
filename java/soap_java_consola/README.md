@@ -10,7 +10,7 @@ Sigue `ARQUITECTURA_CLIENTE.md` (v1). Si este README y esa arquitectura discrepa
 - **Transporte:** JAX-WS (`jaxws-rt` 4.0.3) con **proxy generado**: `wsimport` (`jaxws-maven-plugin`) genera las clases a partir de una copia del WSDL del servidor que va dentro del proyecto, y `ws/ConfiguracionServicio` solo fija la URL completa y los timeouts. El WSDL **no se descarga en ejecución**.
 - **Convención SOAP:** sigue `docs/CONVENCION_SOAP.md` (copia en `docs/`, con el TNS fijo `http://ws.monster.edu.ec/` de R2): así entiende a un servidor Java o .NET que la cumpla.
 - **Autenticación:** **fuera de la plantilla base.** Todo proyecto define su propio login y su propia sesión (en `modelo`); la plantilla no trae ninguno (§8).
-- **Verificada:** `mvn test` → BUILD SUCCESS, 22 pruebas JUnit en verde: 7 de configuración de la URL (3 de ellas para varios servicios), 5 de **conformidad** con la convención (contra un servidor falso local que la cumple y un
+- **Verificada:** `mvn test` → BUILD SUCCESS, 22 pruebas JUnit en verde: 7 de configuración de la URL (3 de ellas para varios servicios), 5 de conformidad con la convención (ejemplo heredado, fuera de alcance) (contra un servidor falso local que la cumple y un
   cliente que es un proxy generado desde un WSDL de ejemplo: parámetros y campos de la respuesta calificados en el XML, SOAPAction con URI, respuesta entendida, URL completa),
   5 de la verificación de la envoltura (`ServicioBase`) y 5 de la traducción de fallos de red (`TraductorRed`).
   **No se ha ejecutado:** el cliente contra el servidor real del dominio, ni la secuencia de pantallas (la plantilla no trae ninguna).
@@ -73,9 +73,9 @@ src/main/java/ec/edu/monster/
 ├── ws/            ConfiguracionServicio, TraductorRed (+ XCliente y XClienteWS del dominio)   el proxy generado vive en target/ (ec.edu.monster.ws.generado)
 ├── controlador/                                           coordinan vista y servicio; devuelven un Resultado
 └── vista/         VistaBase, Textos (+ las del dominio)   única capa que lee el teclado y escribe en la consola
-src/test/java/ec/edu/monster/           JUnit 5 (sin servidor externo), misma estructura; ws/ConvencionClienteTest es un ejemplo ejecutable de prueba de conformidad
+src/test/java/ec/edu/monster/           JUnit 5 (sin servidor externo), misma estructura; ws/ConvencionClienteTest es un ejemplo de conformidad heredado, fuera de alcance según docs/CONVENCION_PRUEBAS.md §8
 src/test/resources/wsdl/               WSEjemplo.wsdl + .xsd: WSDL de ejemplo del que wsimport-test genera el proxy de las pruebas (ec.edu.monster.ws.ejemplo)
-docs/                                  documentos de referencia: CONVENCION_SOAP.md (copia vigente) y PROJECT.md (esqueleto del proyecto)
+docs/                                  documentos de referencia: CONVENCION_SOAP.md y CONVENCION_PRUEBAS.md (copias vigentes) y PROJECT.md (esqueleto del proyecto)
 README.md                              esta guía: el único documento que queda en la raíz
 ```
 
@@ -87,7 +87,7 @@ Si el WSDL cambia solo se tocan `ws`, `dto` y `servicios`. **Solo la vista usa `
 ## 4. Receta: agregar una operación SOAP y su pantalla de consola
 
 Ejemplo: operación `obtenerItems()` que devuelve una lista. Se sigue **siempre el mismo orden**, de abajo hacia arriba
-(modelo ejecutable en `src/test`: `WSEjemplo.wsdl` y `ConvencionClienteTest`):
+(`src/test` conserva `WSEjemplo.wsdl` y `ConvencionClienteTest` como ejemplo heredado, fuera de alcance según `docs/CONVENCION_PRUEBAS.md` §8):
 
 1. **WSDL y proxy** — copiar el WSDL del servidor (`<URL>?wsdl`) y su `.xsd` a `src/main/resources/wsdl/`, dejar en el WSDL el `schemaLocation` que apunta al `.xsd` local
    y **descomentar** en `pom.xml` la ejecución `generar-proxy` (`wsdlFile` = el nombre del WSDL, `wsdlLocation` = `/wsdl/<nombre>.wsdl`). `mvn generate-sources` crea en
@@ -136,7 +136,7 @@ Ejemplo: operación `obtenerItems()` que devuelve una lista. Se sigue **siempre 
 7. **Composición** — en `Main`: crear el cliente (`XClienteWS`), los servicios, las vistas y los controladores, y un bucle que ejecute el controlador actual y cambie al siguiente según su `Resultado`.
    Todo `RuntimeException` no previsto se captura en el bucle (mensaje por `System.err`), nunca termina con una traza.
 8. **Pruebas** — un doble de la interfaz propia (`XCliente` es una interfaz: sirve una lambda o `java.lang.reflect.Proxy`) para el servicio (OK, error de negocio, red, respuesta nula, coma enviada como punto);
-   los controladores se prueban con una vista falsa (subclase de `VistaBase` que devuelve respuestas fijas), sin tocar la consola. Para el envoltorio, repetir el patrón de `ConvencionClienteTest` con la operación real.
+   los controladores se prueban con una vista falsa (subclase de `VistaBase` que devuelve respuestas fijas), sin tocar la consola. El contrato y el envoltorio **no** se prueban con código: se verifican a mano con la lista de `docs/CONVENCION_PRUEBAS.md` §6.3. El criterio de qué probar y con cuánto detalle está en ese documento.
    Mockito no está en el `pom.xml`: la arquitectura lo prevé, pero se agrega solo cuando una prueba lo necesite.
 
 Reglas que se repiten en todo dominio:
