@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ec.edu.monster.dto.RespuestaLoginDto;
-import ec.edu.monster.ws.generado.RespuestaLogin;
+import ec.edu.monster.ws.ejemplo.RespuestaEco;
+import ec.edu.monster.ws.ejemplo.WSEjemplo;
+import ec.edu.monster.ws.ejemplo.WSEjemplo_Service;
 import jakarta.jws.WebMethod;
 import jakarta.jws.WebParam;
 import jakarta.jws.WebResult;
@@ -30,18 +31,20 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Node;
 
 /**
- * Pruebas de CONFORMIDAD del cliente con CONVENCION_SOAP.md, sobre el proxy generado. Se publica un servidor
- * falso que sigue la convención y se mide lo que el cliente ENVÍA y lo que ENTIENDE:
+ * Pruebas de CONFORMIDAD del cliente con docs/CONVENCION_SOAP.md. Se publica un servidor falso que sigue la convención
+ * (como lo haría el servidor real) y se mide lo que el cliente ENVÍA y lo que ENTIENDE. El cliente es el proxy que
+ * {@code wsimport-test} genera desde {@code src/test/resources/wsdl/WSEjemplo.wsdl} (paquete {@code ec.edu.monster.ws.ejemplo}),
+ * configurado con {@link ConfiguracionServicio}:
  *  - los parámetros viajan calificados con el namespace del servicio (R3) y la SOAPAction es la URI de la operación (R4);
- *  - los campos de la respuesta (calificados) llegan con valor, no nulos (el proxy generado desde el WSDL);
- *  - el puerto se obtiene por la interfaz y la URL completa se acepta tal cual (R9, R10).
- * Si una falla, el servidor (Java o .NET) rechazaría o no entendería al cliente. Al agregar operaciones, repetir el patrón.
+ *  - los campos de la respuesta (calificados) llegan con valor, no nulos;
+ *  - el puerto se obtiene de la clase de servicio generada y la URL completa se acepta tal cual (R9, R10).
+ * Si una falla, el servidor (Java o .NET) rechazaría o no entendería al cliente. Sirve de modelo para las pruebas del dominio.
  */
 class ConvencionClienteTest {
 
-    // Los mismos valores que src/main/resources/wsdl/WSServicio.wsdl (DOMINIO: cambiarlos junto con el WSDL)
-    private static final String TNS = "http://CAMBIAR.namespace/";
-    private static final String SERVICIO = "WSServicio";
+    // Los mismos valores que src/test/resources/wsdl/WSEjemplo.wsdl
+    private static final String TNS = "http://ws.monster.edu.ec/";
+    private static final String SERVICIO = "WSEjemplo";
 
     private static Endpoint endpoint;
     private static String url;
@@ -49,25 +52,25 @@ class ConvencionClienteTest {
     private static volatile String accionRecibida;
     private static volatile String campoRespuesta;
 
-    /** Servidor falso: misma forma que un servidor real que cumple la convención (mismo portType que el contrato del cliente). */
-    @WebService(name = SERVICIO, serviceName = SERVICIO,
-            targetNamespace = TNS)
+    /**
+     * Servidor falso: misma forma que un servidor real que cumple la convención. El {@code name} (portType) es el
+     * mismo que el del WSDL del cliente.
+     */
+    @WebService(name = SERVICIO, serviceName = SERVICIO, targetNamespace = TNS)
     public static class ServidorFalso {
-        @WebMethod(operationName = "login", action = TNS + SERVICIO + "/login")
+        @WebMethod(operationName = "eco", action = TNS + SERVICIO + "/eco")
         @WebResult(name = "respuesta", targetNamespace = TNS)
-        public RespuestaLogin login(
-                @WebParam(name = "usuario", targetNamespace = TNS) String usuario,
-                @WebParam(name = "contrasenia", targetNamespace = TNS) String contrasenia) {
-            RespuestaLogin r = new RespuestaLogin();
-            if (usuario == null || usuario.isBlank() || contrasenia == null || contrasenia.isBlank()) {
+        public RespuestaEco eco(@WebParam(name = "texto", targetNamespace = TNS) String texto) {
+            RespuestaEco r = new RespuestaEco();
+            if (texto == null || texto.isBlank()) {
                 r.setEstado("ERROR");
-                r.setCodigo("AUTH-001");
-                r.setMensaje("Usuario y contraseña son obligatorios");
+                r.setCodigo("DATO-001");
+                r.setMensaje("El texto es obligatorio");
             } else {
                 r.setEstado("OK");
                 r.setCodigo("200");
-                r.setMensaje("Ingreso realizado correctamente");
-                r.setToken("TOKEN-1");
+                r.setMensaje("Operación realizada correctamente");
+                r.setTexto(texto);
             }
             return r;
         }
@@ -157,43 +160,48 @@ class ConvencionClienteTest {
         }
     }
 
+    private static WSEjemplo cliente() {
+        return ConfiguracionServicio.configurar(new WSEjemplo_Service().getWSEjemploPort(), url);
+    }
+
     @Test
     void elClienteCalificaLosParametrosYEnviaLaSoapActionConUri() {
-        ClienteWS.crear(url).login("u", "c");
+        cliente().eco("hola");
 
-        assertEquals(TNS, hijosRecibidos.get("usuario"), "R3: el parámetro debe ir calificado con el namespace del servicio");
-        assertEquals(TNS, hijosRecibidos.get("contrasenia"));
-        assertEquals("\"" + TNS + SERVICIO + "/login" + "\"", accionRecibida, "R4: SOAPAction con la URI de la operación");
+        assertEquals(TNS, hijosRecibidos.get("texto"), "R3: el parámetro debe ir calificado con el namespace del servicio");
+        assertEquals("\"" + TNS + SERVICIO + "/eco\"", accionRecibida, "R4: SOAPAction con la URI de la operación");
     }
 
     @Test
     void losCamposDeLaRespuestaViajanCalificadosYElClienteLosEntiende() {
         // Si el WSDL no declara los campos calificados, un servidor .NET los dejaria vacios (R3).
-        ClienteWS.crear(url).login("u", "c");
+        cliente().eco("hola");
         assertEquals(TNS, campoRespuesta, "R3: los campos de la respuesta deben ir calificados con el namespace del servicio");
     }
 
     @Test
     void elClienteEntiendeUnaRespuestaConCamposCalificados() {
-        RespuestaLoginDto r = ClienteWS.crear(url).login("u", "c");
+        RespuestaEco r = cliente().eco("hola");
 
         assertNotNull(r);
-        assertTrue(r.esOk());
+        assertEquals("OK", r.getEstado());
         assertEquals("200", r.getCodigo());
-        assertEquals("TOKEN-1", r.getToken());
+        assertEquals("hola", r.getTexto());
     }
 
     @Test
     void unaRespuestaDeErrorLlegaConSuCodigoYMensaje() {
-        RespuestaLoginDto r = ClienteWS.crear(url).login(" ", " ");
+        RespuestaEco r = cliente().eco("  ");
 
-        assertFalse(r.esOk());
-        assertEquals("AUTH-001", r.getCodigo());
-        assertEquals("Usuario y contraseña son obligatorios", r.getMensaje());
+        assertFalse("OK".equals(r.getEstado()));
+        assertEquals("DATO-001", r.getCodigo());
+        assertEquals("El texto es obligatorio", r.getMensaje());
     }
 
     @Test
     void laUrlCompletaSeAceptaConBarrasFinales() {
-        assertTrue(ClienteWS.crear(url + "//").login("u", "c").esOk());
+        RespuestaEco r = ConfiguracionServicio.configurar(new WSEjemplo_Service().getWSEjemploPort(), url + "//").eco("x");
+
+        assertTrue("OK".equals(r.getEstado()));
     }
 }
