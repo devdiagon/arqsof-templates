@@ -1,36 +1,27 @@
 package ec.edu.monster.vista;
 
 import ec.edu.monster.vista.estilo.EstilosUi;
-import ec.edu.monster.vista.estilo.IndicadorProgreso;
-import ec.edu.monster.vista.estilo.PanelMensaje;
 import ec.edu.monster.vista.estilo.Tema;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.event.ActionListener;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
 /**
- * Pantalla de acceso lista para los proyectos que definen autenticación (la plantilla base no la trae: no hay un
- * login común a todo SOA). Es pasiva: el proyecto escribe su controlador y la registra en {@link Pantalla}.
+ * Pantalla de acceso (docs/PANTALLAS.md §5.1): encabezado · Usuario · Clave · Iniciar sesión · zona de estado.
+ * Pasiva: lee lo escrito y avisa de los eventos. Se muestra en la disposición dividida, sin imagen debajo de los paneles.
  */
-public class LoginVista extends JPanel {
+public class LoginVista extends VistaBase {
+
+    /** Campos de la pantalla, en orden. */
+    public enum Campo { USUARIO, CLAVE }
 
     private final JTextField usuario = EstilosUi.campoTexto(null);
-    private final JPasswordField contrasenia = EstilosUi.campoContrasenia();
-    private final PanelMensaje mensaje = new PanelMensaje();
+    private final JPasswordField clave = EstilosUi.campoContrasenia();
     private final JButton entrar = EstilosUi.botonPrimario(Textos.INICIAR_SESION);
-    private final IndicadorProgreso progreso = new IndicadorProgreso();
 
     public LoginVista() {
-        setOpaque(false);
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        super(Tema.ANCHO_COLUMNA, Tema.SUPERFICIE);
+        registrar(usuario, clave, entrar);
 
         add(izquierda(EstilosUi.encabezadoAplicacion(Textos.NOMBRE_APLICACION)));
         add(separacion(Tema.ESPACIO_SECCION));
@@ -38,13 +29,11 @@ public class LoginVista extends JPanel {
         add(izquierda(usuario));
         add(separacion(Tema.ESPACIO_BLOQUE));
         add(izquierda(EstilosUi.etiqueta(Textos.CLAVE)));
-        add(izquierda(contrasenia));
-        add(separacion(Tema.ESPACIO_BLOQUE));
-        add(izquierda(mensaje));
+        add(izquierda(clave));
         add(separacion(Tema.ESPACIO_SECCION));
-        add(izquierda(centrado(entrar)));
+        add(centrado(entrar));
         add(separacion(Tema.ESPACIO_BLOQUE));
-        add(izquierda(centrado(progreso)));
+        add(izquierda(estado));
     }
 
     // ---- Lectura ----
@@ -53,85 +42,40 @@ public class LoginVista extends JPanel {
         return usuario.getText().trim();
     }
 
-    public String getContrasenia() {
-        return new String(contrasenia.getPassword());
-    }
-
-    public JButton getBotonEntrar() {
-        return entrar;
-    }
-
-    public JTextField getCampoUsuario() {
-        return usuario;
-    }
-
-    public JPasswordField getCampoContrasenia() {
-        return contrasenia;
-    }
-
-    public String getTextoMensaje() {
-        return mensaje.getTexto();
+    public String getClave() {
+        return new String(clave.getPassword());
     }
 
     // ---- Eventos ----
 
-    /** Registra la acción de entrar: botón, o Enter en cualquiera de los dos campos. */
-    public void alPulsarEntrar(ActionListener accion) {
-        entrar.addActionListener(accion);
-        usuario.addActionListener(accion);
-        contrasenia.addActionListener(accion);
+    /** Botón, o Enter en cualquiera de los dos campos. */
+    public void alIniciarSesion(Runnable accion) {
+        entrar.addActionListener(e -> accion.run());
+        usuario.addActionListener(e -> accion.run());
+        clave.addActionListener(e -> accion.run());
     }
+
 
     // ---- Estado ----
 
-    public void mostrarError(String texto) {
-        mensaje.mostrarError(texto);
+    public void marcarVacio(Campo campo) {
+        EstilosUi.marcarError(campo == Campo.USUARIO ? usuario : clave, true);
     }
 
-    public void mostrarExito(String texto) {
-        mensaje.mostrarExito(texto);
-    }
-
-    public void ocultarMensaje() {
-        mensaje.ocultar();
-    }
-
-    public void limpiarContrasenia() {
-        contrasenia.setText("");
-    }
-
-    public void enfocarUsuario() {
-        usuario.requestFocusInWindow();
-    }
-
-    /** Mientras hay una llamada en curso: controles deshabilitados e indicador visible (§5.8). */
-    public void setOcupado(boolean ocupado) {
-        usuario.setEnabled(!ocupado);
-        contrasenia.setEnabled(!ocupado);
-        entrar.setEnabled(!ocupado);
-        progreso.setActivo(ocupado);
+    public void limpiarClave() {
+        clave.setText("");
     }
 
     @Override
-    public Dimension getPreferredSize() {
-        return new Dimension(Tema.ANCHO_COLUMNA, super.getPreferredSize().height);
+    public void alMostrar() {
+        limpiarMarcas();
+        clave.setText("");
+        estado.ocultar();
+        usuario.requestFocusInWindow();
     }
 
-    // ---- Auxiliares de disposición ----
-
-    private static <T extends JComponent> T izquierda(T componente) {
-        componente.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return componente;
-    }
-
-    private static Component separacion(int alto) {
-        return Box.createVerticalStrut(alto);
-    }
-
-    private static JPanel centrado(JComponent componente) {
-        JPanel fila = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-        fila.setOpaque(false);
-        fila.add(componente);
-        return fila;
+    /** Vuelve al campo de usuario tras un error (el usuario se conserva). */
+    public void enfocarUsuario() {
+        usuario.requestFocusInWindow();
     }
 }

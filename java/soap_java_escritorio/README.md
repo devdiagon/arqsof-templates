@@ -14,8 +14,8 @@ Sigue `ARQUITECTURA_CLIENTE.md` (v1) y `ESPECIFICACION_CLIENTES.md`. Si este REA
 - **Convención SOAP:** sigue `docs/CONVENCION_SOAP.md` (TNS fijo `http://ws.monster.edu.ec/`, R2). Pruebas: `docs/CONVENCION_PRUEBAS.md`.
 - **Autenticación:** **fuera de la plantilla base.** Todo proyecto define su login y su sesión (en `modelo`). La plantilla deja el punto de enganche: `InicioVista` (pantalla inicial)
   y `LoginVista`, una pantalla de acceso **pasiva** (sin controlador) lista para usar.
-- **Verificada:** `mvn test` → BUILD SUCCESS, 25 pruebas JUnit en verde (ejecutor asíncrono, configuración de la URL, verificación de la envoltura, traducción de red y
-  5 de conformidad de ejemplo contra un servidor falso local). **No se ha ejecutado:** la ventana real abierta en pantalla, el cliente contra un servidor real del dominio ni el empaquetado en un jar.
+- **Verificada:** `mvn test` → BUILD SUCCESS, 27 pruebas JUnit en verde (ejecutor asíncrono, molde de controlador, configuración de la URL, verificación de la envoltura, traducción de red y
+  5 de conformidad de ejemplo contra un servidor falso local). Las pantallas de la plantilla y los componentes nuevos (tarjeta, tabla, zona de estado) se vieron **renderizados fuera de pantalla**. **No se ha ejecutado:** la ventana real abierta en pantalla, el cliente contra un servidor real del dominio ni el empaquetado en un jar.
 
 > Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `docs/PROJECT.md` **de ese proyecto** (estado real,
 > decisiones, pendientes) y usa este README solo como guía de la estructura y de las recetas.
@@ -46,11 +46,12 @@ Sigue `ARQUITECTURA_CLIENTE.md` (v1) y `ESPECIFICACION_CLIENTES.md`. Si este REA
 | **Proxy generado** | `src/main/resources/wsdl/` → `wsimport` (`pom.xml`) → `target/generated-sources` (`ec.edu.monster.ws.generado`) | Se **agrega** el WSDL del servidor (§4, paso 1) |
 | **Transporte SOAP** | `ws/ConfiguracionServicio`, `ws/TraductorRed` | `ConfiguracionServicio` siempre (URL); el resto no |
 | **DTO base** | `dto/RespuestaBaseDto` (POJO sin anotaciones) | Se agregan DTO del dominio al lado |
-| **Asincronía** | `controlador/EjecutorAsincrono` | No |
+| **Asincronía y molde de controlador** | `controlador/EjecutorAsincrono`, `controlador/ControladorBase` (`ejecutar`: segundo plano, estado «ocupado», segunda acción ignorada, error como mensaje) | No; los controladores del dominio la extienden |
 | **Composición y navegación** | `Main`, `vista/Pantalla`, `vista/VentanaPrincipal` | Se agregan pantallas, servicios y controladores del dominio |
-| **Estilos** | `vista/estilo/*` (`Tema`, `EstilosUi`, `PanelMensaje`, `PanelRedondeado`, `PanelImagen`, `IndicadorProgreso`) | Colores solo si se cambia de presentación; **no** se repiten valores en las vistas |
+| **Estilos** | `vista/estilo/*` (`Tema`, `EstilosUi`, `PanelMensaje`, `ZonaEstado`, `PanelRedondeado`, `PanelImagen`, `IndicadorProgreso`, `TarjetaResultado`, `TablaDatos`, `FlechaDireccion`), `docs/CLIENT_STYLES_JAVA.md` | Colores solo si se cambia de presentación; **no** se repiten valores en las vistas |
 | **Textos** | `vista/Textos` | `NOMBRE_APLICACION` y los textos del dominio |
-| **Punto de enganche** | `vista/InicioVista`, `vista/LoginVista` (pasiva) | Se reemplazan/usan según el proyecto |
+| **Base de las vistas** | `vista/VistaBase` (zona de estado, «ocupado» que deshabilita los controles, `Cancelar` con Esc, auxiliares de disposición) | No; las vistas del dominio la extienden |
+| **Punto de enganche** | `vista/InicioVista` (pantalla inicial de ejemplo), `vista/LoginVista` (pasiva, sin controlador) | Se reemplazan/usan según el proyecto |
 | **Dominio (vacío)** | `modelo/`, `controlador/` | Nuevos `dto/`, `servicios/`, `controlador/`, `vista/`, interfaz `XCliente` y envoltorio `XClienteWS` en `ws/` |
 
 Las zonas a adaptar están marcadas con **`DOMINIO`** o **`TODO`** en el código (`grep -rn "DOMINIO\|TODO" src`).
@@ -65,9 +66,9 @@ src/main/java/ec/edu/monster/
 ├── dto/           RespuestaBaseDto                 POJOs sin anotaciones
 ├── servicios/     ServicioBase                     única capa que conoce la interfaz del cliente y los dto
 ├── ws/            ConfiguracionServicio, TraductorRed        + XCliente / XClienteWS por proyecto (envuelve el puerto generado)
-├── controlador/   EjecutorAsincrono                + un controlador por pantalla
-└── vista/         Pantalla, Textos, VentanaPrincipal, InicioVista, LoginVista
-    └── estilo/    Tema, EstilosUi, PanelRedondeado, PanelMensaje, PanelImagen, IndicadorProgreso
+├── controlador/   EjecutorAsincrono, ControladorBase        + un controlador por pantalla
+└── vista/         Pantalla, Textos, VentanaPrincipal (dos modos), VistaBase, InicioVista, LoginVista
+    └── estilo/    Tema, EstilosUi, PanelRedondeado, PanelMensaje, ZonaEstado, PanelImagen, IndicadorProgreso, TarjetaResultado, TablaDatos, FlechaDireccion
 src/main/resources/wsdl/                copia del WSDL del servidor (la crea el proyecto)
 src/main/resources/ec/edu/monster/estaticos/   fondo_app.jpeg (imagen de ejemplo)
 src/test/java/ec/edu/monster/           JUnit 5 (sin servidor ni pantalla), misma estructura
@@ -95,8 +96,8 @@ Siempre en este orden, de abajo hacia arriba:
 3. **DTO propio** — `…Dto` en `dto` que extienda `RespuestaBaseDto`; POJO con los mismos atributos que el tipo generado. **Todos los campos son texto.**
 4. **Servicio** — `servicios/XServicio extends ServicioBase`: valida lo trivial (campos vacíos), convierte los datos al formato del contrato (coma decimal → punto) y llama:
    `return verificar(cliente.obtenerItems(codigo));`. Las reglas del dominio las decide el servidor; el cliente muestra su `mensaje`.
-5. **Vista** — `XxxVista extends JPanel` **pasiva**, construida solo con `EstilosUi` y `Tema`: getters de lo escrito, métodos `alPulsarXxx(...)`, `mostrarError/mostrarResultado`, `setOcupado(boolean)`.
-6. **Controlador** — registra los eventos de la vista y llama al servicio **con `EjecutorAsincrono.ejecutar(tarea, alTerminar, alFallar)`** (nunca en el hilo de eventos).
+5. **Vista** — `XxxVista extends VistaBase` **pasiva**, construida solo con `EstilosUi` y `Tema` (ver `InicioVista` y `LoginVista`): getters de lo escrito, métodos `alXxx(...)`, `marcarVacio(campo)` y, de `VistaBase`, la zona de estado, `setOcupado` y `alCancelar`. Los controles que se deshabilitan mientras espera se registran con `registrar(...)`.
+6. **Controlador** — `extends ControladorBase`: registra los eventos de la vista, valida los campos vacíos en el orden de la pantalla y llama al servicio **con `ejecutar(textoOcupado, tarea, alExito)`**, que usa `EjecutorAsincrono` (nunca en el hilo de eventos), marca la pantalla «ocupada», ignora una segunda acción y muestra el error como mensaje. Un proyecto con login sobrescribe `manejar` para tratar el código de sesión no válida de su servidor.
    Invariantes (`ARQUITECTURA_CLIENTE.md` §4.6): validar campos vacíos antes de llamar; mostrar `error.getMessage()`, nunca el código; conservar los datos ante un error salvo los sensibles (claves);
    estado «ocupado» que deshabilita los controles e **ignora una nueva acción mientras dura**; no conocer la pantalla siguiente (la navegación llega como `Runnable`/`Consumer`).
 7. **Pantalla** — constante en `vista/Pantalla` y, en `Main`: crear vista y controlador, `ventana.agregar(Pantalla.X, vista)` y conectar la navegación.
@@ -123,10 +124,17 @@ Las vistas **solo usan la fábrica** `EstilosUi` y las constantes de `Tema`; no 
 | `EstilosUi.etiqueta`, `campoTexto`, `campoContrasenia`, `selector`, `marcarError` | Etiqueta de campo, campos, lista desplegable, borde de error |
 | `PanelMensaje` (`mostrarError`, `mostrarExito`, `mostrarResultado`) | Mensaje y resultado; oculto hasta que hay texto |
 | `IndicadorProgreso` (`setActivo`) | Indicador de carga; deshabilitar los controles mientras dura |
+| `ZonaEstado` | Un solo lugar que muestra, de una en una, el indicador de ocupado con su texto, un error o un éxito (la incluye `VistaBase`) |
+| `EstilosUi.botonPrimarioGrande` | Botón de una cuadrícula de acciones (96 de alto) |
+| `TarjetaResultado` | Resumen de un cambio de valor (título centrado, monto con signo, variación, pie); recibe los textos ya formateados |
+| `TablaDatos` | Tabla con encabezado fijo y columnas numéricas a la derecha (`setDatos(columnas, alDerecha, pesos, filas)`) |
+| `FlechaDireccion` | Flecha `→` de 24 × 24 dibujada en código (indica un sentido, p. ej. origen → destino) |
 
-- **Disposición:** ventana dividida: pantalla a la izquierda (columna de 420) e imagen a la derecha. Tamaño inicial 1100 × 720, mínimo 900 × 640 (`Tema`).
+- **Disposición:** dos modos en `VentanaPrincipal`. El **acceso** (`Pantalla.LOGIN`) va dividido: pantalla a la izquierda (columna de 420) e imagen a la derecha. El **resto de la aplicación** usa el ancho completo y la imagen es el fondo de la ventana: completa, centrada, con opacidad (`Tema.OPACIDAD_IMAGEN`) y reescalable, con los paneles sobre ella (`PANEL_SOBRE_IMAGEN`); si no cabe en alto, se desplaza (`Pantalla` indica el modo y si el contenido va a todo el ancho). Tamaño inicial 1100 × 720, mínimo 900 × 640 (`Tema`).
 - **Presentación clara:** cambiar los valores de `Tema` por los de `docs/CLIENT_STYLES_JAVA.md` §2.3 y usar `FlatLightLaf`.
 - FlatLaf no admite algunas propiedades en ciertos componentes: no falla al compilar, puede fallar al construir la pantalla; probar cada pantalla nueva.
+- Un texto con HTML (mensajes, tarjetas) usa `EstilosUi.anchoHtml(px)` para su ancho: Swing escala los px de HTML según la resolución de la pantalla y un ancho fijo cortaría el texto con escalas como 125 %.
+- Antes de construir las pantallas de un proyecto conviene especificarlas en su `docs/PANTALLAS.md` (orden de los elementos, anchos, estados y decisiones); la del cliente de escritorio de EurekaBank sirve de modelo.
 
 ## 6. Servidor y ejecución
 
