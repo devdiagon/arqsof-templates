@@ -1,7 +1,7 @@
 package ec.edu.monster.dto;
 
 /**
- * Forma común de toda respuesta del servidor (regla R6 de CONVENCION_SOAP.md): {@code estado} (OK/ERROR), {@code codigo} y {@code mensaje}.
+ * Forma común de toda respuesta del servidor (regla R6 de docs/CONVENCION_SOAP.md): {@code estado} (OK/ERROR), {@code codigo} y {@code mensaje}.
  * Es un POJO del cliente: el envoltorio de {@code ws} lo llena copiando la respuesta que genera wsimport. Los DTO de cada
  * operación del dominio la extienden.
  *

@@ -8,10 +8,10 @@ import java.util.Map;
  * No conoce el dominio: cada proyecto aporta su clase de servicio generada y su interfaz propia (ver README §4).
  *
  * <pre>
- * ClienteX cliente = new ClienteWSX(ClienteWS.configurar(new WSX_Service().getWSXPort()));
+ * XCliente cliente = new XClienteWS(ConfiguracionServicio.configurar(new WSX_Service().getWSXPort()));
  * </pre>
  *
- * Convención (CONVENCION_SOAP.md):
+ * Convención (docs/CONVENCION_SOAP.md):
  *  - R9: la URL del servicio se recibe COMPLETA por configuración y no se asume su forma. La ruta de un servidor Java
  *        (/Contexto/Servicio) y la de uno .NET (/RutaLibre) son distintas; cambiar de servidor es cambiar solo esta URL.
  *  - R10: el puerto se pide a la clase de servicio generada, nunca por el nombre del puerto, porque lo decide la plataforma
@@ -21,7 +21,7 @@ import java.util.Map;
  *
  * @author: Frederick Tipán
  */
-public final class ClienteWS {
+public final class ConfiguracionServicio {
 
     /**
      * URL COMPLETA del servicio (sin "?wsdl"). CAMBIAR, o sobrescribir sin recompilar con -Dws.url=... o la variable
@@ -30,7 +30,7 @@ public final class ClienteWS {
     public static final String URL_POR_DEFECTO = "http://localhost:8080/CAMBIAR_CONTEXTO/CAMBIAR_SERVICIO";
     private static final int TIMEOUT_MS = 10_000;
 
-    private ClienteWS() {
+    private ConfiguracionServicio() {
     }
 
     /** Propiedad {@code ws.url}, si no la variable {@code WS_URL}, si no {@link #URL_POR_DEFECTO}. */
@@ -41,6 +41,29 @@ public final class ClienteWS {
         }
         if (url == null || url.isBlank()) {
             url = URL_POR_DEFECTO;
+        }
+        return normalizarUrl(url);
+    }
+
+    /**
+     * Variante para un servidor que publica <b>varios servicios</b>, cada uno con su WSDL y su URL completa (R9: no se
+     * asume que cuelguen de una misma base). Propiedad {@code ws.url.<servicio>}, si no la variable
+     * {@code WS_URL_<SERVICIO>} (en mayúsculas), si no la URL por defecto indicada. Se normaliza (sin espacios ni «/» final).
+     *
+     * <pre>
+     * public static final String URL_CONSULTA = "http://localhost:8080/Contexto/Consulta";
+     * public static String urlConsulta() { return urlConfigurada("consulta", URL_CONSULTA); }
+     * </pre>
+     *
+     * Así cada servicio se sobrescribe sin recompilar con {@code -Dws.url.consulta=...} o {@code WS_URL_CONSULTA}.
+     */
+    public static String urlConfigurada(String servicio, String urlPorDefecto) {
+        String url = System.getProperty("ws.url." + servicio);
+        if (url == null || url.isBlank()) {
+            url = System.getenv("WS_URL_" + servicio.toUpperCase());
+        }
+        if (url == null || url.isBlank()) {
+            url = urlPorDefecto;
         }
         return normalizarUrl(url);
     }

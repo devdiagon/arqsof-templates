@@ -31,10 +31,10 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Node;
 
 /**
- * Pruebas de CONFORMIDAD del cliente con CONVENCION_SOAP.md. Se publica un servidor falso que sigue la convención
+ * Pruebas de CONFORMIDAD del cliente con docs/CONVENCION_SOAP.md. Se publica un servidor falso que sigue la convención
  * (como lo haría el servidor real) y se mide lo que el cliente ENVÍA y lo que ENTIENDE. El cliente es el proxy que
  * {@code wsimport-test} genera desde {@code src/test/resources/wsdl/WSEjemplo.wsdl} (paquete {@code ec.edu.monster.ws.ejemplo}),
- * configurado con {@link ClienteWS}:
+ * configurado con {@link ConfiguracionServicio}:
  *  - los parámetros viajan calificados con el namespace del servicio (R3) y la SOAPAction es la URI de la operación (R4);
  *  - los campos de la respuesta (calificados) llegan con valor, no nulos;
  *  - el puerto se obtiene de la clase de servicio generada y la URL completa se acepta tal cual (R9, R10).
@@ -43,7 +43,7 @@ import org.w3c.dom.Node;
 class ConvencionClienteTest {
 
     // Los mismos valores que src/test/resources/wsdl/WSEjemplo.wsdl
-    private static final String TNS = "http://CAMBIAR.namespace/";
+    private static final String TNS = "http://ws.monster.edu.ec/";
     private static final String SERVICIO = "WSEjemplo";
 
     private static Endpoint endpoint;
@@ -161,7 +161,7 @@ class ConvencionClienteTest {
     }
 
     private static WSEjemplo cliente() {
-        return ClienteWS.configurar(new WSEjemplo_Service().getWSEjemploPort(), url);
+        return ConfiguracionServicio.configurar(new WSEjemplo_Service().getWSEjemploPort(), url);
     }
 
     @Test
@@ -200,7 +200,7 @@ class ConvencionClienteTest {
 
     @Test
     void laUrlCompletaSeAceptaConBarrasFinales() {
-        RespuestaEco r = ClienteWS.configurar(new WSEjemplo_Service().getWSEjemploPort(), url + "//").eco("x");
+        RespuestaEco r = ConfiguracionServicio.configurar(new WSEjemplo_Service().getWSEjemploPort(), url + "//").eco("x");
 
         assertTrue("OK".equals(r.getEstado()));
     }

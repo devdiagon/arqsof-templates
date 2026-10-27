@@ -1,12 +1,11 @@
 package ec.edu.monster;
 
-import ec.edu.monster.modelo.Sesion;
-import ec.edu.monster.ws.ClienteWS;
+import ec.edu.monster.ws.ConfiguracionServicio;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Punto de composición: crea la sesión, el puerto del servicio, el servicio, las vistas y los controladores, y ejecuta el bucle.
+ * Punto de composición: crea el cliente del servicio, los servicios, las vistas y los controladores, y ejecuta el bucle.
  *
  * @author: Frederick Tipán
  */
@@ -17,11 +16,11 @@ public class Main {
         System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
         System.setErr(new PrintStream(System.err, true, StandardCharsets.UTF_8));
         try {
-            Sesion sesion = new Sesion();
-            // TODO: cliente = new ClienteWSXxx(ClienteWS.configurar(new WSXxx_Service().getWSXxxPort()));   (README §4)
-            //       crear servicio(contrato, sesion), vistas y controladores, y alternar según su enum Resultado
-            System.out.println("Plantilla lista. WS: " + ClienteWS.urlConfigurada()
-                    + " (sesion: " + (sesion.getToken() != null) + ")");
+            // TODO: cliente = new XClienteWS(ConfiguracionServicio.configurar(new WSXxx_Service().getWSXxxPort()));   (README §4)
+            //       crear servicios, vistas y controladores, y alternar según el enum Resultado de cada controlador
+            System.out.println("Plantilla lista. WS: " + ConfiguracionServicio.urlConfigurada());
+        } catch (java.util.NoSuchElementException e) {
+            System.out.println(); // entrada cerrada: fin del programa
         } catch (RuntimeException e) {
             System.err.println("No fue posible iniciar el cliente: " + e.getMessage());
         }

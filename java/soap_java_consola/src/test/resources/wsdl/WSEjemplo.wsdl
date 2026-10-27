@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://CAMBIAR.namespace/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.xmlsoap.org/wsdl/" targetNamespace="http://CAMBIAR.namespace/" name="WSEjemplo">
+<definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://ws.monster.edu.ec/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.xmlsoap.org/wsdl/" targetNamespace="http://ws.monster.edu.ec/" name="WSEjemplo">
 <types>
 <xsd:schema>
-<xsd:import namespace="http://CAMBIAR.namespace/" schemaLocation="WSEjemplo.xsd"/>
+<xsd:import namespace="http://ws.monster.edu.ec/" schemaLocation="WSEjemplo.xsd"/>
 </xsd:schema>
 </types>
 <message name="eco">
@@ -13,14 +13,14 @@
 </message>
 <portType name="WSEjemplo">
 <operation name="eco">
-<input wsam:Action="http://CAMBIAR.namespace/WSEjemplo/eco" message="tns:eco"/>
-<output wsam:Action="http://CAMBIAR.namespace/WSEjemplo/ecoResponse" message="tns:ecoResponse"/>
+<input wsam:Action="http://ws.monster.edu.ec/WSEjemplo/eco" message="tns:eco"/>
+<output wsam:Action="http://ws.monster.edu.ec/WSEjemplo/ecoResponse" message="tns:ecoResponse"/>
 </operation>
 </portType>
 <binding name="WSEjemploPortBinding" type="tns:WSEjemplo">
 <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
 <operation name="eco">
-<soap:operation soapAction="http://CAMBIAR.namespace/WSEjemplo/eco"/>
+<soap:operation soapAction="http://ws.monster.edu.ec/WSEjemplo/eco"/>
 <input>
 <soap:body use="literal"/>
 </input>
