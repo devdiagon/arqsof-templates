@@ -195,6 +195,7 @@ Lista de registros con columnas. Fondo `panel-sobre-imagen` si hay imagen debajo
 
 - Solo en la **presentación oscura**. La imagen **nunca se deforma**.
 - Si la imagen es **vertical** y sus **bordes tienen exactamente el color `fondo`**, puede mostrarse completa sobre `fondo` y fundirse sin costuras. Es la condición para usar el modo `contain` descrito abajo; si una imagen no la cumple, debe usarse con paneles `panel-sobre-imagen` o recortada.
+- **Imagen horizontal (p. ej. un logotipo apaisado):** se muestra **completa y centrada** pero **compacta**: ocupa como máximo el **60 % del alto y del ancho de su contenedor** (un margen del 20 % por lado), en lugar de llenarlo, para que no domine el fondo. Vale para el acceso y para el fondo de la ventana; el tamaño del PNG no importa, la escala la fija el contenedor. **Escritorio:** constante `Tema.ESCALA_IMAGEN` (0,60), que `PanelImagen` aplica sobre el ajuste `contain` en el acceso y en el fondo de la ventana. Si la imagen tiene **transparencia**, el color `fondo` se ve a través de ella y no se exige que sus bordes sean del color `fondo`. **El 60 % es un punto de partida:** se ajusta según la imagen del proyecto (más grande, más pequeña o 100 %) cambiando ese único valor.
 - **Columna única (móvil):** la imagen cubre toda la pantalla, **recortada** (`centerCrop`), sin deformarse. Los paneles usan `panel-sobre-imagen` para que el texto se lea sobre las zonas claras.
 - **Escritorio, fuera de la pantalla de acceso (§7.0):** la imagen es el **fondo de la ventana**: ocupa toda el área, **completa y centrada** (`contain`, nunca `cover`), sin deformarse; las franjas que sobran son `fondo`. Se dibuja con **opacidad 40 %** sobre `fondo` y se **reescala con la ventana** (al maximizar o redimensionar mantiene su proporción y sigue centrada). Como el contenido queda encima de la imagen, los paneles usan `panel-sobre-imagen`. La opacidad es una constante única y se puede ajustar.
 - **Pantalla ancha con disposición dividida (web, y el acceso del escritorio, §7.0):** la imagen ocupa su propia zona, **completa y centrada** (`contain` / `background-size: contain`), sin recortar ni deformar; el resto de la zona es `fondo`. No se usa `cover`: al maximizar la ventana, una imagen vertical ampliada para cubrir una zona ancha se recorta y parece estirada. Como el contenido no queda sobre la imagen, los paneles usan `superficie`.
@@ -280,7 +281,7 @@ Disposición **dividida** (§7.0): rejilla de dos zonas a pantalla completa, con
 .pagina { display: grid; grid-template-columns: 560px 1fr; min-height: 100vh; background: var(--fondo); }
 .zona-contenido { display: grid; place-items: center; padding: 24px; }
 .columna { width: 100%; max-width: 420px; }
-.zona-imagen { background: var(--fondo) url("imagen-decorativa.jpeg") center / contain no-repeat; }
+.zona-imagen { background: var(--fondo) url("imagen-decorativa.png") center / contain no-repeat; }
 @media (max-width: 899px) {                   /* bajo el mínimo del escritorio: columna única, sin imagen */
   .pagina { grid-template-columns: 1fr; }
   .zona-imagen { display: none; }

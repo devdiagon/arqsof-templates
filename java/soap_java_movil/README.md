@@ -142,7 +142,7 @@ Los layouts **solo referencian estilos**; márgenes laterales de `24dp` en el la
 | `ProgressBar` con `@color/acento` | Indicador de carga; deshabilitar los controles mientras dura |
 | `zona_estado` + `ZonaEstado` | Zona de estado bajo los botones: indicador de ocupado, error o éxito, de uno en uno (`mostrar(ocupado, mensaje, error)`) |
 
-- **Fondo:** `res/drawable-nodpi/fondo_app.jpeg` (opcional; imagen de referencia, recortada a pantalla completa) sobre el color `fondo` de respaldo. Es una imagen **de ejemplo**:
+- **Fondo:** `res/drawable-nodpi/fondo_app.png` (opcional; imagen de referencia, completa y centrada con `fitCenter`; es un **PNG**, y si se cambia por otra con otro dibujo o proporciones se conserva como `fondo_app.png`) sobre el color `fondo` de respaldo. Es una imagen **de ejemplo**:
   sustituirla o quitar el `ImageView` de los layouts según el proyecto (no se usa imagen en la presentación clara).
 - **Presentación clara:** redefinir los mismos nombres de `colors.xml` con los valores de `CLIENT_STYLES_JAVA.md` §2.3. No hay selector de tema.
 - `fitsSystemWindows` reemplaza el `padding` del mismo `View`: usar márgenes en los hijos.

@@ -5,6 +5,7 @@
 
 :root {
     --radio: 8px;
+    --margen-imagen: 20%;         /* la imagen ocupa el 60 % del alto y del ancho de su contenedor, centrada; ajustar según la imagen */
     --acento: #0EA5E9;
     --primario: #0369A1;
     --primario-p: #075985;
@@ -85,7 +86,15 @@ body {
 }
 
 .zona-imagen {
-    background: var(--fondo) url("../img/fondo_app.jpeg") center / contain no-repeat;
+    position: relative;
+    background: var(--fondo);
+}
+
+.zona-imagen::before {          /* imagen compacta: completa y centrada dentro del 60 % de la zona */
+    content: "";
+    position: absolute;
+    inset: var(--margen-imagen);
+    background: url("../img/fondo_app.png") center / contain no-repeat;
 }
 
 @media (max-width: 899px) {
@@ -106,10 +115,10 @@ body {
 .pagina--aplicacion::before {
     content: "";
     position: fixed;
-    inset: 0;
     z-index: -1;
+    inset: var(--margen-imagen);  /* imagen compacta: completa y centrada dentro del 60 % de la ventana */
     opacity: .4;
-    background: url("../img/fondo_app.jpeg") center / contain no-repeat;
+    background: url("../img/fondo_app.png") center / contain no-repeat;
     pointer-events: none;
 }
 

@@ -32,8 +32,8 @@ Sigue `ARQUITECTURA_CLIENTE.md` (v1) y `ESPECIFICACION_CLIENTES.md`. Si este REA
    Si el servidor publica **varios servicios** (cada uno con su WSDL y su URL completa; R9): una ejecución de `wsimport` por servicio con su propio `packageName`
    (p. ej. `ec.edu.monster.ws.generado.consulta`) y, en `ConfiguracionServicio`, una constante y un método `urlConfigurada("consulta", URL_CONSULTA)` por servicio;
    se sobrescriben con `-Dws.url.consulta=...` o `WS_URL_CONSULTA`.
-5. **Poner el nombre de la aplicación** en `vista/Textos.java` y, si se quiere, **sustituir la imagen** `src/main/resources/ec/edu/monster/estaticos/fondo_app.jpeg`
-   (requisitos en `docs/CLIENT_STYLES_JAVA.md` §6).
+5. **Poner el nombre de la aplicación** en `vista/Textos.java` y, si se quiere, **sustituir la imagen** `src/main/resources/ec/edu/monster/estaticos/fondo_app.png`
+   (requisitos en `docs/CLIENT_STYLES_JAVA.md` §6). La imagen es un **PNG** (admite transparencia); si se cambia por otra, con otro dibujo o proporciones, **se conserva como `fondo_app.png`** para no tocar el código ni los estilos. El tamaño con que se dibuja (60 % de su contenedor) se ajusta en `Tema.ESCALA_IMAGEN`.
 6. **Completar `docs/PROJECT.md`** y mantenerlo al día. Retirar los ejemplos de conformidad (`ConvencionClienteTest`, `src/test/resources/wsdl/WSEjemplo.*` y la ejecución `generar-proxy-ejemplo` del `pom.xml`).
 7. Ejecutar: `mvn compile exec:java`.
 
@@ -70,7 +70,7 @@ src/main/java/ec/edu/monster/
 └── vista/         Pantalla, Textos, VentanaPrincipal (dos modos), VistaBase, InicioVista, LoginVista
     └── estilo/    Tema, EstilosUi, PanelRedondeado, PanelMensaje, ZonaEstado, PanelImagen, IndicadorProgreso, TarjetaResultado, TablaDatos, FlechaDireccion
 src/main/resources/wsdl/                copia del WSDL del servidor (la crea el proyecto)
-src/main/resources/ec/edu/monster/estaticos/   fondo_app.jpeg (imagen de ejemplo)
+src/main/resources/ec/edu/monster/estaticos/   fondo_app.png (imagen de ejemplo)
 src/test/java/ec/edu/monster/           JUnit 5 (sin servidor ni pantalla), misma estructura
 docs/                                   CLIENT_STYLES_JAVA, CONVENCION_SOAP, CONVENCION_PRUEBAS, PROJECT
 ```

@@ -280,7 +280,7 @@ Disposición **dividida** (§7.0): rejilla de dos zonas a pantalla completa, con
 .pagina { display: grid; grid-template-columns: 560px 1fr; min-height: 100vh; background: var(--fondo); }
 .zona-contenido { display: grid; place-items: center; padding: 24px; }
 .columna { width: 100%; max-width: 420px; }
-.zona-imagen { background: var(--fondo) url("imagen-decorativa.jpeg") center / contain no-repeat; }
+.zona-imagen { background: var(--fondo) url("imagen-decorativa.png") center / contain no-repeat; }
 @media (max-width: 899px) {                   /* bajo el mínimo del escritorio: columna única, sin imagen */
   .pagina { grid-template-columns: 1fr; }
   .zona-imagen { display: none; }
@@ -294,7 +294,7 @@ Disposición **dividida** (§7.0): rejilla de dos zonas a pantalla completa, con
 .pagina--aplicacion { position: relative; min-height: 100vh; }
 .pagina--aplicacion::before {                  /* imagen de fondo: fija, completa, centrada, con opacidad */
   content: ""; position: fixed; inset: 0; z-index: -1; opacity: .4;
-  background: url("imagen-decorativa.jpeg") center / contain no-repeat; }
+  background: url("imagen-decorativa.png") center / contain no-repeat; }
 .pagina--aplicacion .contenido { width: 100%; max-width: 480px; margin: 0 auto; padding: 24px; }
 .contenido--amplio { max-width: 640px !important; }      /* menú, transferencia */
 .contenido--completo { max-width: none !important; }     /* tabla */

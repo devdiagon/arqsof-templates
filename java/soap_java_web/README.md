@@ -35,7 +35,7 @@ Sigue `ARQUITECTURA_CLIENTE.md` (v1) y `ESPECIFICACION_CLIENTES.md`. Si este REA
    (p. ej. `ec.edu.monster.ws.generado.consulta`; los WSDL de un mismo servidor suelen definir los mismos tipos y en un paquete común chocan), y en `ConfiguracionServicio` una constante y un método
    `urlConfigurada("consulta", URL_CONSULTA)` por servicio; cada uno se sobrescribe con `-Dws.url.consulta=...` o `WS_URL_CONSULTA`.
 5. **Poner el nombre de la aplicación** en `WEB-INF/web.xml` (`context-param` `nombreAplicacion`: título de la pestaña y de la pantalla de acceso) y, si se quiere, **sustituir la imagen**
-   `src/main/webapp/recursos/img/fondo_app.jpeg` (es una imagen de ejemplo; ver `docs/CLIENT_STYLES_JAVA.md` §6 para los requisitos).
+   `src/main/webapp/recursos/img/fondo_app.png` (es una imagen de ejemplo; ver `docs/CLIENT_STYLES_JAVA.md` §6 para los requisitos). La imagen es un **PNG** (admite transparencia); si se cambia por otra, con otro dibujo o proporciones, **se conserva como `fondo_app.png`** para no tocar el código ni los estilos. El tamaño con que se dibuja (60 % de su contenedor) se ajusta en `--margen-imagen` de `estilos.css`.
 6. **Completar `docs/PROJECT.md`** y mantenerlo al día. Retirar los ejemplos de conformidad (`ConvencionClienteTest`, `src/test/resources/wsdl/WSEjemplo.*` y la ejecución `generar-proxy-ejemplo` del `pom.xml`).
 7. Ejecutar el proyecto en Payara (*Run* en NetBeans) y abrir `http://localhost:8080/<context-root>/`.
 
@@ -71,7 +71,7 @@ src/main/java/ec/edu/monster/
 └── filtro/        FiltroCodificacion, ImportaTextos      transversal a las pantallas
 src/main/resources/wsdl/             copia del WSDL del servidor (la crea el proyecto)
 src/main/webapp/
-├── recursos/      css/estilos.css, js/app.js, img/fondo_app.jpeg            lo único público (se sirve tal cual)
+├── recursos/      css/estilos.css, js/app.js, img/fondo_app.png            lo único público (se sirve tal cual)
 └── WEB-INF/       web.xml, beans.xml, glassfish-web.xml                     descriptores
     ├── tags/      pantalla, formulario, progreso, encabezado, campo, campo-con-acciones, fila-campos, selector, mensaje, boton, fila-botones, lista-acciones, cuadricula-acciones, tarjeta, tarjetas, tabla, cerrar-sesion   componentes (.tag)
     └── vistas/    login.jsp, inicio.jsp                                     pantallas; no accesibles por URL directa

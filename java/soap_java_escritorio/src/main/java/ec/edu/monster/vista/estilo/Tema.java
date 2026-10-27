@@ -45,6 +45,8 @@ public final class Tema {
     // Dentro de la aplicación (CLIENT_STYLES_JAVA.md §5.11, §5.12, §5.13, §6, §7.0)
     public static final Color PANEL_SOBRE_IMAGEN = new Color(0, 0, 0, 153);   // rgba(0,0,0,0.60)
     public static final float OPACIDAD_IMAGEN = 0.40f;
+    /** Fracción del alto y del ancho de su contenedor que ocupa la imagen decorativa (completa y centrada); se ajusta según la imagen. */
+    public static final float ESCALA_IMAGEN = 0.60f;
     public static final Color EXITO_CLARO = new Color(0x15803D);   // sobre blanco (tarjeta)
     public static final Color ERROR_CLARO = new Color(0xB91C1C);   // sobre blanco (tarjeta)
     public static final int ALTO_BOTON_CUADRICULA = 96;

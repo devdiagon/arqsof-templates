@@ -29,7 +29,7 @@ import javax.swing.SwingConstants;
  */
 public class VentanaPrincipal extends JFrame {
 
-    private static final String IMAGEN = "/ec/edu/monster/estaticos/fondo_app.jpeg";
+    private static final String IMAGEN = "/ec/edu/monster/estaticos/fondo_app.png";
     private static final String MODO_ACCESO = "ACCESO";
     private static final String MODO_APLICACION = "APLICACION";
 
