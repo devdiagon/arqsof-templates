@@ -16,7 +16,8 @@ Sigue `ARQUITECTURA_CLIENTE.md` (v1) y `ESPECIFICACION_CLIENTES.md`. Si este REA
 - **Autenticación:** **fuera de la plantilla base.** Todo proyecto define su login y su sesión. La plantilla deja el punto de enganche: `/inicio` (pantalla inicial) y `login.jsp`, una pantalla de acceso **pasiva** (sin controlador) lista para usar.
 - **Verificada:** `mvn test` → BUILD SUCCESS, 25 pruebas JUnit en verde (5 de la verificación de la envoltura, 3 del cliente perezoso, 7 de configuración de la URL, 5 de traducción de red y
   5 de conformidad de ejemplo contra un servidor falso local, ejemplo heredado y fuera de alcance), sin servidor externo. `mvn package` genera el WAR.
-  **No se ha ejecutado:** la plantilla desplegada en Payara ni vista en un navegador, ninguna operación de dominio, ni el comportamiento con el servidor SOAP apagado (solo lo cubre una prueba unitaria del reintento del cliente perezoso).
+  Los JSP y los tag files de **todos** los componentes se desplegaron en Payara 7 (en una copia temporal con una página que los usa) y se vieron renderizados en un navegador sin ventana; no queda ninguna expresión EL sin resolver.
+  **No se ha ejecutado:** ninguna operación de dominio, el login y el filtro de acceso (no forman parte de la plantilla), ni el comportamiento con el servidor SOAP apagado (solo lo cubre una prueba unitaria del reintento del cliente perezoso).
 
 > Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `docs/PROJECT.md` **de ese proyecto** (estado real,
 > decisiones, pendientes) y usa este README solo como guía de la estructura y de las recetas.
@@ -47,8 +48,8 @@ Sigue `ARQUITECTURA_CLIENTE.md` (v1) y `ESPECIFICACION_CLIENTES.md`. Si este REA
 | **Proxy generado** | `src/main/resources/wsdl/` → `wsimport` (`pom.xml`) → `target/generated-sources` (`ec.edu.monster.ws.generado`) | Se **agrega** el WSDL del servidor (§4, paso 1) |
 | **Transporte SOAP** | `ws/ConfiguracionServicio`, `ws/TraductorRed`, `ws/ClientePerezoso` | `ConfiguracionServicio` siempre (URL); el resto no |
 | **DTO base** | `dto/RespuestaBaseDto` (POJO sin anotaciones) | Se agregan DTO del dominio al lado |
-| **Contexto web** | `controlador/ContextoWeb` (mostrar vistas, redirigir; punto de composición de los clientes) | Se agrega un cliente y un método por servicio |
-| **Codificación** | `filtro/FiltroCodificacion` (UTF-8) | No |
+| **Contexto web** | `controlador/ContextoWeb` (mostrar vistas, redirigir, resultado y aviso de una sola lectura, cerrar sesión; punto de composición de los clientes) | Se agrega un cliente y un método por servicio |
+| **Codificación y textos** | `filtro/FiltroCodificacion` (UTF-8); `filtro/ImportaTextos` (hace visible `Textos` en las expresiones EL: `${Textos.CODIGO_CUENTA}`, `${Textos.saludo(nombre, paterno)}`) | No |
 | **Estilos y componentes** | `webapp/recursos/css/estilos.css`, `recursos/js/app.js`, `WEB-INF/tags/*.tag`, `docs/CLIENT_STYLES_JAVA.md` | Colores solo si se cambia de presentación; **no** se escriben clases ni estilos en los JSP |
 | **Textos** | `vista/Textos` (los que necesitan los controladores) y `web.xml` (`nombreAplicacion`, `tema`) | Se agregan los textos del dominio |
 | **Punto de enganche** | `controlador/InicioControlador` + `vista/inicio.jsp`; `vista/login.jsp` (pasiva) | Se reemplazan/usan según el proyecto |
@@ -67,12 +68,12 @@ src/main/java/ec/edu/monster/
 ├── servicios/     ServicioBase                           única capa que conoce la interfaz del cliente y los dto
 ├── controlador/   ContextoWeb, InicioControlador         servlets
 ├── vista/         Textos                                 textos que usan los controladores (las páginas son JSP, en WEB-INF)
-└── filtro/        FiltroCodificacion                     transversal a las pantallas
+└── filtro/        FiltroCodificacion, ImportaTextos      transversal a las pantallas
 src/main/resources/wsdl/             copia del WSDL del servidor (la crea el proyecto)
 src/main/webapp/
 ├── recursos/      css/estilos.css, js/app.js, img/fondo_app.jpeg            lo único público (se sirve tal cual)
 └── WEB-INF/       web.xml, beans.xml, glassfish-web.xml                     descriptores
-    ├── tags/      pantalla, formulario, encabezado, campo, selector, mensaje, boton, lista-acciones, cerrar-sesion   componentes (.tag)
+    ├── tags/      pantalla, formulario, progreso, encabezado, campo, campo-con-acciones, fila-campos, selector, mensaje, boton, fila-botones, lista-acciones, cuadricula-acciones, tarjeta, tarjetas, tabla, cerrar-sesion   componentes (.tag)
     └── vistas/    login.jsp, inicio.jsp                                     pantallas; no accesibles por URL directa
 src/test/java/ec/edu/monster/           JUnit 5 (sin servidor), misma estructura
 docs/                                   CLIENT_STYLES_JAVA, CONVENCION_SOAP, CONVENCION_PRUEBAS, PROJECT
@@ -108,9 +109,11 @@ Siempre en este orden, de abajo hacia arriba:
    En `ContextoWeb`, un método `static XServicio x(HttpServletRequest p)` que lo arma con el cliente compartido (los servicios no guardan estado propio).
 5. **Controlador** — un servlet `@WebServlet("/items")` (molde: `InicioControlador`): valida campos vacíos, llama al servicio, deja el resultado con `request.setAttribute(...)` y muestra el JSP con `ContextoWeb.mostrar(peticion, respuesta, "items")`.
    Atrapa `ExcepcionServicio` y deja `setAttribute("error", e.getMessage())` (solo el mensaje, nunca el código). Cualquier otra excepción: `Textos.ERROR_INESPERADO`, sin traza.
-   Para un formulario: `doPost` valida, llama al servicio y vuelve a mostrar la misma pantalla con el resultado o el error, **conservando lo escrito** (devolver los valores como atributos) salvo los datos sensibles (claves).
-   Si el resultado no es una página de respuesta del mismo formulario, terminar en redirección (Post/Redirect/Get).
-6. **Vista** — `WEB-INF/vistas/items.jsp`, **solo con componentes `ui:`** (ver `inicio.jsp`, `login.jsp` y la tabla de `docs/CLIENT_STYLES_JAVA.md` §7.2). Sin `class`, sin `style`, sin lógica; muestra lo que dejó el controlador (`${items}`, `${error}`).
+   Para un formulario que **consulta** (no cambia datos): `doPost` valida, llama al servicio y vuelve a mostrar la misma pantalla con el resultado o el error, **conservando lo escrito** (devolver los valores como atributos) salvo los datos sensibles (claves).
+   Para uno que **cambia datos** (una operación, un registro): Post/Redirect/Get con resultado de una sola lectura. El `POST` valida, llama al servicio, guarda el resultado, o el error y lo escrito, con `ContextoWeb.guardarFlash(...)` y redirige al `GET` de la misma pantalla, que lo recupera con `ContextoWeb.cargarFlash(...)`.
+   Así recargar la página (F5) no repite la operación. Si el proyecto lo requiere, descartar además un `POST` repetido de la misma sesión mientras el anterior sigue en curso (un indicador por sesión HTTP).
+   Lo que se guarda en la sesión debe ser serializable.
+6. **Vista** — `WEB-INF/vistas/items.jsp`, **solo con componentes `ui:`** y textos de `Textos` (`${Textos.X}`, no escritos a mano) (ver `inicio.jsp`, `login.jsp` y la tabla de `docs/CLIENT_STYLES_JAVA.md` §7.2). Sin `class`, sin `style`, sin lógica; muestra lo que dejó el controlador (`${items}`, `${error}`).
    Los enlaces a otras pantallas son `<ui:boton href="/otra">` (relativos al contexto) o `<ui:lista-acciones>` con datos del servidor.
 7. **Pruebas** — unitarias, sin servidor (`docs/CONVENCION_PRUEBAS.md`): servicio con un doble de `XCliente` (es una interfaz) y la traducción a `RED`/`SRV-000` en `XClienteWS`.
    Los controladores y los JSP se verifican **ejecutando la aplicación** (§7).
@@ -120,8 +123,9 @@ Reglas que se repiten en todo dominio:
 - **Datos sensibles** (credenciales, si hay login): solo en la sesión HTTP del servidor del cliente; nunca en disco, cookies propias, logs ni en la página, y la clave nunca se devuelve al formulario.
 - Si hay login: renovar el identificador de sesión al autenticar (`changeSessionId`: evita la fijación de sesión), invalidar la sesión al cerrarla y no guardar en caché las pantallas protegidas (`Cache-Control: no-store`) para que «Atrás» no las muestre. La cookie es `HttpOnly` y no se admite el id en la URL (`web.xml`).
 - Todo dato viaja como **texto**; los decimales con **punto**. El campo numérico de la vista es `type="text"` con `inputmode="decimal"`, no `type="number"`.
-- Mostrar solo el **mensaje**, nunca el código. Textos con tildes, centralizados y **los mismos en todos los clientes** del proyecto.
+- Mostrar solo el **mensaje**, nunca el código. Los textos salen de `Textos` (los mismos en todos los clientes); en los JSP se leen con `${Textos.X}` (no se escriben a mano en las páginas).
 - **Escapar todo texto dinámico** en los JSP (`<c:out>`; los componentes ya lo hacen).
+- **Lo que se muestra en un JSP es una clase con getters, no un `record`**: las expresiones EL de Payara 7 no ven los accesores de un `record` y la página falla con HTTP 500 (`PropertyNotFoundException`).
 - Un fallo de red no tumba la aplicación: se muestra el mensaje y la pantalla sigue usable. El WAR arranca aunque el servidor SOAP esté apagado.
 
 ## 5. Estilos (resumen; detalle en `docs/CLIENT_STYLES_JAVA.md`)
@@ -130,16 +134,19 @@ Los JSP **solo usan los componentes** de `WEB-INF/tags`; no escriben clases, est
 
 | Etiqueta | Para qué |
 |---|---|
-| `ui:pantalla` | Estructura de toda página: cabecera HTML, columna de contenido (420, centrada) e imagen a la derecha |
-| `ui:formulario` | Formulario POST; al enviarlo deshabilita los controles y muestra el progreso (`app.js`) |
-| `ui:encabezado` | Título de pantalla (`aplicacion="true"` para el título de la aplicación en el acceso) |
-| `ui:campo`, `ui:selector` | Etiqueta + campo de texto/contraseña, etiqueta + lista desplegable (`invalido="true"` marca el borde de error) |
+| `ui:pantalla` | Estructura de toda página. `modo="acceso"` (por defecto): disposición dividida, columna de 420 e imagen a la derecha. `modo="aplicacion"`: ancho completo con la imagen como fondo (`ancho`: `formulario` 480, `amplio` 640, `completo`) |
+| `ui:formulario` | Formulario POST (`ocupado`: texto de la espera); al enviarlo deshabilita los controles, oculta el mensaje y los resultados anteriores y muestra `ui:progreso` (`app.js`) |
+| `ui:encabezado` | Título de pantalla (`aplicacion="true"`: título de la aplicación, centrado; `plano="true"`: texto grande en negrita sin panel, para un saludo) |
+| `ui:campo`, `ui:selector` | Etiqueta + campo de texto/contraseña, etiqueta + lista desplegable (`invalido="true"` marca el borde de error; `centrado="true"` reduce el ancho) |
+| `ui:fila-campos`, `ui:campo-con-acciones` | Dos campos en horizontal con una flecha entre ambos; un campo con sus botones a la derecha (fragmentos `jsp:attribute`) |
 | `ui:mensaje` | Mensaje o resultado (`tipo`: `error`, `exito`, `resultado`); no se dibuja si no hay texto |
-| `ui:boton` | Botón primario (acción principal) o `tipo="secundario"` (salida o regreso); con `href` es un enlace |
-| `ui:lista-acciones` | Una columna de botones primarios generados con datos del servidor |
+| `ui:boton`, `ui:fila-botones` | Botón primario (acción principal) o `tipo="secundario"` (salida o regreso); con `href` es un enlace y `cancelar="true"` lo marca como Cancelar (la tecla Esc lo activa). `fila-botones` los alinea en una fila |
+| `ui:lista-acciones`, `ui:cuadricula-acciones` | Botones primarios generados con datos del servidor: en una columna, o en una cuadrícula de dos columnas (una bajo 600 px) |
+| `ui:tarjeta`, `ui:tarjetas` | Tarjeta de resultado (título centrado, monto con signo, variación, pie) y la fila que las agrupa; reciben los textos ya formateados |
+| `ui:tabla` | Tabla con encabezado fijo; se desplaza dentro de su contenedor (la página nunca se desplaza en horizontal) |
 | `ui:cerrar-sesion` | Botón secundario «Cerrar sesión» (POST `/logout`), para los proyectos con login |
 
-- **Disposición:** pantalla a la izquierda (columna de 420, centrada) e imagen a la derecha (completa y centrada); bajo 900 px, columna única sin imagen. La imagen es de la **página** (`ui:pantalla`), no de cada JSP.
+- **Disposición:** el acceso va dividido (columna de 420 e imagen a la derecha); el resto de la aplicación usa el ancho completo y la imagen es una **capa fija de fondo**, completa, centrada y con opacidad. Bajo 900 px no hay imagen (columna única). La imagen es de la **página** (`ui:pantalla`), no de cada JSP.
 - **Presentación clara:** cambiar el `context-param` `tema` de `web.xml` a `tema-claro` (ver `docs/CLIENT_STYLES_JAVA.md` §2.3 y §6: la clara no usa imagen).
 - **Las imágenes** van en `src/main/webapp/recursos/img` y se referencian desde el CSS con ruta relativa (`../img/...`).
 - **Componente nuevo:** crear `WEB-INF/tags/<nombre>.tag` (escapando el texto con `<c:out>`) y su CSS en `estilos.css`, con tokens (`var(--…)`), nunca con colores sueltos. Probarlo en un navegador a 1100 px y a menos de 900 px.

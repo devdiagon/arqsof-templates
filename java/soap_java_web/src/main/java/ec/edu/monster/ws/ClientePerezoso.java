@@ -17,7 +17,8 @@ import java.util.function.Supplier;
  *         () -&gt; new XClienteWS(ConfiguracionServicio.configurar(new WSX_Service().getWSXPort())));
  * </pre>
  *
- * Las excepciones del cliente llegan tal cual, sin envolver.
+ * Las excepciones del cliente llegan tal cual, sin envolver. La interfaz del cliente debe ser <b>pública</b>: con una interfaz
+ * de paquete, la invocación reflexiva falla al llamarse desde otro paquete.
  */
 public final class ClientePerezoso {
 

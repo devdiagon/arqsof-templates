@@ -10,7 +10,8 @@
 <%@ attribute name="inputmode" required="false" description="decimal para números (teclado móvil); el campo sigue siendo texto. Por defecto text." %>
 <%@ attribute name="invalido" type="java.lang.Boolean" required="false" description="Borde de error." %>
 <%@ attribute name="autofocus" type="java.lang.Boolean" required="false" %>
-<div>
+<%@ attribute name="centrado" type="java.lang.Boolean" required="false" description="Campo de ancho reducido y centrado (p. ej. el importe de una transferencia)." %>
+<div${centrado ? ' class="campo-centrado"' : ''}>
     <c:if test="${not empty etiqueta}"><label class="etiqueta" for="${id}"><c:out value="${etiqueta}"/></label></c:if>
     <input class="campo${invalido ? ' campo--error' : ''}" type="${empty tipo ? 'text' : tipo}" id="${id}" name="${empty nombre ? id : nombre}"
            autocomplete="${empty autocomplete ? 'off' : autocomplete}" inputmode="${empty inputmode ? 'text' : inputmode}"${autofocus ? ' autofocus' : ''}
