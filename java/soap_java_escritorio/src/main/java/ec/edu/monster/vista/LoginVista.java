@@ -16,12 +16,16 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
+/**
+ * Pantalla de acceso lista para los proyectos que definen autenticación (la plantilla base no la trae: no hay un
+ * login común a todo SOA). Es pasiva: el proyecto escribe su controlador y la registra en {@link Pantalla}.
+ */
 public class LoginVista extends JPanel {
 
     private final JTextField usuario = EstilosUi.campoTexto(null);
     private final JPasswordField contrasenia = EstilosUi.campoContrasenia();
     private final PanelMensaje mensaje = new PanelMensaje();
-    private final JButton entrar = EstilosUi.botonPrimario("Iniciar sesión");
+    private final JButton entrar = EstilosUi.botonPrimario(Textos.INICIAR_SESION);
     private final IndicadorProgreso progreso = new IndicadorProgreso();
 
     public LoginVista() {
@@ -30,10 +34,10 @@ public class LoginVista extends JPanel {
 
         add(izquierda(EstilosUi.encabezadoAplicacion(Textos.NOMBRE_APLICACION)));
         add(separacion(Tema.ESPACIO_SECCION));
-        add(izquierda(EstilosUi.etiqueta("Usuario")));
+        add(izquierda(EstilosUi.etiqueta(Textos.USUARIO)));
         add(izquierda(usuario));
         add(separacion(Tema.ESPACIO_BLOQUE));
-        add(izquierda(EstilosUi.etiqueta("Contraseña")));
+        add(izquierda(EstilosUi.etiqueta(Textos.CLAVE)));
         add(izquierda(contrasenia));
         add(separacion(Tema.ESPACIO_BLOQUE));
         add(izquierda(mensaje));

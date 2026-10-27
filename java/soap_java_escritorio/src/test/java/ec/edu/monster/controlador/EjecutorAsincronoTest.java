@@ -3,6 +3,7 @@ package ec.edu.monster.controlador;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ec.edu.monster.excepciones.ExcepcionServicio;
+import ec.edu.monster.vista.Textos;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -77,7 +78,7 @@ class EjecutorAsincronoTest {
 
         assertTrue(listo.await(5, TimeUnit.SECONDS));
         assertEquals("ERROR", error.get().getCodigo());
-        assertEquals("Ocurrió un error inesperado", error.get().getMessage());
+        assertEquals(Textos.ERROR_INESPERADO, error.get().getMessage());
         assertInstanceOf(IllegalStateException.class, error.get().getCause());
     }
 }

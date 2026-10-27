@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://ws.monster.edu.ec/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.xmlsoap.org/wsdl/" targetNamespace="http://ws.monster.edu.ec/" name="WSEjemplo">
+<types>
+<xsd:schema>
+<xsd:import namespace="http://ws.monster.edu.ec/" schemaLocation="WSEjemplo.xsd"/>
+</xsd:schema>
+</types>
+<message name="eco">
+<part name="parameters" element="tns:eco"/>
+</message>
+<message name="ecoResponse">
+<part name="parameters" element="tns:ecoResponse"/>
+</message>
+<portType name="WSEjemplo">
+<operation name="eco">
+<input wsam:Action="http://ws.monster.edu.ec/WSEjemplo/eco" message="tns:eco"/>
+<output wsam:Action="http://ws.monster.edu.ec/WSEjemplo/ecoResponse" message="tns:ecoResponse"/>
+</operation>
+</portType>
+<binding name="WSEjemploPortBinding" type="tns:WSEjemplo">
+<soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+<operation name="eco">
+<soap:operation soapAction="http://ws.monster.edu.ec/WSEjemplo/eco"/>
+<input>
+<soap:body use="literal"/>
+</input>
+<output>
+<soap:body use="literal"/>
+</output>
+</operation>
+</binding>
+<service name="WSEjemplo">
+<port name="WSEjemploPort" binding="tns:WSEjemploPortBinding">
+<soap:address location="http://localhost:8080/CAMBIAR_CONTEXTO/CAMBIAR_SERVICIO"/>
+</port>
+</service>
+</definitions>
