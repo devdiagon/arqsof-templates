@@ -4,6 +4,8 @@ Reglas para que **cualquier servicio SOAP** del equipo —escrito en Java (JAX-W
 No describe el dominio del servicio (conversión de unidades, ventas, etc.): eso va en `RESUMEN_FUNCIONALIDADES.md`. Aquí solo se define **cómo se ve el SOAP en el cable** y qué hace cada plataforma para producirlo.
 
 > Estado: **verificada** el 2026-10-16 con un servidor Java (Payara/Metro) y un servidor .NET (CoreWCF) que implementan el mismo servicio, y con clientes JAX-WS, clientes generados con `dotnet-svcutil` y un cliente Android armado a mano (ver §6).
+>
+> Revisión 2026-10-26: **R2 fija el TNS en `http://ws.monster.edu.ec/` para todos los servicios SOAP del equipo** (antes era una forma sugerida). La verificación del 2026-10-16 se hizo con otro TNS; los resultados no dependen del valor, pero conviene repetir la prueba de conformidad (§6) al adoptarlo en un proyecto nuevo.
 
 ---
 
@@ -40,9 +42,9 @@ Consecuencias: (1) los dos lenguajes siguen el **mismo** patrón de cliente, as�
 | # | Regla | Por qué |
 |---|---|---|
 | **R1** | **SOAP 1.1 sobre HTTP, estilo `document/literal` con parámetros envueltos (*wrapped*), UTF‑8.** Es el valor por defecto de JAX-WS y de WCF. | Es el estilo que ambos generan y que todas las herramientas de clientes entienden. |
-| **R2** | **Un solo namespace de destino (TNS)** para el servicio, los envoltorios y los tipos. Forma sugerida: `http://<dominio-invertido>/` con barra final. | Evita mezclar namespaces entre tipos y mensajes. |
+| **R2** | **Un solo namespace de destino (TNS)** para el servicio, los envoltorios y los tipos. **El TNS es fijo para todos los servicios SOAP del equipo, de cualquier dominio: `http://ws.monster.edu.ec/`** (con barra final). Se declara en **un único lugar** del código (Java: constante `ConvencionSoap.TNS`; .NET: constante de espacio de nombres) y todo lo demás la referencia. No se elige por proyecto ni se deriva del paquete. | Evita mezclar namespaces entre tipos y mensajes. Un TNS único hace que los clientes, los proxies generados y los mensajes de cualquier servicio del equipo sean uniformes, y que cambiar de dominio no cambie el espacio de nombres. En Java coincide con el que JAX-WS derivaría del paquete `ec.edu.monster.ws`, pero **se declara explícitamente**, porque los tipos viven en otros paquetes (`ws.contrato`) y JAXB derivaría un TNS distinto para ellos. |
 | **R3** | **Todos los elementos van calificados con el TNS** (`elementFormDefault="qualified"`): el envoltorio de la operación, cada parámetro, el elemento de retorno y cada campo de los tipos. Ejemplo: `<ws:login><ws:usuario>…</ws:usuario></ws:login>`. | En .NET (`DataContract`) siempre es así y **no se puede cambiar de forma idiomática**; en Java por defecto es lo contrario (campos sin namespace) y **sí se puede declarar**. Es la regla que más rompe la interoperabilidad. |
-| **R4** | **`SOAPAction` = TNS + `<NombreServicio>` + `/` + `<operación>`**, entre comillas: `"http://ws.ejemplo.edu.ec/MiServicio/login"`. | Es el valor que WCF genera por defecto y **exige**: rechaza la cabecera vacía con HTTP 500 (`ActionNotSupported`). JAX-WS usa `""` por defecto, así que hay que declararlo. Los clientes **siempre la envían**. |
+| **R4** | **`SOAPAction` = TNS + `<NombreServicio>` + `/` + `<operación>`**, entre comillas: `"http://ws.monster.edu.ec/MiServicio/login"`. | Es el valor que WCF genera por defecto y **exige**: rechaza la cabecera vacía con HTTP 500 (`ActionNotSupported`). JAX-WS usa `""` por defecto, así que hay que declararlo. Los clientes **siempre la envían**. |
 | **R5** | **Los nombres son parte del contrato y no derivan del código**: servicio y tipos en PascalCase (`MiServicio`, `RespuestaBase`), operaciones y parámetros en camelCase (`obtenerUnidades`, `unidadOrigen`), un único elemento de retorno llamado `respuesta`. | Los clientes generados y los escritos a mano dependen de ellos. Cambiarlos obliga a regenerar todos los clientes. |
 | **R6** | **Toda operación devuelve un tipo que extiende `RespuestaBase`** con `estado` (`OK`/`ERROR`), `codigo` y `mensaje`; los campos propios de cada operación van después, en orden fijo. Éxito y error usan **el mismo tipo**. | El cliente revisa siempre los mismos tres campos y el WSDL no cambia entre éxito y error. |
 | **R7** | **Datos simples como `string`.** Números con punto decimal y sin notación científica, fechas en ISO‑8601, sin tipos propios de una plataforma (`decimal`, `DateTime`, enumeraciones) en el contrato. Campos opcionales **omitidos** cuando no tienen valor. Las listas son un elemento contenedor con el elemento repetido dentro (`<elementos><elemento>…</elemento></elementos>`) y **llegan vacías, nunca ausentes**, en caso de error. | Evita diferencias de cultura, de precisión y de serialización entre plataformas. |
@@ -73,7 +75,7 @@ Consecuencia práctica de **no** aplicar R3/R4 (medida): un cliente escrito para
 
 ## 3. Recetas para el servidor
 
-Marcadores: `<TNS>` = namespace de destino, `<Servicio>` = nombre del servicio, `<op>` = operación. No hay lógica de dominio aquí: las clases de negocio no cambian.
+Marcadores: `<TNS>` = namespace de destino (siempre `http://ws.monster.edu.ec/`, R2; en el código se escribe una sola vez como constante y el resto la referencia), `<Servicio>` = nombre del servicio, `<op>` = operación. No hay lógica de dominio aquí: las clases de negocio no cambian.
 
 ### 3.1 Java (JAX-WS / JAXB)
 1. **`package-info.java`** en el paquete de los tipos de respuesta (mismo paquete, mismo nombre de carpeta):
@@ -153,7 +155,7 @@ Reglas comunes a todos los clientes:
 ## 7. Aplicarla a otro servicio o dominio
 
 0. Partir de la plantilla de la plataforma: `soap_server_java` (Jakarta EE + JAX-WS) o `soap_server_dotnet` (CoreWCF); ambas llevan una copia de este documento y su servicio/estructura ya cumple la convención.
-1. Elegir **TNS** y **nombre del servicio** (R2, R5).
+1. Elegir el **nombre del servicio** (R5). El **TNS no se elige**: es siempre `http://ws.monster.edu.ec/` (R2).
 2. Definir operaciones y parámetros (todo `string`, R7) y los tipos de respuesta que extienden `RespuestaBase` (R6).
 3. Aplicar la receta de la plataforma (§3). La lógica de negocio va en capas sin dependencias de SOAP.
 4. Publicar el WSDL, **guardar una copia** en el repositorio de los clientes y verificar (§6).
@@ -167,8 +169,8 @@ Contrato: 9 operaciones tras el catálogo ampliado (2026-10-20): `login`, `obten
 
 | Componente | Estado de la convención |
 |---|---|
-| Servidor Java (Payara) | Aplicada (§3.1): `package-info.java` + `targetNamespace` y `action` en cada operación (las 9 del contrato, incluidas `convertirVolumen`, `convertirTiempo` y `convertirArea`) |
-| Clientes Java: consola, escritorio, web | Aplicada (§0.1, §4 a): **proxy generado** con `wsimport` (`jaxws-maven-plugin`) desde la copia del WSDL en `src/main/resources/wsdl`, envuelto por `ClienteConversor`/`ClienteWSConversor` (en las plantillas, `ClienteServicio`/`ClienteWS`); URL completa por `-Dws.url` / `WS_URL` (R9). Ya no hay contrato a mano ni `dto/package-info.java` |
+| Servidor Java (Payara) | Aplicada (§3.1): `package-info.java` + `targetNamespace` y `action` en cada operación. Las 3 operaciones nuevas deben llevar las mismas anotaciones |
+| Clientes Java: consola, escritorio, web | Hoy: contrato JAX-WS **escrito a mano** (§4 b) y `crear()` con URL base + `/WSConversorUnidades` (no cumple R9 frente a .NET). **Planificado:** migrar a proxy generado con `wsimport` (§0.1, §4 a) y `crear(String urlCompleta)`; ver `soap_java/ACTUALIZACION_CATALOGO.md` §2.0 |
 | Cliente móvil Android | Aplicada (§4 c): parámetros con prefijo, `SOAPAction` por operación, URL en `res/values/config.xml`. Se mantiene a mano |
 | Servidor .NET (CoreWCF) | Aplicada con el código idiomático (§3.2), con los mismos textos de login que Java. Única diferencia conocida: números de más de ~28 dígitos |
 | Clientes .NET (consola, WPF, MVC, MAUI) | **Construidos** con proxy generado por `dotnet-svcutil` (§4 a) desde `wsdl/WSConversorUnidades.wsdl`, envuelto por `IClienteConversor`/`ClienteWSConversor`, URL completa en `ConfiguracionServicio` |

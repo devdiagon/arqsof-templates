@@ -6,131 +6,146 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-import ec.edu.monster.dto.RespuestaListaDto;
-import ec.edu.monster.dto.RespuestaLoginDto;
+import ec.edu.monster.dto.RespuestaBaseDto;
 import ec.edu.monster.excepciones.ExcepcionServicio;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.Test;
+import org.w3c.dom.Element;
 
 /** Las respuestas son del formato que devuelven los servidores de esta familia: elementos calificados con el namespace del servicio. */
 public class SoapXmlTest {
 
-    private static final String CAB = "<?xml version='1.0' encoding='UTF-8'?><S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Body>";
-    private static final String PIE = "</S:Body></S:Envelope>";
+    private static final String TNS = ConfiguracionServicio.TNS;
 
-    private static final String LOGIN_OK = CAB
-            + "<ns2:loginResponse xmlns:ns2=\"http://CAMBIAR.namespace/\"><respuesta><estado>OK</estado><codigo>200</codigo>"
-            + "<mensaje>Ingreso realizado correctamente</mensaje><token>99537fe655084389acc1de0e2829f0af</token></respuesta></ns2:loginResponse>" + PIE;
+    private static final String OK = ServidorFalso.sobre(
+            "<ns2:obtenerItemsResponse xmlns:ns2=\"" + TNS + "\"><ns2:respuesta><ns2:estado>OK</ns2:estado>"
+                    + "<ns2:codigo>200</ns2:codigo><ns2:mensaje>Consulta realizada correctamente</ns2:mensaje>"
+                    + "<ns2:cantidad>3</ns2:cantidad><ns2:items><ns2:item>Uno</ns2:item><ns2:item>Dos</ns2:item>"
+                    + "<ns2:item>Tres</ns2:item></ns2:items></ns2:respuesta></ns2:obtenerItemsResponse>");
 
-    private static final String LOGIN_ERROR = CAB
-            + "<ns2:loginResponse xmlns:ns2=\"http://CAMBIAR.namespace/\"><respuesta><estado>ERROR</estado><codigo>AUTH-001</codigo>"
-            + "<mensaje>Usuario o contrasenia incorrectos</mensaje></respuesta></ns2:loginResponse>" + PIE;
+    private static final String ERROR = ServidorFalso.sobre(
+            "<ns2:obtenerItemsResponse xmlns:ns2=\"" + TNS + "\"><ns2:respuesta><ns2:estado>ERROR</ns2:estado>"
+                    + "<ns2:codigo>DATO-001</ns2:codigo><ns2:mensaje>El código es obligatorio</ns2:mensaje>"
+                    + "<ns2:items/></ns2:respuesta></ns2:obtenerItemsResponse>");
 
-    private static final String LISTA_OK = CAB
-            + "<ns2:obtenerItemsResponse xmlns:ns2=\"http://CAMBIAR.namespace/\"><respuesta><estado>OK</estado><codigo>200</codigo>"
-            + "<mensaje>Consulta realizada correctamente</mensaje><elementos><elemento>Uno</elemento><elemento>Dos</elemento>"
-            + "<elemento>Tres</elemento></elementos></respuesta></ns2:obtenerItemsResponse>" + PIE;
+    private static final String FAULT = ServidorFalso.sobre(
+            "<S:Fault><faultcode>S:Server</faultcode><faultstring>Error interno</faultstring></S:Fault>");
 
-    private static final String LISTA_ERROR = CAB
-            + "<ns2:obtenerItemsResponse xmlns:ns2=\"http://CAMBIAR.namespace/\"><respuesta><estado>ERROR</estado><codigo>AUTH-002</codigo>"
-            + "<mensaje>Token invalido, acceso no autorizado</mensaje><elementos/></respuesta></ns2:obtenerItemsResponse>" + PIE;
-
-    private static final String FAULT = CAB
-            + "<S:Fault xmlns:ns4=\"http://www.w3.org/2003/05/soap-envelope\"><faultcode>S:Server</faultcode>"
-            + "<faultstring>java.lang.NullPointerException</faultstring></S:Fault>" + PIE;
-
-    @Test
-    public void loginCorrectoTraeElToken() {
-        RespuestaLoginDto r = SoapXml.leerLogin(LOGIN_OK);
-        assertTrue(r.esOk());
-        assertEquals("200", r.getCodigo());
-        assertEquals("99537fe655084389acc1de0e2829f0af", r.getToken());
+    private static RespuestaBaseDto base(String xml) {
+        RespuestaBaseDto dto = new RespuestaBaseDto();
+        SoapXml.llenarBase(dto, SoapXml.extraerRespuesta(xml));
+        return dto;
     }
 
     @Test
-    public void loginConErrorNoTraeToken() {
-        RespuestaLoginDto r = SoapXml.leerLogin(LOGIN_ERROR);
-        assertFalse(r.esOk());
-        assertEquals("AUTH-001", r.getCodigo());
-        assertEquals("Usuario o contrasenia incorrectos", r.getMensaje());
-        assertNull(r.getToken());
+    public void respuestaOkTraeEstadoCodigoYMensaje() {
+        RespuestaBaseDto dto = base(OK);
+
+        assertTrue(dto.esOk());
+        assertEquals("200", dto.getCodigo());
+        assertEquals("Consulta realizada correctamente", dto.getMensaje());
+    }
+
+    @Test
+    public void respuestaConErrorDeNegocioNoEsOkYConservaSuCodigo() {
+        RespuestaBaseDto dto = base(ERROR);
+
+        assertFalse(dto.esOk());
+        assertEquals("DATO-001", dto.getCodigo());
+        assertEquals("El código es obligatorio", dto.getMensaje());
+    }
+
+    @Test
+    public void textoLeeUnCampoPropioYDevuelveNuloSiFalta() {
+        Element r = SoapXml.extraerRespuesta(OK);
+
+        assertEquals("3", SoapXml.texto(r, "cantidad"));
+        assertNull(SoapXml.texto(r, "noExiste"));
     }
 
     @Test
     public void listaTraeLosElementosEnOrden() {
-        RespuestaListaDto r = SoapXml.leerLista(LISTA_OK);
-        assertTrue(r.esOk());
-        assertEquals(Arrays.asList("Uno", "Dos", "Tres"), r.getElementos());
+        Element r = SoapXml.extraerRespuesta(OK);
+
+        assertEquals(Arrays.asList("Uno", "Dos", "Tres"), SoapXml.lista(r, "items", "item"));
     }
 
     @Test
-    public void listaConErrorLlegaVaciaYNoNula() {
-        RespuestaListaDto r = SoapXml.leerLista(LISTA_ERROR);
-        assertEquals("AUTH-002", r.getCodigo());
-        assertTrue(r.getElementos().isEmpty());
+    public void listaVaciaOAusenteLlegaVaciaYNoNula() {
+        assertEquals(Collections.emptyList(), SoapXml.lista(SoapXml.extraerRespuesta(ERROR), "items", "item"));
+        assertEquals(Collections.emptyList(), SoapXml.lista(SoapXml.extraerRespuesta(OK), "otraLista", "item"));
     }
 
     @Test
     public void leeIgualConOtroPrefijoDeNamespace() {
-        assertEquals("99537fe655084389acc1de0e2829f0af", SoapXml.leerLogin(LOGIN_OK.replace("ns2", "zz")).getToken());
+        String xml = OK.replace("ns2:", "otro:").replace("xmlns:ns2", "xmlns:otro");
+
+        assertTrue(base(xml).esOk());
     }
 
     @Test
     public void leeUnaRespuestaConCamposCalificadosEnNamespacePorDefecto() {
-        // Forma tipica de un servidor .NET (DataContract): todo en el namespace del servicio, sin prefijos.
-        String xml = CAB + "<loginResponse xmlns=\"http://CAMBIAR.namespace/\"><respuesta><estado>OK</estado><codigo>200</codigo>"
-                + "<mensaje>ok</mensaje><token>T9</token></respuesta></loginResponse>" + PIE;
-        RespuestaLoginDto r = SoapXml.leerLogin(xml);
-        assertTrue(r.esOk());
-        assertEquals("T9", r.getToken());
+        String xml = ServidorFalso.sobre("<obtenerItemsResponse xmlns=\"" + TNS + "\"><respuesta><estado>OK</estado>"
+                + "<codigo>200</codigo><mensaje>ok</mensaje></respuesta></obtenerItemsResponse>");
+
+        assertTrue(base(xml).esOk());
     }
 
     @Test
     public void laSoapActionEsLaUriDeLaOperacionEntreComillas() {
-        assertEquals("\"http://CAMBIAR.namespace/WSServicio/login\"",
-                SoapXml.accionSoap("http://CAMBIAR.namespace/", "WSServicio", "login"));
+        assertEquals("\"http://ws.monster.edu.ec/ServicioReporte/obtenerMovimientos\"",
+                SoapXml.accionSoap(TNS, "ServicioReporte", "obtenerMovimientos"));
     }
 
     @Test
     public void faultEsFalloDeComunicacion() {
-        ExcepcionServicio e = assertThrows(ExcepcionServicio.class, () -> SoapXml.leerLogin(FAULT));
+        ExcepcionServicio e = assertThrows(ExcepcionServicio.class, () -> SoapXml.extraerRespuesta(FAULT));
+
         assertEquals(ExcepcionServicio.RED, e.getCodigo());
-        assertFalse(e.getMessage().contains("NullPointer"));
+        assertEquals(ExcepcionServicio.MENSAJE_RED, e.getMessage());
     }
 
     @Test
-    public void cuerpoVacioOInvalidoEsFalloDeComunicacion() {
-        assertEquals(ExcepcionServicio.RED, assertThrows(ExcepcionServicio.class, () -> SoapXml.leerLista("")).getCodigo());
-        assertEquals(ExcepcionServicio.RED, assertThrows(ExcepcionServicio.class, () -> SoapXml.leerLista("<html>502")).getCodigo());
-        assertEquals(ExcepcionServicio.RED, assertThrows(ExcepcionServicio.class, () -> SoapXml.leerLista(CAB + PIE)).getCodigo());
+    public void cuerpoVacioOInvalidoEsRespuestaIlegible() {
+        for (String xml : new String[] {null, "", "   ", "<html>no es soap", "texto plano"}) {
+            ExcepcionServicio e = assertThrows(ExcepcionServicio.class, () -> SoapXml.extraerRespuesta(xml));
+            assertEquals(ExcepcionServicio.SRV_000, e.getCodigo());
+            assertEquals(ExcepcionServicio.MENSAJE_SRV_000, e.getMessage());
+        }
+    }
+
+    @Test
+    public void unSobreSinElElementoRespuestaEsRespuestaIlegible() {
+        String sinRespuesta = ServidorFalso.sobre("<ns2:opResponse xmlns:ns2=\"" + TNS + "\"><otro/></ns2:opResponse>");
+
+        assertEquals(ExcepcionServicio.SRV_000,
+                assertThrows(ExcepcionServicio.class, () -> SoapXml.extraerRespuesta(sinRespuesta)).getCodigo());
     }
 
     @Test
     public void peticionRespetaElOrdenYCalificaLosParametros() {
         Map<String, String> p = new LinkedHashMap<>();
-        p.put("usuario", "admin");
-        p.put("contrasenia", "clave");
-        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                + "<S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Body>"
-                + "<ns:login xmlns:ns=\"http://CAMBIAR.namespace/\"><ns:usuario>admin</ns:usuario><ns:contrasenia>clave</ns:contrasenia></ns:login>"
-                + "</S:Body></S:Envelope>", SoapXml.construirPeticion("http://CAMBIAR.namespace/", "login", p));
+        p.put("cuentaOrigen", "00100001");
+        p.put("importe", "100.50");
+
+        String xml = SoapXml.construirPeticion(TNS, "realizarRetiro", p);
+
+        assertTrue(xml.contains("<ns:realizarRetiro xmlns:ns=\"" + TNS + "\">"));
+        assertTrue(xml.indexOf("<ns:cuentaOrigen>00100001</ns:cuentaOrigen>") < xml.indexOf("<ns:importe>100.50</ns:importe>"));
     }
 
     @Test
-    public void peticionUsaElNamespaceIndicado() {
-        String xml = SoapXml.construirPeticion("http://ws.otro.dominio/", "operacion", new LinkedHashMap<String, String>());
-        assertTrue(xml.contains("<ns:operacion xmlns:ns=\"http://ws.otro.dominio/\"></ns:operacion>"));
+    public void parametrosConservaElOrdenDeLosPares() {
+        assertEquals(Arrays.asList("b", "a"), Arrays.asList(SoapXml.parametros("b", "1", "a", "2").keySet().toArray()));
     }
 
     @Test
     public void peticionEscapaCaracteresReservadosYConservaTildes() {
-        Map<String, String> p = new LinkedHashMap<>();
-        p.put("contrasenia", "a&b<c>\"d'");
-        p.put("nombre", "Kilómetro");
-        String xml = SoapXml.construirPeticion("http://CAMBIAR.namespace/", "login", p);
-        assertTrue(xml.contains("<ns:contrasenia>a&amp;b&lt;c&gt;&quot;d&apos;</ns:contrasenia>"));
-        assertTrue(xml.contains("<ns:nombre>Kilómetro</ns:nombre>"));
+        String xml = SoapXml.construirPeticion(TNS, "op", SoapXml.parametros("texto", "a<b & \"c\" ñandú"));
+
+        assertTrue(xml.contains("<ns:texto>a&lt;b &amp; &quot;c&quot; ñandú</ns:texto>"));
     }
 }

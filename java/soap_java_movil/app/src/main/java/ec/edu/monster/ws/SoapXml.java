@@ -1,11 +1,11 @@
 package ec.edu.monster.ws;
 
 import ec.edu.monster.dto.RespuestaBaseDto;
-import ec.edu.monster.dto.RespuestaListaDto;
-import ec.edu.monster.dto.RespuestaLoginDto;
 import ec.edu.monster.excepciones.ExcepcionServicio;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
@@ -19,29 +19,36 @@ import org.w3c.dom.NodeList;
  * Armado de peticiones SOAP 1.1 y lectura de respuestas. Funciones puras (sin android.*), por lo que se
  * prueban con JUnit local. Los elementos se leen por nombre local, ignorando prefijos de namespace.
  *
- * Convencion de respuesta que asume (la de los servidores de esta familia): dentro del Body viene
+ * Convención de respuesta que asume (la de los servidores de esta familia): dentro del Body viene
  * &lt;{operacion}Response&gt; con un hijo &lt;respuesta&gt; que contiene estado, codigo, mensaje y los datos de la
- * operacion. Si otro servidor usa otra forma, cambiar ELEMENTO_RESPUESTA o extraerRespuesta.
+ * operación. Un Fault es un fallo de comunicación ({@code RED}); un cuerpo vacío, un XML inválido o una respuesta sin
+ * el elemento esperado son una respuesta ilegible ({@code SRV-000}).
  *
  * @author: Frederick Tipán
  */
 public final class SoapXml {
 
-    /** Nombre del elemento que envuelve la respuesta de cada operacion. */
+    /** Nombre del elemento que envuelve la respuesta de cada operación. */
     public static final String ELEMENTO_RESPUESTA = "respuesta";
-
-    private static final String MENSAJE_RED = "No fue posible comunicarse con el servidor";
-    private static final String MENSAJE_INESPERADA = "Respuesta inesperada del servidor";
 
     private SoapXml() {
     }
 
-    // ------------------------------------------------------------------ peticion
+    // ------------------------------------------------------------------ petición
+
+    /** Pares clave/valor en el orden en que el servidor espera los parámetros: {@code parametros("a", x, "b", y)}. */
+    public static Map<String, String> parametros(String... paresClaveValor) {
+        Map<String, String> mapa = new LinkedHashMap<>();
+        for (int i = 0; i + 1 < paresClaveValor.length; i += 2) {
+            mapa.put(paresClaveValor[i], paresClaveValor[i + 1]);
+        }
+        return mapa;
+    }
 
     /**
-     * Arma el sobre de una operacion; los parametros salen en el orden del mapa y con el texto escapado.
-     * Operacion y parametros van CALIFICADOS con el namespace del servicio (prefijo ns): lo exige la convencion
-     * (CONVENCION_SOAP.md, R3) y lo esperan por igual los servidores Java y .NET.
+     * Arma el sobre de una operación; los parámetros salen en el orden del mapa y con el texto escapado.
+     * Operación y parámetros van CALIFICADOS con el namespace del servicio (prefijo ns): lo exige la convención
+     * (docs/CONVENCION_SOAP.md, R3) y lo esperan por igual los servidores Java y .NET.
      */
     public static String construirPeticion(String namespace, String operacion, Map<String, String> parametros) {
         StringBuilder sb = new StringBuilder();
@@ -58,53 +65,34 @@ public final class SoapXml {
     }
 
     /**
-     * Valor de la cabecera SOAPAction de una operacion: la URI {@code namespace + servicio + "/" + operacion}, entre
-     * comillas (convencion R4). Un servidor .NET rechaza la cabecera vacia con HTTP 500 (ActionNotSupported).
+     * Valor de la cabecera SOAPAction de una operación: la URI {@code namespace + servicio + "/" + operacion}, entre
+     * comillas (R4). Un servidor .NET rechaza la cabecera vacía con HTTP 500 (ActionNotSupported).
      */
     public static String accionSoap(String namespace, String servicio, String operacion) {
         return "\"" + namespace + servicio + "/" + operacion + "\"";
     }
 
-    // ------------------------------------------------------------------ respuestas listas para usar
-
-    public static RespuestaLoginDto leerLogin(String xml) {
-        Element r = extraerRespuesta(xml);
-        RespuestaLoginDto dto = new RespuestaLoginDto();
-        llenarBase(dto, r);
-        dto.setToken(texto(r, "token"));
-        return dto;
-    }
-
-    /** Respuesta con una lista: &lt;elementos&gt;&lt;elemento&gt;..&lt;/elemento&gt;...&lt;/elementos&gt;. */
-    public static RespuestaListaDto leerLista(String xml) {
-        Element r = extraerRespuesta(xml);
-        RespuestaListaDto dto = new RespuestaListaDto();
-        llenarBase(dto, r);
-        dto.getElementos().addAll(lista(r, "elementos", "elemento"));
-        return dto;
-    }
-
-    // ------------------------------------------------------------------ bloques para respuestas del dominio
+    // ------------------------------------------------------------------ lectura de respuestas
 
     /**
-     * Devuelve el elemento "respuesta" de la operacion. Un S:Fault, un cuerpo vacio o un XML invalido son fallos
-     * de comunicacion (RED), no errores de negocio.
+     * Devuelve el elemento "respuesta" de la operación. Un S:Fault es un fallo de comunicación ({@code RED}); un cuerpo
+     * vacío, un XML inválido o una respuesta sin el elemento esperado son ilegibles ({@code SRV-000}).
      */
     public static Element extraerRespuesta(String xml) {
         Document doc = parsear(xml);
         Element cuerpo = hijo(doc.getDocumentElement(), "Body");
-        if (cuerpo == null || hijo(cuerpo, "Fault") != null) {
-            throw new ExcepcionServicio(ExcepcionServicio.RED, MENSAJE_RED);
+        if (cuerpo != null && hijo(cuerpo, "Fault") != null) {
+            throw new ExcepcionServicio(ExcepcionServicio.RED, ExcepcionServicio.MENSAJE_RED);
         }
-        Element operacion = primerElemento(cuerpo);
+        Element operacion = cuerpo == null ? null : primerElemento(cuerpo);
         Element respuesta = operacion == null ? null : hijo(operacion, ELEMENTO_RESPUESTA);
         if (respuesta == null) {
-            throw new ExcepcionServicio(ExcepcionServicio.RED, MENSAJE_INESPERADA);
+            throw new ExcepcionServicio(ExcepcionServicio.SRV_000, ExcepcionServicio.MENSAJE_SRV_000);
         }
         return respuesta;
     }
 
-    /** Copia estado, codigo y mensaje de la respuesta al DTO. */
+    /** Copia estado, código y mensaje de la respuesta al DTO. */
     public static void llenarBase(RespuestaBaseDto dto, Element respuesta) {
         dto.setEstado(texto(respuesta, "estado"));
         dto.setCodigo(texto(respuesta, "codigo"));
@@ -129,9 +117,9 @@ public final class SoapXml {
         return null;
     }
 
-    /** Textos de los hijos "item" dentro del hijo "contenedor"; lista vacia si el contenedor falta o viene vacio. */
+    /** Textos de los hijos "item" dentro del hijo "contenedor"; lista vacía si el contenedor falta o viene vacío. */
     public static List<String> lista(Element padre, String contenedor, String item) {
-        List<String> valores = new java.util.ArrayList<>();
+        List<String> valores = new ArrayList<>();
         Element c = hijo(padre, contenedor);
         if (c != null) {
             NodeList hijos = c.getChildNodes();
@@ -147,7 +135,7 @@ public final class SoapXml {
 
     // ------------------------------------------------------------------ internos
 
-    /** Escapa los cinco caracteres reservados de XML y descarta los caracteres de control no validos. */
+    /** Escapa los cinco caracteres reservados de XML y descarta los caracteres de control no válidos. */
     static String escapar(String s) {
         if (s == null) {
             return "";
@@ -172,7 +160,7 @@ public final class SoapXml {
 
     private static Document parsear(String xml) {
         if (xml == null || xml.trim().isEmpty()) {
-            throw new ExcepcionServicio(ExcepcionServicio.RED, MENSAJE_RED);
+            throw new ExcepcionServicio(ExcepcionServicio.SRV_000, ExcepcionServicio.MENSAJE_SRV_000);
         }
         try {
             DocumentBuilderFactory fabrica = DocumentBuilderFactory.newInstance();
@@ -181,12 +169,12 @@ public final class SoapXml {
                 // Evita entidades externas; algunas plataformas no soportan la propiedad.
                 fabrica.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             } catch (Exception ignorada) {
-                // sin proteccion adicional en esa plataforma
+                // sin protección adicional en esa plataforma
             }
             DocumentBuilder constructor = fabrica.newDocumentBuilder();
             return constructor.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
-            throw new ExcepcionServicio(ExcepcionServicio.RED, MENSAJE_INESPERADA, e);
+            throw new ExcepcionServicio(ExcepcionServicio.SRV_000, ExcepcionServicio.MENSAJE_SRV_000, e);
         }
     }
 

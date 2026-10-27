@@ -1,19 +1,23 @@
 # Plantilla: cliente móvil Android (Java) para servicios SOAP
 
-Base reutilizable para construir el cliente móvil de **cualquier sistema** cuyo servidor exponga un servicio **SOAP**
-(JAX-WS) con el esquema de respuesta de esta familia de proyectos. Contiene lo que **todo** cliente necesita y deja
-claramente marcado lo que cambia con el **dominio**.
+Base reutilizable para construir el cliente móvil de **cualquier sistema** cuyo servidor exponga servicios **SOAP**
+(JAX-WS) con el esquema de respuesta de esta familia de proyectos. Trae el transporte SOAP armado a mano, los tipos comunes,
+la verificación de la envoltura, el molde de los controladores (`ViewModel` + `LiveData`) y los estilos, y deja marcado lo que cambia con el **dominio**.
+No incluye inicio de sesión ni pantallas de dominio: se construyen con la receta de §4.
 
-- **Lenguaje:** Java (sin Kotlin ni Compose). **Vistas:** XML + ViewBinding. **Arquitectura:** MVC con `ViewModel` y `LiveData`.
-- **Transporte:** SOAP 1.1 armado a mano sobre `HttpURLConnection` (Android no incluye JAX-WS). Sin librerías de terceros.
+Sigue `ARQUITECTURA_CLIENTE.md` (v1) y `ESPECIFICACION_CLIENTES.md`. Si este README y esa arquitectura discrepan, **prevalece la arquitectura**.
+
+- **Lenguaje:** Java (sin Kotlin ni Compose), compilación Java 11. **Vistas:** XML + ViewBinding. **Arquitectura:** capas con `ViewModel` y `LiveData`, sin frameworks.
+- **Transporte:** SOAP 1.1 armado a mano sobre `HttpURLConnection` (Android no incluye JAX-WS, así que no hay proxy generado ni `ws.generado`). `ws/ClienteSoapHttp` envía,
+  `ws/SoapXml` arma el sobre y lee la respuesta, `ws/TraductorRed` traduce los fallos de red a `RED` y `ws/ConfiguracionServicio` fija el TNS y los timeouts. Sin librerías de terceros.
 - **Estilo:** `docs/CLIENT_STYLES_JAVA.md` (paleta oscura/clara, tipografía, medidas, componentes).
-- **Convención SOAP:** sigue `CONVENCION_SOAP.md` (copia en esta carpeta): así lo entiende un servidor Java o .NET que la cumpla.
-- **Verificada:** `./gradlew testDebugUnitTest` → BUILD SUCCESSFUL, **36 pruebas JUnit en verde**, entre ellas 5 de **conformidad** con la convención (`ConvencionClienteTest`,
-  contra un servidor HTTP mínimo local: operación y parámetros calificados, SOAPAction con URI, URL completa sin alterar, respuesta entendida con prefijo o con namespace por defecto).
-  `assembleDebug` y `lintDebug` **no se repitieron** tras adaptar la plantilla a la convención. Antes de adaptarla, el transporte y el parser se comprobaron en el emulador contra un servidor real (y en teléfono real);
-  tras la adaptación **no se ha repetido** contra un servidor real. **No se ha ejecutado:** una operación de dominio distinta del login.
+- **Convención SOAP:** sigue `docs/CONVENCION_SOAP.md` (TNS fijo `http://ws.monster.edu.ec/`, R2; sobre a mano: §4 c). Pruebas: `docs/CONVENCION_PRUEBAS.md`.
+- **Autenticación:** **fuera de la plantilla base.** Todo proyecto define su login y su sesión (en `modelo`). La plantilla deja el punto de enganche: `InicioActivity` (pantalla inicial, es la de entrada)
+  y `LoginActivity`, una pantalla de acceso **pasiva** (sin controlador) lista para usar.
+- **Verificada:** `./gradlew testDebugUnitTest lintDebug assembleDebug` → BUILD SUCCESSFUL, **43 pruebas JUnit en verde** (molde de controlador, verificación de la envoltura, traducción de red y de respuesta ilegible,
+  lectura y armado del XML y 6 de conformidad de ejemplo contra un servidor HTTP falso local) y lint sin avisos. **No se ha ejecutado:** la app en el emulador o en un teléfono, ni contra un servidor real del dominio.
 
-> Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `PROJECT.md` **de ese proyecto** (estado real,
+> Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `docs/PROJECT.md` **de ese proyecto** (estado real,
 > decisiones, pendientes) y usa este README solo como guía de la estructura y de las recetas.
 
 ---
@@ -28,86 +32,98 @@ claramente marcado lo que cambia con el **dominio**.
    | Qué | Dónde | Valor de la plantilla |
    |---|---|---|
    | Nombre del proyecto | `settings.gradle.kts` → `rootProject.name` | `ClienteSoapMovil` |
-   | Nombre visible y título del login | `res/values/strings.xml` → `app_name` | `Cliente SOAP` |
+   | Nombre visible | `res/values/strings.xml` → `app_name` y `vista/Textos.NOMBRE_APLICACION` (deben coincidir) | `Cliente SOAP` |
    | Tema | `res/values/themes.xml` y `AndroidManifest.xml` | `Theme.ClienteSoap` |
    | Paquete / `applicationId` | `app/build.gradle.kts` (`namespace`, `applicationId`) | `ec.edu.monster` (la convención: **no cambiarlo**) |
 
-4. **Configurar el servidor:** la **URL completa del servicio** (host, puerto y ruta, sin `?wsdl`) en `app/src/main/res/values/config.xml` (`url_servicio`; una sola línea decide a qué servidor
-   se conecta la app), y en `app/src/main/java/ec/edu/monster/ws/ConfiguracionServicio.java` el `NAMESPACE` (`targetNamespace` del WSDL) y el `NOMBRE_SERVICIO` (`<wsdl:service name>`). Ver §8.
+4. **Configurar el servidor:** la **URL completa de cada servicio** (host, puerto y ruta, sin `?wsdl`) en `app/src/main/res/values/config.xml` (`url_servicio`; una línea por servicio si el servidor publica varios:
+   cada uno con su URL completa, R9). El TNS es fijo y ya está en `ws/ConfiguracionServicio`; el nombre de cada servicio (`<wsdl:service name>`) lo recibe su `XClienteWS` (§4, paso 2). Ver §8.
 5. **Permitir el host** si es HTTP sin cifrar: `app/src/main/res/xml/network_security_config.xml` (ver §6).
-6. **Crear `PROJECT.md`** a partir de `PROJECT.md` de esta carpeta (esqueleto) y mantenerlo al día.
-7. **Probar el servidor con `curl`** antes de tocar la app (ver el ejemplo de §7) y luego ejecutar en emulador: el login debe funcionar tal cual.
+6. **Crear `docs/PROJECT.md`** a partir de `docs/PROJECT.md` de esta carpeta (esqueleto) y mantenerlo al día. Retirar los ejemplos de conformidad (`ConvencionClienteTest`; las pruebas automáticas de conformidad están fuera de alcance, `docs/CONVENCION_PRUEBAS.md` §8).
+7. **Probar el servidor con `curl`** antes de tocar la app (ver el ejemplo de §7) y luego ejecutar en emulador.
 
 ## 2. Qué es compartido y qué se adapta
 
 | Parte | Archivos | ¿Se toca? |
 |---|---|---|
-| **Login (compartido)** | `vista/LoginActivity`, `controlador/LoginControlador`, `servicio/ServicioAutenticacion`, `dto/RespuestaLoginDto`, `res/layout/activity_login.xml` | Solo `INICIO` en `LoginActivity` (pantalla de destino) y, si el servidor difiere, la operación `login` |
-| **Núcleo de servicios** | `servicio/ServicioBase` (sesión, `token()`, `verificar(...)`) | No; los servicios del dominio la extienden |
-| **Sesión y errores** | `modelo/Sesion`, `excepciones/ExcepcionServicio` | No |
-| **Transporte SOAP** | `ws/SoapXml`, `ws/ClienteSoapHttp`, `ws/ConfiguracionServicio`, `res/values/config.xml` | `config.xml` y `ConfiguracionServicio` siempre; `ClienteSoapHttp` y `ContratoWS` para **agregar operaciones** |
-| **DTO base** | `dto/RespuestaBaseDto`, `RespuestaListaDto` | Se agregan DTO del dominio al lado |
-| **Composición** | `AplicacionCliente`, `controlador/FabricaControladores`, `vista/Navegacion` | Se agregan servicios/controladores del dominio |
+| **Núcleo de servicios** | `servicios/ServicioBase` (verifica la envoltura: no OK → `ExcepcionServicio`; nula → `SRV-000`) | No; los servicios del dominio la extienden |
+| **Errores** | `excepciones/ExcepcionServicio` (códigos propios `RED` y `SRV-000`) | No |
+| **Transporte SOAP** | `ws/ClienteSoapHttp`, `ws/SoapXml`, `ws/TraductorRed`, `ws/ConfiguracionServicio`, `res/values/config.xml` | `config.xml` siempre (URL); el resto no |
+| **DTO base** | `dto/RespuestaBaseDto` (POJO sin anotaciones) | Se agregan DTO del dominio al lado |
+| **Molde de controlador** | `controlador/ControladorBase` (`ejecutar`: segundo plano, estado «ocupado», segunda acción ignorada, error como mensaje; `rechazar`: validación) | No; los controladores del dominio la extienden |
+| **Composición** | `AplicacionCliente`, `controlador/FabricaControladores` | Se agregan clientes, servicios y controladores del dominio |
 | **Estilos** | `res/values/{colors,styles,themes}.xml`, `res/color/`, `res/drawable/`, `docs/CLIENT_STYLES_JAVA.md` | Colores solo si se cambia de presentación; **no** se repiten valores en los layouts |
-| **Pantalla de ejemplo (dominio)** | `vista/InicioActivity`, `controlador/InicioControlador`, `activity_inicio.xml`, textos `inicio_*` | **Se reemplaza** por las pantallas del dominio |
-| **Dominio (vacío)** | — | Nuevos `dto/`, `servicio/`, `controlador/`, `vista/`, layouts y textos |
+| **Textos** | `vista/Textos` | `NOMBRE_APLICACION` y los textos del dominio |
+| **Punto de enganche** | `vista/InicioActivity` + `activity_inicio.xml` (pantalla inicial de ejemplo), `vista/LoginActivity` + `activity_login.xml` (pasiva, sin controlador) | Se reemplazan/usan según el proyecto |
+| **Dominio (vacío)** | `modelo/`, `controlador/` | Nuevos `dto/`, `servicios/`, `controlador/`, `vista/`, interfaz `XCliente` e implementación `XClienteWS` en `ws/`, layouts |
 
-Las zonas a adaptar están marcadas con el comentario **`DOMINIO:`** en el código (`grep -rn "DOMINIO" app/src`).
+Las zonas a adaptar están marcadas con **`DOMINIO`** o **`TODO`** en el código (`grep -rn "DOMINIO\|TODO" app/src`).
 
 ## 3. Estructura
 
 ```
 app/src/main/java/ec/edu/monster/
-├── AplicacionCliente.java      punto de composición (Sesion, contrato SOAP, servicios, fábrica)
-├── modelo/        Sesion                                  entidades: solo atributos, sin lógica
-├── excepciones/   ExcepcionServicio                       código + mensaje; exigeLogin()
-├── dto/           RespuestaBaseDto, RespuestaLoginDto, RespuestaListaDto    POJOs, sin anotaciones
-├── ws/            ConfiguracionServicio, ContratoWS, ClienteSoapHttp, SoapXml
-├── servicio/      ServicioBase, ServicioAutenticacion     única capa que conoce ws y dto
-├── controlador/   LoginControlador, InicioControlador, FabricaControladores    ViewModel
-└── vista/         LoginActivity, InicioActivity, Navegacion
+├── AplicacionCliente.java      punto de composición (clientes SOAP, servicios, fábrica)
+├── modelo/                     datos propios del cliente (p. ej. la sesión, si el proyecto tiene login)
+├── excepciones/   ExcepcionServicio
+├── dto/           RespuestaBaseDto                 POJOs sin anotaciones
+├── servicios/     ServicioBase                     única capa que conoce la interfaz del cliente y los dto
+├── ws/            ConfiguracionServicio, TraductorRed, ClienteSoapHttp, SoapXml      + XCliente / XClienteWS por proyecto
+├── controlador/   ControladorBase, FabricaControladores        + un controlador (ViewModel) por pantalla
+└── vista/         Textos, InicioActivity, LoginActivity        + una Activity por pantalla
+app/src/main/res/                       layouts, estilos (values, color, drawable), config.xml (URL), network_security_config.xml
 app/src/test/java/ec/edu/monster/       JUnit 4 local (sin emulador ni servidor), misma estructura
+docs/                                   CLIENT_STYLES_JAVA, CONVENCION_SOAP, CONVENCION_PRUEBAS, PROJECT
 ```
 
-Dependencias permitidas: `vista → controlador → servicio → ws/dto`; `modelo` y `excepciones` no dependen de nadie.
-**La vista nunca importa `ws` ni `dto`.** Si el WSDL cambia solo se tocan `ws`, `dto` y `servicio`.
+Dependencias: `vista → controlador → servicios → ws | dto`; `modelo`, `dto` y `excepciones` son transversales.
+**La vista nunca importa `ws`.** Solo `XClienteWS` conoce `ClienteSoapHttp`, `SoapXml` y el protocolo; `servicios` ve únicamente la interfaz `XCliente`.
+Si el WSDL cambia solo se tocan `ws`, `dto` y, si cambia un parámetro, `servicios`.
 
 ## 4. Receta: agregar una operación SOAP y su pantalla
 
-Ejemplo: operación `obtenerItems(token)` que devuelve una lista. Se sigue **siempre el mismo orden**, de abajo hacia arriba:
+Siempre en este orden, de abajo hacia arriba. Ejemplo: `obtenerItems(codigo)` del servicio `XServicio`, que devuelve una lista.
 
-1. **Contrato** — `ws/ContratoWS.java`: `RespuestaListaDto obtenerItems(String token);`
-2. **Transporte** — `ws/ClienteSoapHttp.java` (tres líneas; los nombres de parámetro son los del servidor y van **en su orden**; `SoapXml` los califica con el namespace
-   y `enviar` agrega la SOAPAction de la operación, no hay que hacerlo a mano):
+1. **Contrato** — copiar el WSDL del servidor y su `.xsd` a `app/src/main/resources/wsdl/` **solo como referencia** (no se genera nada: Android no tiene `wsimport`). De él salen el nombre del servicio,
+   los nombres de operación y de parámetro (**en su orden**) y los campos de cada respuesta.
+2. **Interfaz y envoltorio** — `ws/XCliente.java` (una operación por cada una que use el cliente, con los mismos nombres del servidor y DTO propios como retorno) y `ws/XClienteWS.java`, que arma la
+   petición con `ClienteSoapHttp` y copia la respuesta al DTO leyendo por nombre local con `SoapXml`:
    ```java
-   @Override
-   public RespuestaListaDto obtenerItems(String token) {
-       return SoapXml.leerLista(enviar("obtenerItems", parametros("token", token)));
+   public class XClienteWS implements XCliente {
+       private final ClienteSoapHttp soap;
+       public XClienteWS(String urlServicio) { soap = new ClienteSoapHttp(urlServicio, "XServicio"); }
+
+       @Override public RespuestaItemsDto obtenerItems(String codigo) {
+           Element r = soap.enviar("obtenerItems", SoapXml.parametros("codigo", codigo));
+           RespuestaItemsDto dto = new RespuestaItemsDto();
+           SoapXml.llenarBase(dto, r);
+           dto.setItems(SoapXml.lista(r, "items", "item"));      // listas: llegan vacías, nunca ausentes
+           return dto;
+       }
    }
    ```
-3. **DTO** (si la respuesta no es login ni lista) — clase `…Dto` que extienda `RespuestaBaseDto` y un método `leerXxx(xml)` en `SoapXml` que use los bloques
-   `extraerRespuesta`, `llenarBase`, `texto`, `hijo` y `lista`.
-4. **Servicio** — `servicio/ServicioItems extends ServicioBase`:
-   ```java
-   public List<String> items() {
-       return verificar(ws.obtenerItems(token())).getElementos();   // token() lanza AUTH-002 si no hay sesión
-   }
-   ```
-   Se crea en `AplicacionCliente` (`new ServicioItems(ws, sesion)`) y se pasa a la fábrica. Aquí van las reglas **del cliente** (campo vacío, formato);
-   las reglas del dominio las decide el servidor y el cliente muestra su `mensaje`.
-5. **Controlador** — copiar `LoginControlador` como molde: `Estado` inmutable (`cargando`, datos, `mensaje`, `sesionExpirada`), `LiveData`, `Executor` inyectado,
-   `catch (ExcepcionServicio e)` → `e.getMessage()` y `e.exigeLogin()` → `sesionExpirada`. Registrarlo en `FabricaControladores.create(...)`.
-6. **Pantalla** — layout con los estilos (§5), `Activity` que pide su controlador a la fábrica, observa el estado y delega eventos. Si `estado.sesionExpirada` →
-   `Navegacion.irALogin(this, estado.mensaje)`. Declarar la `Activity` en `AndroidManifest.xml` (`exported="false"`) y los textos en `strings.xml`.
-7. **Pruebas** — doble en `src/test/.../ws/ContratoFalso` (agregar la operación), pruebas del servicio y del controlador, y de `SoapXml` con **el XML real** del servidor.
-   Por cada operación nueva, repetir el patrón de `ws/ConvencionClienteTest` (parámetros calificados, SOAPAction y respuesta entendida).
+   `enviar` ya califica operación y parámetros con el TNS (R3), envía la `SOAPAction` con URI (R4), usa la URL completa tal cual (R9) y traduce red/Fault a `RED` y respuesta ilegible a `SRV-000`.
+   Se crea en `AplicacionCliente`: `new XClienteWS(getString(R.string.url_servicio))`.
+3. **DTO propio** — `…Dto` en `dto` que extienda `RespuestaBaseDto`; POJO con los campos de la respuesta. **Todos los campos son texto.**
+4. **Servicio** — `servicios/XServicio extends ServicioBase`: valida lo trivial (campos vacíos), convierte los datos al formato del contrato (coma decimal → punto) y llama:
+   `return verificar(cliente.obtenerItems(codigo));`. Las reglas del dominio las decide el servidor; el cliente muestra su `mensaje`. Se crea en `AplicacionCliente` y se pasa a la fábrica.
+5. **Controlador** — `XControlador extends ControladorBase<Datos>` (los datos de la pantalla: lo escrito, el resultado, el destino de navegación). Valida los campos vacíos en el orden de la pantalla con
+   `rechazar(Textos.campoObligatorio(...))` y llama al servicio **con `ejecutar(textoOcupado, tarea, alExito)`**, que usa el `Executor` inyectado (nunca en el hilo principal), publica el estado «ocupado», ignora una
+   segunda acción y muestra el error como mensaje. Un proyecto con login sobrescribe `manejar` para tratar el código de sesión no válida de su servidor. Registrarlo en `FabricaControladores.create(...)`.
+   Invariantes (`ARQUITECTURA_CLIENTE.md` §4.6): validar campos vacíos antes de llamar; mostrar `mensaje`, nunca el código; conservar los datos ante un error salvo los sensibles (claves, que la vista limpia);
+   estado «ocupado» que deshabilita los controles; no conocer la pantalla siguiente (la navegación es un dato del estado que consume la actividad).
+6. **Pantalla** — layout con los estilos (§5), `Activity` que pide su controlador a la fábrica (`new ViewModelProvider(this, app.getFabrica())`), observa el estado (dibuja `ocupado`, `mensaje` con `error`, `datos`) y delega los eventos.
+   Los textos salen de `Textos`, no de `strings.xml`. Declarar la `Activity` en `AndroidManifest.xml` (`exported="false"`).
+7. **Pruebas** — unitarias, sin servidor ni emulador (`docs/CONVENCION_PRUEBAS.md`): servicio con un doble de `XCliente`, controlador con un doble del servicio y un `Executor` sincrónico (`Runnable::run`) o manual
+   (ver `ControladorBaseTest`), y la lectura de `XClienteWS`/`SoapXml` con el **XML real** del servidor copiado de `curl`.
 
-Reglas que se repiten en todo dominio (ver `context/CLIENTES_CONSTRUCT.md` del repositorio de contexto):
-- **Los errores de negocio no son SOAP Fault**: el servidor responde HTTP 200 con `estado = ERROR`; solo red, timeout y `Fault` son `RED`.
-- **El token** vive en `Sesion` (memoria), no se guarda en disco ni en logs. Ante `AUTH-002`/`AUTH-003` se descarta y se vuelve al login; no se cuenta el tiempo en el cliente.
-- Todo dato viaja como **texto**; los decimales con **punto** (normalizar la coma antes de enviar).
-- Mostrar solo el **mensaje** del servidor, nunca el código. Textos propios del cliente **con tildes**.
+Reglas que se repiten en todo dominio:
+- **Los errores de negocio no son SOAP Fault**: HTTP 200 con `estado = ERROR`; solo red, timeout y `Fault` son `RED`.
+- Si el proyecto tiene login: la sesión vive solo en memoria (`modelo`), nunca en disco ni en logs; las credenciales se envían según el contrato del servidor.
+- Todo dato viaja como **texto**; los decimales con **punto**.
+- Mostrar solo el **mensaje**, nunca el código. Textos con tildes, centralizados en `Textos` y **los mismos en todos los clientes** del proyecto.
 - **Nunca red en el hilo principal.** Los fallos de red no cierran la app.
+- Las pruebas manuales del proyecto (`ec.edu.monster.pruebas`, en `app/src/main/java`) se generan al final con `JAVA_TESTS_CONVENTIONS.md`; la plantilla no las trae.
 
 ## 5. Estilos (resumen; detalle en `docs/CLIENT_STYLES_JAVA.md`)
 
@@ -116,7 +132,7 @@ Los layouts **solo referencian estilos**; márgenes laterales de `24dp` en el la
 | Estilo | Para qué |
 |---|---|
 | `Boton.Primario` | Acción principal de la pantalla (relleno `primario`, texto blanco) |
-| `Boton.Secundario` | Salida o regreso: «Cerrar sesión», «Volver» (sólido `secundario`) |
+| `Boton.Secundario` | Salida o regreso: «Cerrar sesión», «Cancelar» (sólido `secundario`) |
 | `Panel`, `Panel.Titulo`, `Panel.Resultado` | Mensaje, encabezado de pantalla y resultado |
 | `Etiqueta`, `Campo`, `Selector` | Etiqueta de campo, campo de texto y lista desplegable (`item_spinner.xml` para el adaptador) |
 | `ProgressBar` con `@color/acento` | Indicador de carga; deshabilitar los controles mientras dura |
@@ -125,7 +141,9 @@ Los layouts **solo referencian estilos**; márgenes laterales de `24dp` en el la
   sustituirla o quitar el `ImageView` de los layouts según el proyecto (no se usa imagen en la presentación clara).
 - **Presentación clara:** redefinir los mismos nombres de `colors.xml` con los valores de `CLIENT_STYLES_JAVA.md` §2.3. No hay selector de tema.
 - `fitsSystemWindows` reemplaza el `padding` del mismo `View`: usar márgenes en los hijos.
-- Los recursos de la biblioteca que una pantalla de ejemplo no usa están exentos del aviso `UnusedResources` en `app/lint.xml`.
+- Los recursos de la biblioteca que las pantallas de ejemplo no usan están exentos del aviso `UnusedResources` en `app/lint.xml`.
+- El móvil es de una columna y no usa la disposición dividida ni los componentes exclusivos del escritorio (cuadrícula de acciones, tabla de ancho completo); si un resultado necesita una tarjeta o una tabla, se construye con `Panel`/`Panel.Resultado`.
+- Antes de construir las pantallas de un proyecto conviene especificarlas en su `docs/PANTALLAS.md` (orden de los elementos, estados y decisiones); la del cliente de escritorio de EurekaBank sirve de modelo.
 
 ## 6. Servidor, emulador y teléfono real
 
@@ -141,36 +159,34 @@ app falla con `CLEARTEXT communication ... not permitted`—. El permiso `INTERN
 - Probar primero desde el navegador del teléfono `http://<IP de la PC>:<puerto>/<contexto>/<Servicio>?wsdl`: si carga el XML, la app también conectará.
 - La IP cambia al cambiar de red: repetir los cambios de `url_servicio` y `network_security_config.xml` y reinstalar.
 
+Con el servidor apagado la app abre y el fallo llega al **llamar** una operación, donde `ClienteSoapHttp` lo traduce a `RED` («Servidor no disponible, intente más tarde»).
+
 ## 7. Comandos y verificación
 
 ```
-./gradlew assembleDebug testDebugUnitTest lintDebug      # compilar + pruebas locales + lint
+./gradlew testDebugUnitTest      # pruebas locales (sin emulador ni servidor)
+./gradlew assembleDebug lintDebug    # compilar + lint
 ```
 En Windows también `gradlew.bat`. Si Gradle no encuentra el SDK, abrir el proyecto una vez en Android Studio (crea `local.properties`) o definir `ANDROID_HOME`.
 
 Probar una operación del servidor sin la app (el sobre es el mismo que arma `SoapXml`):
 ```
-curl -s -H "Content-Type: text/xml; charset=utf-8" -H 'SOAPAction: "<NAMESPACE><NOMBRE_SERVICIO>/login"' -d '<?xml version="1.0" encoding="UTF-8"?><S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns:login xmlns:ns="<NAMESPACE>"><ns:usuario>u</ns:usuario><ns:contrasenia>c</ns:contrasenia></ns:login></S:Body></S:Envelope>' <url_servicio>
+curl -s -H "Content-Type: text/xml; charset=utf-8" -H 'SOAPAction: "http://ws.monster.edu.ec/NOMBRE_SERVICIO/OPERACION"' -d '<?xml version="1.0" encoding="UTF-8"?><S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns:OPERACION xmlns:ns="http://ws.monster.edu.ec/"><ns:PARAMETRO>valor</ns:PARAMETRO></ns:OPERACION></S:Body></S:Envelope>' URL_SERVICIO
 ```
-Copiar las respuestas reales (OK, error de negocio, token inválido, `Fault`) como datos de `SoapXmlTest`: así un nombre de elemento mal escrito falla en la prueba y no en el teléfono.
+Copiar las respuestas reales (OK, error de negocio, `Fault`) como datos de `SoapXmlTest`: así un nombre de elemento mal escrito falla en la prueba y no en el teléfono.
 
-Un agente que no pueda ejecutar el emulador debe decir explícitamente que **solo verificó compilación y pruebas locales**.
+Un agente que no pueda ejecutar el emulador debe decir explícitamente que **solo verificó compilación, lint y pruebas locales** y que no vio la app real.
 
 ## 8. Qué asume la plantilla del servidor
 
-Si el nuevo servidor no cumple alguno de estos puntos, el cambio se limita a `SoapXml` / `ClienteSoapHttp` / `ServicioAutenticacion`:
-
-Es la convención común de la familia (`CONVENCION_SOAP.md`); lo que **el código ya cumple** y lo que **debe cumplir el servidor**:
+Si el servidor no cumple alguno de estos puntos, el cambio se limita a `ws` y `dto` (`docs/CONVENCION_SOAP.md`):
 
 - SOAP **1.1** por HTTP POST, `Content-Type: text/xml; charset=utf-8`, estilo *document/literal wrapped*.
-- **Operación y parámetros calificados** con el namespace del servicio (prefijo `ns`, hecho por `SoapXml.construirPeticion`) (R3). La respuesta se lee por nombre local, así que acepta campos con prefijo o con namespace por defecto.
-- **SOAPAction = `NAMESPACE + NOMBRE_SERVICIO + "/" + operación`**, entre comillas (`SoapXml.accionSoap`, la envía `ClienteSoapHttp.enviar`). Un servidor .NET rechaza la acción vacía con HTTP 500 *ActionNotSupported* (R4).
+- **Operación y parámetros calificados** con el TNS fijo `http://ws.monster.edu.ec/` (R2, R3; prefijo `ns`, hecho por `SoapXml.construirPeticion`). La respuesta se lee por nombre local, así que acepta campos con prefijo o con namespace por defecto.
+- **SOAPAction = `TNS + Servicio + "/" + operación`**, entre comillas (`SoapXml.accionSoap`, la envía `ClienteSoapHttp`). Un servidor .NET rechaza la acción vacía con HTTP 500 *ActionNotSupported* (R4).
 - **La URL completa del servicio** se recibe por configuración (`url_servicio`) y se usa tal cual: la app no asume puerto, binding ni nombre de puerto (R9, R10). El WSDL no se descarga.
-- **Lo que el código no puede imponer** (acuerdo con el servidor): todos los datos viajan como texto (R6); los errores de negocio van en el cuerpo con HTTP 200, no como Fault (R7);
-  los nombres de operaciones, parámetros y campos son fijos e iguales en Java y .NET (R5/R8). Si el servidor cambia su contrato hay que actualizar `ContratoWS`, `ClienteSoapHttp` y `SoapXml`.
 - Cada respuesta es `<{operacion}Response><respuesta>…</respuesta></{operacion}Response>` y `respuesta` contiene `estado` (`OK`/`ERROR`), `codigo` y `mensaje`,
-  más los datos de la operación (`ELEMENTO_RESPUESTA` en `SoapXml`).
-- Existe `login(usuario, contrasenia)` que devuelve `token`, y las operaciones protegidas reciben el `token` como parámetro (no como cabecera).
-- Los códigos `AUTH-002` / `AUTH-003` significan «token inválido / vencido» (`ExcepcionServicio.exigeLogin()`).
-- Si el servidor usa **cabecera SOAP** para el token, WS-Security u otro estilo, ampliar `ClienteSoapHttp.enviar` / `SoapXml.construirPeticion`.
-- Para un servicio **REST** reutilizar de esta plantilla todo salvo `ws/` y `dto/` (la capa `servicio` solo depende de `ContratoWS`).
+  más los datos de la operación (`SoapXml.ELEMENTO_RESPUESTA`).
+- Todo dato viaja como texto (R7); los errores de negocio van en el cuerpo con HTTP 200 (R8); un `Fault`, HTTP distinto de 200/500 o la falta de respuesta son `RED`; un cuerpo vacío o que no es el XML esperado es `SRV-000`.
+- Si el servidor usa **cabecera SOAP** para credenciales, WS-Security u otro estilo, ampliar `ClienteSoapHttp` / `SoapXml.construirPeticion`.
+- Para un servicio **REST** se reutiliza todo salvo `ws/` y `dto/` (`servicios` solo depende de la interfaz del cliente).
