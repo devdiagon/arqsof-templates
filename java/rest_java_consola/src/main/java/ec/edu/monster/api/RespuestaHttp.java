@@ -1,13 +1,5 @@
 package ec.edu.monster.api;
 
-/**
- * Respuesta cruda del servidor: código HTTP y cuerpo (JSON, o cualquier texto si es una página de error).
- *
- * @author: Frederick Tipán
- */
+/** Lo que devuelve el transporte: código HTTP y cuerpo (texto, posiblemente vacío). Se lee siempre, también en un error. */
 public record RespuestaHttp(int codigo, String cuerpo) {
-
-    public boolean esExito() {
-        return codigo >= 200 && codigo < 300;
-    }
 }
