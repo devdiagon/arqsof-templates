@@ -208,7 +208,11 @@ Ejemplo para la entidad `Cuenta`:
 | Conflicto | Duplicado o violación de una restricción | 409 |
 | No autorizado | Credenciales o permisos insuficientes | 401 |
 | Operación inválida | Una regla de negocio impide la acción | 422 |
+| Método no permitido | Verbo HTTP no admitido en la ruta (`ERR-405`) | 405 |
+| Tipo no soportado | `Content-Type` no admitido (`ERR-415`) | 415 |
 | Técnico | Error inesperado | 500 |
+
+`ERR-404` (ruta inexistente) usa *No encontrado*. Las dos categorías de plataforma solo se usan en REST; en SOAP existen en el catálogo pero no salen en el cable. Detalle y mensajes en `CONVENCION_REST.md` §2.1.
 
 **Entrada obligatoria:** `ERR-500` ("Error interno del servidor"), de categoría Técnico. Es la que usa el controlador para reemplazar cualquier excepción no controlada sin filtrar detalles internos.
 
