@@ -4,11 +4,13 @@ Define **un solo lenguaje visual** para clientes con interfaz gráfica en **escr
 Es **independiente del dominio** (no menciona qué hace la aplicación), del protocolo de comunicación y del lenguaje: sirve para cualquier proyecto cuyas pantallas combinen **acceso con credenciales, listas de acciones, formularios y resultados**.
 No aplica a clientes de consola.
 
-Aquí solo se define **cómo se ve**. El flujo, los textos concretos, las imágenes y las reglas de negocio de cada proyecto se documentan aparte (en este repositorio: `CLIENTES_CONSTRUCT.md`, sección «Aplicación del estilo en este proyecto»).
+Aquí solo se define **cómo se ve**. El flujo, los textos concretos, las imágenes y las reglas de negocio de cada proyecto se documentan aparte (en `dominio/ESPECIFICACION_CLIENTES.md` y en el `docs/PANTALLAS.md` de cada cliente).
 
 > Verificación: los **contrastes** de §2 se calcularon con la fórmula WCAG 2.x.
 >
-> Revisión 2026-10-26 (clientes de escritorio y web de EurekaBank): el **escritorio y la web** conservan la disposición dividida solo en la pantalla de acceso; en el resto de la aplicación usa el ancho completo y la imagen pasa a ser el fondo de la ventana, centrada y con opacidad (§6, §7.0, §7.2, §7.3). Se agregan los componentes **cuadrícula de acciones**, **tarjeta de resultado** y **tabla** (§5.11 a §5.13). El móvil no cambia.
+> Revisión 2026-10-26 (primeros clientes gráficos construidos): el **escritorio y la web** conservan la disposición dividida solo en la pantalla de acceso; en el resto de la aplicación usan el ancho completo y la imagen pasa a ser el fondo de la ventana, centrada y con opacidad (§6, §7.0, §7.2, §7.3). Se agregan los componentes **cuadrícula de acciones**, **tarjeta de resultado** y **tabla** (§5.11 a §5.13).
+>
+> Revisión 2026-10-27 (cliente móvil construido): el **móvil** usa la imagen con `fitCenter` (completa y centrada, nunca recortada): en el acceso como cabecera y en el resto como fondo fijo con opacidad (§6); una **imagen horizontal** se muestra compacta (60 % de su contenedor) en escritorio y web (§6); se agregan la **zona de estado** (§5.14) y las particularidades de la columna única (§7.1).
 
 ---
 
@@ -191,11 +193,15 @@ Lista de registros con columnas. Fondo `panel-sobre-imagen` si hay imagen debajo
 
 ---
 
+### 5.14 Zona de estado
+Un solo lugar, **bajo los botones** de la pantalla, que muestra de una en una: el **indicador de ocupado** con su texto (§5.8), un **error** o un **éxito**. El error y el éxito son un panel de mensaje (§5.2) con una **barra izquierda** de 4 del color `error` o `exito`; el texto es siempre el mensaje del sistema, nunca un código. Oculta si no hay nada que mostrar. Mientras hay una llamada en curso, todos los controles de la pantalla (incluido `Cancelar`) quedan deshabilitados.
+
 ## 6. Imagen decorativa (opcional)
 
 - Solo en la **presentación oscura**. La imagen **nunca se deforma**.
 - Si la imagen es **vertical** y sus **bordes tienen exactamente el color `fondo`**, puede mostrarse completa sobre `fondo` y fundirse sin costuras. Es la condición para usar el modo `contain` descrito abajo; si una imagen no la cumple, debe usarse con paneles `panel-sobre-imagen` o recortada.
-- **Columna única (móvil):** la imagen cubre toda la pantalla, **recortada** (`centerCrop`), sin deformarse. Los paneles usan `panel-sobre-imagen` para que el texto se lea sobre las zonas claras.
+- **Imagen horizontal (p. ej. un logotipo apaisado):** se muestra **completa y centrada** pero **compacta**: ocupa como máximo el **60 % del alto y del ancho de su contenedor** (un margen del 20 % por lado), en lugar de llenarlo, para que no domine el fondo. Vale para el acceso y para el fondo de la ventana; el tamaño del PNG no importa, la escala la fija el contenedor. **Escritorio:** constante única (p. ej. `Tema.ESCALA_IMAGEN` = 0,60) que el panel de la imagen aplica sobre el ajuste `contain`. **Web:** variable CSS `--margen-imagen: 20%`, usada como `inset` del `::before` de `.zona-imagen` (acceso) y de la capa fija de `.pagina--aplicacion` (resto), con `background-size: contain`. Si la imagen tiene **transparencia**, el color `fondo` se ve a través de ella y no se exige que sus bordes sean del color `fondo`. **El 60 % es un punto de partida:** se ajusta según la imagen del proyecto (más grande, más pequeña o 100 %) cambiando ese único valor.
+- **Columna única (móvil):** la imagen se muestra **completa y centrada** (`fitCenter`, nunca `centerCrop`), sin recortar ni deformar; lo que sobra es `fondo`. **Acceso:** va como **cabecera** del formulario (≈ 160 dp de alto) a opacidad plena, en su propia zona, y los paneles usan `superficie`. **Resto de pantallas:** es el **fondo fijo** de la pantalla (fuera del contenedor que se desplaza), con **opacidad 40 %**, y los paneles usan `panel-sobre-imagen` para que el texto se lea sobre ella. En una imagen horizontal, un teléfono vertical deja bandas de `fondo` arriba y abajo.
 - **Escritorio y web, fuera de la pantalla de acceso (§7.0):** la imagen es el **fondo de la ventana**: ocupa toda el área, **completa y centrada** (`contain`, nunca `cover`), sin deformarse; las franjas que sobran son `fondo`. Se dibuja con **opacidad 40 %** sobre `fondo` y se **reescala con la ventana** (al maximizar o redimensionar mantiene su proporción y sigue centrada). Como el contenido queda encima de la imagen, los paneles usan `panel-sobre-imagen`. La opacidad es una constante única y se puede ajustar. En la web es una capa fija (`position: fixed`) detrás del contenido, con `background-size: contain` y `opacity: .4`; bajo 900 px no se muestra (columna única sin imagen) y la presentación clara tampoco la usa.
 - **Pantalla ancha con disposición dividida (el acceso, en escritorio y web, §7.0):** la imagen ocupa su propia zona, **completa y centrada** (`contain` / `background-size: contain`), sin recortar ni deformar; el resto de la zona es `fondo`. No se usa `cover`: al maximizar la ventana, una imagen vertical ampliada para cubrir una zona ancha se recorta y parece estirada. Como el contenido no queda sobre la imagen, los paneles usan `superficie`.
 - Sin imagen, los paneles usan `superficie`.
@@ -221,6 +227,8 @@ El móvil es una **columna única**. El escritorio y la web **aprovechan el anch
 - Si el ancho disponible es menor que el mínimo de la plataforma, la zona derecha puede quedar muy estrecha: en escritorio se fija un mínimo de ventana (§7.3); en la web se pasa a columna única sin imagen por debajo de ese ancho (§7.2).
 
 ### 7.1 Móvil (Android, vistas XML)
+Particularidades de la **columna única**: todos los elementos se apilan a ancho completo con `margen-pantalla` (24) a cada lado; los botones de una acción van **apilados** (el principal arriba, `Cancelar` debajo, separados 16) y nunca en fila; los botones de un menú son primarios de **96 de alto**, separados 16 (la cuadrícula de §5.11 es del escritorio y la web); una tarjeta de resultado (§5.12) ocupa el ancho completo y varias se apilan; una lista de registros se dibuja como **una tarjeta compacta por registro** (no una tabla), apiladas y dentro del mismo desplazamiento de la pantalla. Se oculta el teclado al enviar un formulario para que la zona de estado (§5.14) quede visible.
+
 Tokens en `res/values/colors.xml` y estilos en `res/values/styles.xml`; los layouts **solo referencian estilos** y nunca valores sueltos.
 
 ```xml
