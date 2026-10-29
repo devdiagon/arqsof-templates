@@ -1,0 +1,40 @@
+package ec.edu.monster.ws.contrato;
+
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlType;
+
+/**
+ * EJEMPLO de respuesta con campos propios. Un campo propio no puede llamarse estado, codigo ni mensaje
+ * (chocaría con la envoltura): por eso el código se publica como {@code codigoElemento}.
+ * Los campos solo existen si hubo éxito; JAXB omite los nulos.
+ */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "RespuestaElemento", propOrder = {"codigoElemento", "nombre", "valor"})
+public class RespuestaElemento extends RespuestaBase {
+
+    private String codigoElemento;
+    private String nombre;
+    private String valor;
+
+    public RespuestaElemento() {
+    }
+
+    public void cargarDatos(String codigoElemento, String nombre, String valor) {
+        this.codigoElemento = codigoElemento;
+        this.nombre = nombre;
+        this.valor = valor;
+    }
+
+    public String getCodigoElemento() {
+        return codigoElemento;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public String getValor() {
+        return valor;
+    }
+}
