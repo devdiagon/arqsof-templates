@@ -1,92 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Acceso (docs/PANTALLAS.md 5.1): imagen como cabecera a opacidad plena, y debajo el formulario. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:fitsSystemWindows="true">
 
-    <ImageView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:contentDescription="@null"
-        android:importantForAccessibility="no"
-        android:scaleType="centerCrop"
-        android:src="@drawable/fondo_app" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="24dp">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:fitsSystemWindows="true">
-
-        <LinearLayout
+        <TextView
+            android:id="@+id/txtTitulo"
+            style="@style/Panel.Titulo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="24dp">
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="24dp"
+            android:gravity="center" />
 
-            <TextView
-                style="@style/Panel.Titulo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="64dp"
-                android:layout_marginEnd="24dp"
-                android:gravity="center"
-                android:text="@string/app_name" />
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="24dp"
+            android:contentDescription="@null"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:src="@drawable/fondo_app" />
 
-            <EditText
-                android:id="@+id/txtUsuario"
-                style="@style/Campo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="32dp"
-                android:layout_marginEnd="24dp"
-                android:autofillHints="username"
-                android:hint="@string/hint_usuario"
-                android:importantForAutofill="no"
-                android:inputType="text" />
+        <TextView
+            android:id="@+id/lblUsuario"
+            style="@style/Etiqueta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="24dp"
+            android:labelFor="@id/txtUsuario" />
 
-            <EditText
-                android:id="@+id/txtContrasenia"
-                style="@style/Campo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="24dp"
-                android:hint="@string/hint_contrasenia"
-                android:imeOptions="actionDone"
-                android:importantForAutofill="no"
-                android:inputType="textPassword" />
+        <EditText
+            android:id="@+id/txtUsuario"
+            style="@style/Campo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="24dp"
+            android:autofillHints="username"
+            android:imeOptions="actionNext"
+            android:importantForAutofill="no"
+            android:inputType="text" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnIniciarSesion"
-                style="@style/Boton.Primario"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="24dp"
-                android:text="@string/boton_iniciar_sesion" />
+        <TextView
+            android:id="@+id/lblClave"
+            style="@style/Etiqueta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="24dp"
+            android:labelFor="@id/txtClave" />
 
-            <ProgressBar
-                android:id="@+id/progreso"
-                style="?android:attr/progressBarStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="16dp"
-                android:indeterminateTint="@color/acento"
-                android:visibility="gone" />
+        <EditText
+            android:id="@+id/txtClave"
+            style="@style/Campo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="24dp"
+            android:imeOptions="actionDone"
+            android:importantForAutofill="no"
+            android:inputType="textPassword" />
 
-            <TextView
-                android:id="@+id/txtMensaje"
-                style="@style/Panel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="24dp"
-                android:visibility="gone" />
-        </LinearLayout>
-    </ScrollView>
-</FrameLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnIniciarSesion"
+            style="@style/Boton.Primario"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="24dp" />
+
+        <include
+            android:id="@+id/zonaEstado"
+            layout="@layout/zona_estado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="24dp" />
+    </LinearLayout>
+</ScrollView>

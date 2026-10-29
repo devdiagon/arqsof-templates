@@ -1,14 +1,8 @@
 <resources>
-    <!-- DOMINIO: nombre de la aplicacion; tambien es el titulo del login. -->
+    <!--
+      Android exige el nombre de la aplicación como recurso (etiqueta del manifiesto). Los demás textos de pantalla
+      viven en vista/Textos.java, no aquí: son los mismos en todos los clientes del proyecto.
+      DOMINIO: nombre de la aplicación; debe coincidir con Textos.NOMBRE_APLICACION.
+    -->
     <string name="app_name">Cliente REST</string>
-
-    <!-- Login (compartido entre dominios) -->
-    <string name="hint_usuario">Usuario</string>
-    <string name="hint_contrasenia">Contraseña</string>
-    <string name="boton_iniciar_sesion">Iniciar sesión</string>
-    <string name="boton_cerrar_sesion">Cerrar sesión</string>
-
-    <!-- DOMINIO: pantalla de ejemplo; se reemplaza por las del dominio -->
-    <string name="inicio_titulo">Inicio</string>
-    <string name="inicio_mensaje">Sesión iniciada. Reemplace esta pantalla por las pantallas del dominio (ver README.md).</string>
 </resources>

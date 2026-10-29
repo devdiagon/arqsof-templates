@@ -13,4 +13,7 @@
     <color name="campo_fondo">#FFFFFFFF</color>
     <color name="campo_texto">#FF0F172A</color>
     <color name="campo_placeholder">#FF64748B</color>
+    <color name="texto_secundario">#FF94A3B8</color>
+    <color name="error">#FFF87171</color>
+    <color name="exito">#FF4ADE80</color>
 </resources>

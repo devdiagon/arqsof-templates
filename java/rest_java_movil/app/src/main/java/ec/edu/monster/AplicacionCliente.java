@@ -2,17 +2,21 @@ package ec.edu.monster;
 
 import android.app.Application;
 
-import ec.edu.monster.api.ClienteApi;
-import ec.edu.monster.api.ClienteApiHttp;
+import ec.edu.monster.api.ConfiguracionApi;
 import ec.edu.monster.controlador.FabricaControladores;
-import ec.edu.monster.modelo.Sesion;
-import ec.edu.monster.servicio.ServicioAutenticacion;
 
 /**
- * Punto de composicion: crea UNA Sesion y UN transporte HTTP por proceso y los comparte con todos los servicios.
- * Si Android mata el proceso la sesion se pierde y la app vuelve al login (comportamiento esperado).
+ * Punto de composición: fija la URL base de la API (de {@code res/values/config.xml}), crea UNA instancia de cada cliente
+ * REST y de cada servicio por proceso y los comparte con los controladores a través de la fábrica. Si el proyecto tiene
+ * login, aquí vive también su única sesión (en memoria): si Android mata el proceso se pierde y la app vuelve al login
+ * (comportamiento esperado).
  *
- * DOMINIO: crear aqui los servicios de dominio (new ServicioXxx(api, sesion)) y pasarlos a la fabrica.
+ * DOMINIO: crear aquí los clientes y los servicios y pasarlos a la fábrica:
+ * <pre>
+ * XCliente cliente = XClienteApi.crear();
+ * XServicio servicio = new XServicio(cliente);
+ * fabrica = new FabricaControladores(servicio);
+ * </pre>
  *
  * @author: Frederick Tipán
  */
@@ -23,10 +27,9 @@ public class AplicacionCliente extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Sesion sesion = new Sesion();
-        ClienteApi api = new ClienteApiHttp();
-        ServicioAutenticacion autenticacion = new ServicioAutenticacion(api, sesion);
-        fabrica = new FabricaControladores(autenticacion);
+        ConfiguracionApi.fijarUrlBase(getString(R.string.url_base_api));
+        // TODO: clientes (XClienteApi.crear()) y servicios del dominio (README §4)
+        fabrica = new FabricaControladores();
     }
 
     public FabricaControladores getFabrica() {

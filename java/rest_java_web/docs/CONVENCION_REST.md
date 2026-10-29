@@ -173,7 +173,7 @@ Primera variante construida (servidor Java, Payara 7, `jakartaee-api 11.0.0`), d
 
 **Diferencias de plataforma aceptadas:** ninguna en el mensaje del cable. **Pendiente para .NET REST:** comparar las mismas peticiones contra Java REST (§7, punto 3) y anotar aquí las diferencias de ASP.NET Core.
 
-> **Verificación pendiente:** `OPTIONS` y `HEAD` (los atiende el framework, fuera del contrato) y un cliente real de cada tipo contra el servidor (§7, punto 4); **consola Java hecha** (§8.2), faltan escritorio, web y móvil.
+> **Verificación pendiente:** `OPTIONS` y `HEAD` (los atiende el framework, fuera del contrato) y un cliente real de cada tipo contra el servidor (§7, punto 4); **hechos los cuatro clientes Java** (§8.2 y §8.3): el responsable los verificó a mano contra el servidor Java REST (el móvil, en el emulador, con el mismo comportamiento que su par SOAP).
 
 ### 8.2 Lo aprendido al construir el cliente de consola Java REST (2026-10-29)
 
@@ -191,3 +191,20 @@ Primer cliente REST construido (consola Java, `04. CLICON/CliCon_Eurekabank_java
 | Un solo `HttpClient` | Compartido por todo el programa (estático en el transporte real) |
 | Paridad con la consola SOAP | Fuera de `ws`/`api`, el núcleo difiere solo en el `import` de las interfaces del cliente y en comentarios que mencionaban SOAP (`ARQUITECTURA_CLIENTE.md` §5) |
 | Ejecución manual | Las pruebas manuales que usan `api` necesitan Gson en el *classpath* (`mvn exec:java` o *Run File* en el IDE lo resuelven; con `java -cp` hay que añadirlo) |
+
+### 8.3 Lo aprendido al construir los clientes de escritorio, web y móvil Java REST (2026-10-29)
+
+Los tres se construyeron con el núcleo y la capa `api` de la consola REST y la interfaz de su par SOAP (ya verificada), sin rehacer pantallas. Cada uno lo verificó a mano el responsable contra el servidor Java REST. Lo que cambió respecto a la consola, por tipo:
+
+| Cliente | Hallazgo |
+|---|---|
+| Escritorio y web | `controlador` y `vista` no conocen el protocolo: del par SOAP solo cambian la composición (`Main` o `ContextoWeb`: el `import` de las interfaces y la fábrica `crear()`) y el `pom.xml`. Fuera de eso, `diff` sin diferencias |
+| Web | Gson **va dentro del WAR** (`compile`): Payara aporta JAX-RS, JSON-B y JSON-P, no Gson. Ya no hace falta `webservices-rt` ni `wsimport` |
+| Web | El cliente web y el servidor REST conviven en el mismo Payara con distinto *context root*; el servlet llama al servidor por HTTP (el navegador nunca) |
+| Web | Crear el cliente REST no abre ninguna conexión y el `HttpClient` ya es único: la creación perezosa que la web SOAP necesitaba para arrancar sin servidor es innecesaria en REST. Se conservó (movida de `ws` a `api`) por no rediseñar la composición ya verificada |
+| Móvil | **`api` se reescribe, no se copia** (`ARQUITECTURA_CLIENTE.md` §9.1): `java.net.http` no existe en Android y se usa `HttpURLConnection`. Las interfaces `…Cliente`, los tres `…ClienteApi` y `Transporte` se copian sin cambios; cambian el transporte, `TraductorApi`, `ConfiguracionApi` y `RespuestaHttp` |
+| Móvil | Con `minSdk` 24 y compilación Java 11 no valen `java.util.Base64` (API 26), `URLEncoder.encode(String, Charset)` ni `String.isBlank` (API 33) ni un `record` (Java 16): el lint avisa `NewApi`, y `android.util.Base64` no funciona en las pruebas locales. Se usan `URLEncoder.encode(String, "UTF-8")`, `trim().isEmpty()`, un Base64 propio probado con los vectores de la RFC 4648 y una clase en lugar del `record` |
+| Móvil | El `401` lleva `WWW-Authenticate` (§8.1): un `POST` con el cuerpo en modo de transmisión fija (`setFixedLengthStreamingMode`) puede hacer que `HttpURLConnection` falle al intentar reenviarlo en lugar de entregar la respuesta. El transporte envía el cuerpo sin ese modo y lee `getErrorStream()` con 4xx y 5xx |
+| Móvil | La URL base no puede venir de una propiedad ni de una variable de entorno: vive en un recurso y la aplicación la entrega a la configuración al arrancar. Si no se fijó, falla en lugar de usar una por defecto |
+| Móvil | Gson lee los DTO por reflexión: con R8 activado hay que conservar los DTO o dejar la optimización de `release` desactivada **(no verificado con R8 activado)** |
+| Móvil | Las pruebas JUnit del núcleo se traducen de JUnit 5 a JUnit 4 (solo imports, `@Before` y `public`); las de `api` se portan igual y se agrega una de Base64 |

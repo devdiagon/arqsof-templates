@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <lint>
     <!--
-      Estos recursos son la biblioteca de componentes de docs/CLIENT_STYLES.md que la pantalla de ejemplo no usa
-      pero que las pantallas de cada dominio si usaran (selector, etiqueta, panel de resultado).
+      Estos recursos son la biblioteca de componentes de docs/CLIENT_STYLES_JAVA.md y la configuracion del servidor, que las
+      pantallas de ejemplo no usan pero que las pantallas y los clientes de cada dominio si usaran (selector, etiqueta, panel de
+      resultado, boton secundario, url_base_api).
       Al terminar un proyecto se pueden borrar los que sigan sin usarse y eliminar estas excepciones.
     -->
     <issue id="UnusedResources">
-        <ignore regexp="ic_flecha_abajo|item_spinner|spinner_fondo|Panel_Resultado|Etiqueta|Selector" />
+        <ignore regexp="ic_flecha_abajo|item_spinner|spinner_fondo|Panel_Resultado|Etiqueta|Selector|secundario|Boton_Secundario|url_base_api" />
+    </issue>
+    <!-- Los hint de los campos de acceso se ponen en codigo desde vista/Textos (los textos no van en strings.xml). -->
+    <issue id="LabelFor">
+        <ignore path="**/activity_login.xml" />
     </issue>
 </lint>

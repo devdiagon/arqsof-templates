@@ -57,4 +57,15 @@
         <item name="android:background">@drawable/spinner_fondo</item>
         <item name="android:minHeight">48dp</item>
     </style>
+
+    <!-- Zona de estado (docs/CLIENT_STYLES_JAVA.md 5, layout zona_estado): indicador de ocupado y mensaje con barra izquierda. -->
+    <style name="Estado.Indicador" parent="">
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/texto</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Mensaje" parent="Panel">
+        <item name="android:paddingStart">16dp</item>
+    </style>
 </resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      DOMINIO: URL base COMPLETA de la API REST (R1): host, puerto, contexto y prefijo de la API, con "/" final.
+      Una sola linea decide a que servidor se conecta la app; el cliente no asume puerto ni ruta (cada servidor, Java
+      o .NET, publica la suya). Ejemplos, en el emulador:
+        Java (Payara) : http://10.0.2.2:8080/CAMBIAR_CONTEXTO/api/
+        .NET (Kestrel): http://10.0.2.2:5267/api/
+      10.0.2.2 es la PC anfitriona vista desde el emulador.
+      AplicacionCliente la entrega a ConfiguracionApi al arrancar.
+    -->
+    <string name="url_base_api" translatable="false">http://10.0.2.2:8080/CAMBIAR_CONTEXTO/api/</string>
+</resources>

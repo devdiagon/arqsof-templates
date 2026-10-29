@@ -18,6 +18,8 @@ android {
 
   buildTypes {
     release {
+      // Desactivada: Gson lee los DTO por reflexión (campos por nombre) y R8 los renombraría o quitaría.
+      // Si se activa, hay que conservar ec.edu.monster.dto.** en app/src/main/keepRules/rules.keep.
       optimization {
         enable = false
       }
@@ -39,6 +41,7 @@ dependencies {
   implementation(libs.androidx.activity)
   implementation(libs.androidx.lifecycle.viewmodel)
   implementation(libs.androidx.lifecycle.livedata)
+  // JSON de la API REST (es Java puro: también corre en las pruebas locales)
   implementation(libs.gson)
   testImplementation(libs.junit)
   testImplementation(libs.androidx.arch.core.testing)

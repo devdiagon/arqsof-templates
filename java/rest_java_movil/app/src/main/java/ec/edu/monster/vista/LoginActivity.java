@@ -1,77 +1,39 @@
 package ec.edu.monster.vista;
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.view.inputmethod.EditorInfo;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
 
-import ec.edu.monster.AplicacionCliente;
-import ec.edu.monster.controlador.LoginControlador;
 import ec.edu.monster.databinding.ActivityLoginBinding;
 
 /**
- * Pantalla de login (compartida entre dominios). Solo dibuja el estado del controlador y reenvia los eventos;
- * no conoce api ni dto.
+ * Pantalla de acceso, para los proyectos que definen autenticación (docs/PROJECT.md). Pasiva: solo dibuja el formulario
+ * (imagen · título · Usuario · Clave · Iniciar sesión · zona de estado) con los textos de {@link Textos}; la clave es un campo
+ * enmascarado. La plantilla no trae login (ARQUITECTURA_CLIENTE.md §1): el proyecto la conecta a su controlador
+ * ({@code ControladorBase}) y a su sesión (en {@code modelo}); ver docs/PANTALLAS.md §5.1.
  *
- * DOMINIO: cambiar INICIO por la pantalla a la que se entra tras autenticar.
+ * DOMINIO: para usarla, hacerla la actividad de entrada en AndroidManifest.xml, pedir su controlador a la fábrica, observar
+ * su estado (mostrar el estado en {@link ZonaEstado}, deshabilitar los controles mientras esté ocupado, ocultar el teclado con
+ * {@link Teclado} al enviar, conservar el usuario y limpiar la clave tras un error) y pasar a la pantalla siguiente cuando el
+ * estado lo indique.
  *
  * @author: Frederick Tipán
  */
 public class LoginActivity extends AppCompatActivity {
 
-    /** Aviso opcional para mostrar al abrir (p. ej. «Sesión expirada»). */
-    public static final String EXTRA_MENSAJE = "ec.edu.monster.MENSAJE";
-
-    /** DOMINIO: pantalla de destino tras un login correcto. */
-    private static final Class<?> INICIO = InicioActivity.class;
-
     private ActivityLoginBinding binding;
-    private LoginControlador controlador;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
-        AplicacionCliente app = (AplicacionCliente) getApplication();
-        controlador = new ViewModelProvider(this, app.getFabrica()).get(LoginControlador.class);
-
-        binding.btnIniciarSesion.setOnClickListener(v -> enviar());
-        binding.txtContrasenia.setOnEditorActionListener((v, accion, evento) -> {
-            if (accion == EditorInfo.IME_ACTION_DONE) {
-                enviar();
-                return true;
-            }
-            return false;
-        });
-
-        controlador.getEstado().observe(this, estado -> {
-            binding.progreso.setVisibility(estado.cargando ? View.VISIBLE : View.GONE);
-            binding.btnIniciarSesion.setEnabled(!estado.cargando);
-            binding.txtUsuario.setEnabled(!estado.cargando);
-            binding.txtContrasenia.setEnabled(!estado.cargando);
-            binding.txtMensaje.setVisibility(estado.mensaje == null ? View.GONE : View.VISIBLE);
-            binding.txtMensaje.setText(estado.mensaje);
-            if (estado.autenticado) {
-                startActivity(new Intent(this, INICIO));
-                finish();
-            }
-        });
-
-        String aviso = getIntent().getStringExtra(EXTRA_MENSAJE);
-        if (savedInstanceState == null && aviso != null) {
-            controlador.mostrarMensaje(aviso);
-        }
-    }
-
-    private void enviar() {
-        controlador.iniciarSesion(
-                binding.txtUsuario.getText().toString().trim(),
-                binding.txtContrasenia.getText().toString());
+        binding.txtTitulo.setText(Textos.TITULO_LOGIN);
+        binding.lblUsuario.setText(Textos.USUARIO);
+        binding.lblClave.setText(Textos.CLAVE);
+        binding.btnIniciarSesion.setText(Textos.INICIAR_SESION);
+        // TODO: controlador = new ViewModelProvider(this, app.getFabrica()).get(LoginControlador.class); observar su estado
+        //       y dibujarlo: new ZonaEstado(binding.zonaEstado).mostrar(estado.ocupado, estado.mensaje, estado.error)
     }
 
     @Override

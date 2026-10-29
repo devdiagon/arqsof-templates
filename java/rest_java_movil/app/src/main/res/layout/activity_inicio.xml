@@ -25,32 +25,22 @@
 
             <!-- DOMINIO: pantalla de ejemplo. Estructura tipica: encabezado, contenido, accion de salida. -->
             <TextView
+                android:id="@+id/txtTitulo"
                 style="@style/Panel.Titulo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="32dp"
-                android:layout_marginEnd="24dp"
-                android:text="@string/inicio_titulo" />
+                android:layout_marginEnd="24dp" />
 
             <TextView
+                android:id="@+id/txtMensaje"
                 style="@style/Panel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="16dp"
-                android:layout_marginEnd="24dp"
-                android:text="@string/inicio_mensaje" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCerrarSesion"
-                style="@style/Boton.Secundario"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="32dp"
-                android:layout_marginEnd="24dp"
-                android:text="@string/boton_cerrar_sesion" />
+                android:layout_marginEnd="24dp" />
         </LinearLayout>
     </ScrollView>
 </FrameLayout>

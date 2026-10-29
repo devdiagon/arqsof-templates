@@ -15,9 +15,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ClienteRest">
 
-        <!-- Compartido: el login es siempre la pantalla de entrada. -->
+        <!-- DOMINIO: la pantalla de entrada. La plantilla no trae login: el proyecto pone aqui su LoginActivity o su menu. -->
         <activity
-            android:name=".vista.LoginActivity"
+            android:name=".vista.InicioActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -26,9 +26,10 @@
             </intent-filter>
         </activity>
 
+        <!-- Pantalla de acceso pasiva (sin controlador), para los proyectos con autenticacion. -->
         <!-- DOMINIO: declarar aqui cada pantalla nueva (exported=false). -->
         <activity
-            android:name=".vista.InicioActivity"
+            android:name=".vista.LoginActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
     </application>
