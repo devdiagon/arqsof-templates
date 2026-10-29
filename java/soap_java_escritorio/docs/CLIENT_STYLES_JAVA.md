@@ -4,11 +4,13 @@ Define **un solo lenguaje visual** para clientes con interfaz gráfica en **escr
 Es **independiente del dominio** (no menciona qué hace la aplicación), del protocolo de comunicación y del lenguaje: sirve para cualquier proyecto cuyas pantallas combinen **acceso con credenciales, listas de acciones, formularios y resultados**.
 No aplica a clientes de consola.
 
-Aquí solo se define **cómo se ve**. El flujo, los textos concretos, las imágenes y las reglas de negocio de cada proyecto se documentan aparte (en este repositorio: `CLIENTES_CONSTRUCT.md`, sección «Aplicación del estilo en este proyecto»).
+Aquí solo se define **cómo se ve**. El flujo, los textos concretos, las imágenes y las reglas de negocio de cada proyecto se documentan aparte (en `dominio/ESPECIFICACION_CLIENTES.md` y en el `docs/PANTALLAS.md` de cada cliente).
 
 > Verificación: los **contrastes** de §2 se calcularon con la fórmula WCAG 2.x.
 >
-> Revisión 2026-10-26 (cliente de escritorio de EurekaBank): el **escritorio** conserva la disposición dividida solo en la pantalla de acceso; en el resto de la aplicación usa el ancho completo y la imagen pasa a ser el fondo de la ventana, centrada y con opacidad (§6, §7.0, §7.3). Se agregan los componentes **cuadrícula de acciones**, **tarjeta de resultado** y **tabla** (§5.11 a §5.13). Web y móvil no cambian.
+> Revisión 2026-10-26 (primeros clientes gráficos construidos): el **escritorio y la web** conservan la disposición dividida solo en la pantalla de acceso; en el resto de la aplicación usan el ancho completo y la imagen pasa a ser el fondo de la ventana, centrada y con opacidad (§6, §7.0, §7.2, §7.3). Se agregan los componentes **cuadrícula de acciones**, **tarjeta de resultado** y **tabla** (§5.11 a §5.13).
+>
+> Revisión 2026-10-27 (cliente móvil construido): el **móvil** usa la imagen con `fitCenter` (completa y centrada, nunca recortada): en el acceso como cabecera y en el resto como fondo fijo con opacidad (§6); una **imagen horizontal** se muestra compacta (60 % de su contenedor) en escritorio y web (§6); se agregan la **zona de estado** (§5.14) y las particularidades de la columna única (§7.1).
 
 ---
 
@@ -167,8 +169,8 @@ Una columna de botones primarios de ancho completo, separados 16, generados con 
 ### 5.10 Fondo
 `fondo` plano. Opcional: **imagen decorativa** (§6). El fondo no contiene información ni controles.
 
-### 5.11 Cuadrícula de acciones (escritorio)
-Variante de la lista de acciones (§5.9) para el ancho completo: los botones primarios se disponen en una **rejilla de 2 columnas**, de igual tamaño, separados `espacio-bloque` (16) en ambos sentidos y **sin superponerse**. Cada botón es **grande**: altura **96**, texto *Botón* centrado; el ancho es la mitad del contenido menos la mitad de la separación. Los datos siguen viniendo del sistema (nunca fijos en el cliente). El botón secundario de salida va **debajo**, ancho completo, separado 32. Si el ancho no alcanza para dos columnas (ventana mínima), la rejilla se mantiene y los botones se reducen en ancho; el texto largo se parte en dos líneas.
+### 5.11 Cuadrícula de acciones (escritorio y web)
+Variante de la lista de acciones (§5.9) para el ancho completo: los botones primarios se disponen en una **rejilla de 2 columnas**, de igual tamaño, separados `espacio-bloque` (16) en ambos sentidos y **sin superponerse**. Cada botón es **grande**: altura **96**, texto *Botón* centrado; el ancho es la mitad del contenido menos la mitad de la separación. Los datos siguen viniendo del sistema (nunca fijos en el cliente). El botón secundario de salida va **debajo**, ancho completo, separado 32. Si el ancho no alcanza para dos columnas (ventana mínima), la rejilla se mantiene y los botones se reducen en ancho; el texto largo se parte en dos líneas. En la web, bajo 600 px de ancho pasa a una sola columna.
 
 ### 5.12 Tarjeta de resultado
 Resume **un cambio de un valor** (por ejemplo, el efecto de una operación sobre un saldo). Es plana (sin sombra), con el mismo `radio` (8), `padding` 16 y **ancho fijo de 260**, con un **contorno sutil de 1,5 en el color `primario`** (translúcido); su altura se ajusta al contenido. Se compone, de arriba abajo, de:
@@ -191,14 +193,17 @@ Lista de registros con columnas. Fondo `panel-sobre-imagen` si hay imagen debajo
 
 ---
 
+### 5.14 Zona de estado
+Un solo lugar, **bajo los botones** de la pantalla, que muestra de una en una: el **indicador de ocupado** con su texto (§5.8), un **error** o un **éxito**. El error y el éxito son un panel de mensaje (§5.2) con una **barra izquierda** de 4 del color `error` o `exito`; el texto es siempre el mensaje del sistema, nunca un código. Oculta si no hay nada que mostrar. Mientras hay una llamada en curso, todos los controles de la pantalla (incluido `Cancelar`) quedan deshabilitados.
+
 ## 6. Imagen decorativa (opcional)
 
 - Solo en la **presentación oscura**. La imagen **nunca se deforma**.
 - Si la imagen es **vertical** y sus **bordes tienen exactamente el color `fondo`**, puede mostrarse completa sobre `fondo` y fundirse sin costuras. Es la condición para usar el modo `contain` descrito abajo; si una imagen no la cumple, debe usarse con paneles `panel-sobre-imagen` o recortada.
-- **Imagen horizontal (p. ej. un logotipo apaisado):** se muestra **completa y centrada** pero **compacta**: ocupa como máximo el **60 % del alto y del ancho de su contenedor** (un margen del 20 % por lado), en lugar de llenarlo, para que no domine el fondo. Vale para el acceso y para el fondo de la ventana; el tamaño del PNG no importa, la escala la fija el contenedor. **Escritorio:** constante `Tema.ESCALA_IMAGEN` (0,60), que `PanelImagen` aplica sobre el ajuste `contain` en el acceso y en el fondo de la ventana. Si la imagen tiene **transparencia**, el color `fondo` se ve a través de ella y no se exige que sus bordes sean del color `fondo`. **El 60 % es un punto de partida:** se ajusta según la imagen del proyecto (más grande, más pequeña o 100 %) cambiando ese único valor.
-- **Columna única (móvil):** la imagen cubre toda la pantalla, **recortada** (`centerCrop`), sin deformarse. Los paneles usan `panel-sobre-imagen` para que el texto se lea sobre las zonas claras.
-- **Escritorio, fuera de la pantalla de acceso (§7.0):** la imagen es el **fondo de la ventana**: ocupa toda el área, **completa y centrada** (`contain`, nunca `cover`), sin deformarse; las franjas que sobran son `fondo`. Se dibuja con **opacidad 40 %** sobre `fondo` y se **reescala con la ventana** (al maximizar o redimensionar mantiene su proporción y sigue centrada). Como el contenido queda encima de la imagen, los paneles usan `panel-sobre-imagen`. La opacidad es una constante única y se puede ajustar.
-- **Pantalla ancha con disposición dividida (web, y el acceso del escritorio, §7.0):** la imagen ocupa su propia zona, **completa y centrada** (`contain` / `background-size: contain`), sin recortar ni deformar; el resto de la zona es `fondo`. No se usa `cover`: al maximizar la ventana, una imagen vertical ampliada para cubrir una zona ancha se recorta y parece estirada. Como el contenido no queda sobre la imagen, los paneles usan `superficie`.
+- **Imagen horizontal (p. ej. un logotipo apaisado):** se muestra **completa y centrada** pero **compacta**: ocupa como máximo el **60 % del alto y del ancho de su contenedor** (un margen del 20 % por lado), en lugar de llenarlo, para que no domine el fondo. Vale para el acceso y para el fondo de la ventana; el tamaño del PNG no importa, la escala la fija el contenedor. **Escritorio:** constante única (p. ej. `Tema.ESCALA_IMAGEN` = 0,60) que el panel de la imagen aplica sobre el ajuste `contain`. **Web:** variable CSS `--margen-imagen: 20%`, usada como `inset` del `::before` de `.zona-imagen` (acceso) y de la capa fija de `.pagina--aplicacion` (resto), con `background-size: contain`. Si la imagen tiene **transparencia**, el color `fondo` se ve a través de ella y no se exige que sus bordes sean del color `fondo`. **El 60 % es un punto de partida:** se ajusta según la imagen del proyecto (más grande, más pequeña o 100 %) cambiando ese único valor.
+- **Columna única (móvil):** la imagen se muestra **completa y centrada** (`fitCenter`, nunca `centerCrop`), sin recortar ni deformar; lo que sobra es `fondo`. **Acceso:** va como **cabecera** del formulario (≈ 160 dp de alto) a opacidad plena, en su propia zona, y los paneles usan `superficie`. **Resto de pantallas:** es el **fondo fijo** de la pantalla (fuera del contenedor que se desplaza), con **opacidad 40 %**, y los paneles usan `panel-sobre-imagen` para que el texto se lea sobre ella. En una imagen horizontal, un teléfono vertical deja bandas de `fondo` arriba y abajo.
+- **Escritorio y web, fuera de la pantalla de acceso (§7.0):** la imagen es el **fondo de la ventana**: ocupa toda el área, **completa y centrada** (`contain`, nunca `cover`), sin deformarse; las franjas que sobran son `fondo`. Se dibuja con **opacidad 40 %** sobre `fondo` y se **reescala con la ventana** (al maximizar o redimensionar mantiene su proporción y sigue centrada). Como el contenido queda encima de la imagen, los paneles usan `panel-sobre-imagen`. La opacidad es una constante única y se puede ajustar. En la web es una capa fija (`position: fixed`) detrás del contenido, con `background-size: contain` y `opacity: .4`; bajo 900 px no se muestra (columna única sin imagen) y la presentación clara tampoco la usa.
+- **Pantalla ancha con disposición dividida (el acceso, en escritorio y web, §7.0):** la imagen ocupa su propia zona, **completa y centrada** (`contain` / `background-size: contain`), sin recortar ni deformar; el resto de la zona es `fondo`. No se usa `cover`: al maximizar la ventana, una imagen vertical ampliada para cubrir una zona ancha se recorta y parece estirada. Como el contenido no queda sobre la imagen, los paneles usan `superficie`.
 - Sin imagen, los paneles usan `superficie`.
 - **Siempre** definir `fondo` como color de respaldo por si la imagen no carga.
 - En la presentación clara **no se usa imagen**: el fondo es `fondo` plano. Si se requiere imagen en claro, debe pasar una revisión de contraste propia.
@@ -217,11 +222,13 @@ El móvil es una **columna única**. El escritorio y la web **aprovechan el anch
 | **Derecha** (el resto) | La imagen decorativa (§6), centrada. Solo decora: no contiene información ni controles. |
 
 - La imagen es **parte de la ventana, no de cada pantalla**: se ve igual en todas mientras se navega.
-- **Escritorio:** la disposición dividida se usa **solo en la pantalla de acceso**. En las demás pantallas el contenido ocupa el **ancho completo** de la ventana (con `margen-pantalla` a los lados) sobre la imagen de fondo (§6), sin zona derecha. Ancho del contenido (centrado): **480** en formularios de una columna, **640** en la cuadrícula de acciones (§5.11) y en formularios con dos campos en fila, y **todo el ancho disponible** en tablas (§5.13).
+- **Escritorio y web:** la disposición dividida se usa **solo en la pantalla de acceso**. En las demás pantallas el contenido ocupa el **ancho completo** de la ventana (con `margen-pantalla` a los lados) sobre la imagen de fondo (§6), sin zona derecha. Ancho del contenido (centrado): **480** en formularios de una columna, **640** en la cuadrícula de acciones (§5.11) y en formularios con dos campos en fila, y **todo el ancho disponible** en tablas (§5.13). En la web son anchos máximos (`max-width`), nunca fijos: bajo 900 px el contenido ocupa el ancho de la pantalla menos los márgenes.
 - Las medidas de componentes (§4 y §5) no cambian; solo cambia dónde se colocan.
 - Si el ancho disponible es menor que el mínimo de la plataforma, la zona derecha puede quedar muy estrecha: en escritorio se fija un mínimo de ventana (§7.3); en la web se pasa a columna única sin imagen por debajo de ese ancho (§7.2).
 
 ### 7.1 Móvil (Android, vistas XML)
+Particularidades de la **columna única**: todos los elementos se apilan a ancho completo con `margen-pantalla` (24) a cada lado; los botones de una acción van **apilados** (el principal arriba, `Cancelar` debajo, separados 16) y nunca en fila; los botones de un menú son primarios de **96 de alto**, separados 16 (la cuadrícula de §5.11 es del escritorio y la web); una tarjeta de resultado (§5.12) ocupa el ancho completo y varias se apilan; una lista de registros se dibuja como **una tarjeta compacta por registro** (no una tabla), apiladas y dentro del mismo desplazamiento de la pantalla. Se oculta el teclado al enviar un formulario para que la zona de estado (§5.14) quede visible.
+
 Tokens en `res/values/colors.xml` y estilos en `res/values/styles.xml`; los layouts **solo referencian estilos** y nunca valores sueltos.
 
 ```xml
@@ -289,6 +296,22 @@ Disposición **dividida** (§7.0): rejilla de dos zonas a pantalla completa, con
 ```
 `.contenedor { max-width: 480px }` queda solo para la variante de columna única (ancho < 900). La imagen usa `contain` (§6), nunca `cover`.
 
+**Fuera del acceso** (§7.0): la página usa `ui:pantalla modo="aplicacion"`, sin zona derecha; el contenido va centrado y la imagen es una capa de fondo.
+
+```css
+.pagina--aplicacion { position: relative; min-height: 100vh; }
+.pagina--aplicacion::before {                  /* imagen de fondo: fija, completa, centrada, con opacidad */
+  content: ""; position: fixed; inset: 0; z-index: -1; opacity: .4;
+  background: url("imagen-decorativa.png") center / contain no-repeat; }
+.pagina--aplicacion .contenido { width: 100%; max-width: 480px; margin: 0 auto; padding: 24px; }
+.contenido--amplio { max-width: 640px !important; }      /* menú, transferencia */
+.contenido--completo { max-width: none !important; }     /* tabla */
+.pagina--aplicacion .encabezado, .pagina--aplicacion .mensaje, .pagina--aplicacion .tabla { background: rgba(0,0,0,.60); } /* panel-sobre-imagen */
+@media (max-width: 899px) { .pagina--aplicacion::before { display: none; } }
+.tema-claro .pagina--aplicacion::before { display: none; }
+```
+Tarjeta, cuadrícula y tabla (§5.11 a §5.13): tokens propios `--exito-claro: #15803D`, `--error-claro: #B91C1C` y `--divisor-tarjeta: #CBD5E1`; el título de la tarjeta usa `font-weight: 600`. La tabla va dentro de un contenedor con `overflow-x: auto`, de modo que **la página nunca se desplaza en horizontal**.
+
 Cada componente de §5 es un tag file (de `WEB-INF/tags`); en un JSP se declara una vez `<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>`.
 
 | Etiqueta | Componente (§) | Atributos principales |
@@ -302,6 +325,15 @@ Cada componente de §5 es un tag file (de `WEB-INF/tags`); en un JSP se declara 
 | `<ui:boton>` | Botón primario / secundario (§5.6, §5.7) | `tipo`, `href` (enlace; sin él envía el formulario), `ancho`, `centrado`, `salida`, `deshabilitado` |
 | `<ui:lista-acciones elementos destino parametro>` | Lista de acciones (§5.9) con datos del servidor | un botón primario por elemento |
 | `<ui:cerrar-sesion/>` | Botón secundario de salida separado 32 (§5.7) | — |
+| `<ui:pantalla titulo modo>` | (ampliado) `modo="acceso"` (dividida, por defecto) o `modo="aplicacion"` (ancho completo con imagen de fondo) | `modo`, `ancho` (`formulario`, `amplio`, `completo`) |
+| `<ui:cuadricula-acciones>` | Cuadrícula de acciones (§5.11) | un `<ui:boton>` por acción; 2 columnas, 1 bajo 600 px |
+| `<ui:fila-campos>` | Dos campos en horizontal con una flecha entre ellos | cuerpo: dos `<ui:campo>`; bajo 600 px se apilan y la flecha apunta hacia abajo |
+| `<ui:tarjeta>` | Tarjeta de resultado (§5.12) | `titulo`, `suma`, `monto`, `variacion`, `pie` |
+| `<ui:tabla>` | Tabla (§5.13) | `columnas`, `filas`, `alDerecha` |
+| `<ui:fila-botones>` | Fila de botones: la acción principal y Cancelar, centrados, separados 16; apilados bajo 600 px | cuerpo: `<ui:boton>`; el de Cancelar lleva `cancelar="true"` (la tecla Esc lo activa) |
+| `<ui:campo-con-acciones>` | Un campo con sus botones a la derecha | fragmentos `campo` y `acciones` |
+| `<ui:tarjetas>` | Fila de tarjetas de resultado | cuerpo: `<ui:tarjeta>`; se ocultan mientras hay una petición en curso |
+| `<ui:progreso texto>` | Indicador de progreso con su texto (§5.8); lo incluye `<ui:formulario>` | `texto` (`Procesando…`, `Consultando…`, `Iniciando sesión…`) |
 
 ### 7.3 Escritorio (Swing + FlatLaf)
 Dependencia: `com.formdev:flatlaf`. Presentación oscura → `FlatDarkLaf`; clara → `FlatLightLaf`. Un único punto de configuración al arrancar, **antes** de crear ventanas:
@@ -351,5 +383,5 @@ Antes de dar por terminado un cliente comprobar:
 - [ ] Sin sombras; sin más de dos pesos de fuente por pantalla.
 - [ ] Si hay imagen decorativa: sin deformar, `fondo` de respaldo; en columna única recortada con paneles `panel-sobre-imagen`; en disposición dividida completa (`contain`) y paneles `superficie`.
 - [ ] En disposición dividida: columna de contenido centrada, imagen en la ventana (no en cada pantalla) y mínimo de ventana definido.
-- [ ] Escritorio: dividida solo en el acceso; en el resto, imagen de fondo centrada (`contain`) con opacidad, que se reescala con la ventana, y paneles `panel-sobre-imagen`.
+- [ ] Escritorio y web: dividida solo en el acceso; en el resto, imagen de fondo centrada (`contain`) con opacidad, que se reescala con la ventana, y paneles `panel-sobre-imagen`.
 - [ ] Tarjetas de resultado: signo y color (`exito`/`error` de la presentación clara) juntos, y textos con contraste ≥ 4,5:1 sobre blanco.

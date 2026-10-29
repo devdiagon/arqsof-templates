@@ -88,6 +88,7 @@ Reemplaza a las pruebas automáticas de conformidad. Se hace **con el servidor e
 | 2 | Por cada fila, provocar al menos un error de negocio | El código HTTP de su categoría; envoltura con `estado=ERROR`, `codigo` y `mensaje` |
 | 3 | Llamar a una ruta inexistente, con verbo no permitido y con JSON mal formado | Código HTTP de la plataforma **con la misma envoltura**, sin trazas internas |
 | 4 | Provocar un fallo interno | `ERR-500` genérico |
+| 5 | En una operación con cuerpo, repetir una petición válida con un valor numérico **sin comillas** (`"importe": 100.50`) | La misma respuesta que con el valor como texto (R9); un valor como `1E+2` se rechaza igual, con `DATA-001` |
 
 ### 6.3 Cliente
 

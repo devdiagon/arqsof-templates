@@ -1,11 +1,13 @@
 # CONVENCION_SOAP — Convención de interoperabilidad SOAP (Java ⇄ .NET ⇄ móvil)
 
 Reglas para que **cualquier servicio SOAP** del equipo —escrito en Java (JAX-WS/Jakarta EE) o en .NET (CoreWCF) y de cualquier dominio— sea consumible por **cualquier cliente** (Java, .NET, Android a mano) cambiando solo una URL.
-No describe el dominio del servicio (conversión de unidades, ventas, etc.): eso va en `RESUMEN_FUNCIONALIDADES.md`. Aquí solo se define **cómo se ve el SOAP en el cable** y qué hace cada plataforma para producirlo.
+No describe el dominio del servicio (ventas, inventario, etc.): eso va en `RESUMEN_FUNCIONALIDADES.md`. Aquí solo se define **cómo se ve el SOAP en el cable** y qué hace cada plataforma para producirlo.
 
-> Estado: **verificada** el 2026-10-16 con un servidor Java (Payara/Metro) y un servidor .NET (CoreWCF) que implementan el mismo servicio, y con clientes JAX-WS, clientes generados con `dotnet-svcutil` y un cliente Android armado a mano (ver §6).
+> Estado: **verificada** el 2026-10-16 con un servidor Java (Payara/Metro) y un servidor .NET (CoreWCF) que implementan el mismo servicio (verificación hecha en un proyecto anterior; ninguna variante del proyecto actual se ha verificado contra .NET), y con clientes JAX-WS, clientes generados con `dotnet-svcutil` y un cliente Android armado a mano (ver §6).
 >
 > Revisión 2026-10-26: **R2 fija el TNS en `http://ws.monster.edu.ec/` para todos los servicios SOAP del equipo** (antes era una forma sugerida). La verificación del 2026-10-16 se hizo con otro TNS; los resultados no dependen del valor, pero conviene repetir la prueba de conformidad (§6) al adoptarlo en un proyecto nuevo.
+>
+> Revisión 2026-10-27: la convención es **independiente del dominio y de la autenticación**. Se quitaron los ejemplos y el estado de un proyecto anterior y se agregó §8, que dice qué especifica cada proyecto. La envoltura `estado/codigo/mensaje` (R6) es común a SOAP y REST; la autenticación no es una regla de esta convención.
 
 ---
 
@@ -26,7 +28,7 @@ Visión general; el detalle está en §3 (servidor) y §4 (cliente).
 | **Servidor** | *Code-first*: clase `@WebService` con las operaciones; el WSDL lo genera Metro al desplegar en Payara. La plataforma **no** cumple R3/R4 por defecto: hay que **declararlo** (`package-info.java` y `action`/`targetNamespace` en cada `@WebMethod`) | *Code-first*: interfaz `[ServiceContract]` + implementación; el WSDL lo genera CoreWCF. R3/R4 se cumplen **por defecto**; solo se fijan nombres y el `Namespace` del contrato, del binding y de los `DataContract` |
 | **Cliente de escritorio, consola, web** | **Proxy generado** (a) con `wsimport` (`jaxws-maven-plugin`) desde la copia del WSDL en el repositorio, envuelto por una clase propia del cliente | **Proxy generado** (a) con `dotnet-svcutil` desde la copia del WSDL en el repositorio (`Reference.cs`), envuelto por una clase propia del cliente |
 | **Cliente móvil** | Android: **sobre XML a mano** (c), porque no hay JAX-WS en Android | MAUI: proxy generado (a), igual que los demás clientes .NET |
-| **Envoltorio del proxy** | Interfaz propia del cliente (p. ej. `ClienteConversor`) implementada por `ClienteWSConversor`; el resto del cliente (servicio, controladores, vistas) **no ve** las clases generadas | Interfaz `IClienteConversor` implementada por `ClienteWSConversor` |
+| **Envoltorio del proxy** | Interfaz propia del cliente (p. ej. `CuentaCliente`) implementada por `CuentaClienteWS`; el resto del cliente (servicio, controladores, vistas) **no ve** las clases generadas | Interfaz `ICuentaCliente` implementada por `CuentaClienteWS` |
 | **URL (R9)** | Constante con la **URL completa** del servicio; método `crear(String urlCompleta)` que fija `ENDPOINT_ADDRESS_PROPERTY`; sobrescribible con propiedad/variable de entorno | Constante con la URL completa en `ConfiguracionServicio`; sobrescribible con variable de entorno |
 | **WSDL en ejecución** | No se descarga: el proxy usa la copia empaquetada (`wsdlLocation` en el classpath) | No se usa: solo sirve para generar |
 | **Cambio de contrato** | Desplegar el servidor → copiar el WSDL nuevo al repositorio → `mvn generate-sources` → actualizar el envoltorio | Desplegar el servidor → copiar el WSDL nuevo → regenerar `Reference.cs` → actualizar el envoltorio |
@@ -43,16 +45,16 @@ Consecuencias: (1) los dos lenguajes siguen el **mismo** patrón de cliente, as�
 |---|---|---|
 | **R1** | **SOAP 1.1 sobre HTTP, estilo `document/literal` con parámetros envueltos (*wrapped*), UTF‑8.** Es el valor por defecto de JAX-WS y de WCF. | Es el estilo que ambos generan y que todas las herramientas de clientes entienden. |
 | **R2** | **Un solo namespace de destino (TNS)** para el servicio, los envoltorios y los tipos. **El TNS es fijo para todos los servicios SOAP del equipo, de cualquier dominio: `http://ws.monster.edu.ec/`** (con barra final). Se declara en **un único lugar** del código (Java: constante `ConvencionSoap.TNS`; .NET: constante de espacio de nombres) y todo lo demás la referencia. No se elige por proyecto ni se deriva del paquete. | Evita mezclar namespaces entre tipos y mensajes. Un TNS único hace que los clientes, los proxies generados y los mensajes de cualquier servicio del equipo sean uniformes, y que cambiar de dominio no cambie el espacio de nombres. En Java coincide con el que JAX-WS derivaría del paquete `ec.edu.monster.ws`, pero **se declara explícitamente**, porque los tipos viven en otros paquetes (`ws.contrato`) y JAXB derivaría un TNS distinto para ellos. |
-| **R3** | **Todos los elementos van calificados con el TNS** (`elementFormDefault="qualified"`): el envoltorio de la operación, cada parámetro, el elemento de retorno y cada campo de los tipos. Ejemplo: `<ws:login><ws:usuario>…</ws:usuario></ws:login>`. | En .NET (`DataContract`) siempre es así y **no se puede cambiar de forma idiomática**; en Java por defecto es lo contrario (campos sin namespace) y **sí se puede declarar**. Es la regla que más rompe la interoperabilidad. |
-| **R4** | **`SOAPAction` = TNS + `<NombreServicio>` + `/` + `<operación>`**, entre comillas: `"http://ws.monster.edu.ec/MiServicio/login"`. | Es el valor que WCF genera por defecto y **exige**: rechaza la cabecera vacía con HTTP 500 (`ActionNotSupported`). JAX-WS usa `""` por defecto, así que hay que declararlo. Los clientes **siempre la envían**. |
-| **R5** | **Los nombres son parte del contrato y no derivan del código**: servicio y tipos en PascalCase (`MiServicio`, `RespuestaBase`), operaciones y parámetros en camelCase (`obtenerUnidades`, `unidadOrigen`), un único elemento de retorno llamado `respuesta`. | Los clientes generados y los escritos a mano dependen de ellos. Cambiarlos obliga a regenerar todos los clientes. |
+| **R3** | **Todos los elementos van calificados con el TNS** (`elementFormDefault="qualified"`): el envoltorio de la operación, cada parámetro, el elemento de retorno y cada campo de los tipos. Ejemplo: `<ws:operacion><ws:parametro>…</ws:parametro></ws:operacion>`. | En .NET (`DataContract`) siempre es así y **no se puede cambiar de forma idiomática**; en Java por defecto es lo contrario (campos sin namespace) y **sí se puede declarar**. Es la regla que más rompe la interoperabilidad. |
+| **R4** | **`SOAPAction` = TNS + `<NombreServicio>` + `/` + `<operación>`**, entre comillas: `"http://ws.monster.edu.ec/MiServicio/operacion"`. | Es el valor que WCF genera por defecto y **exige**: rechaza la cabecera vacía con HTTP 500 (`ActionNotSupported`). JAX-WS usa `""` por defecto, así que hay que declararlo. Los clientes **siempre la envían**. |
+| **R5** | **Los nombres son parte del contrato y no derivan del código**: servicio y tipos en PascalCase (`MiServicio`, `RespuestaBase`), operaciones y parámetros en camelCase (`obtenerElementos`, `codigoElemento`), un único elemento de retorno llamado `respuesta`. | Los clientes generados y los escritos a mano dependen de ellos. Cambiarlos obliga a regenerar todos los clientes. |
 | **R6** | **Toda operación devuelve un tipo que extiende `RespuestaBase`** con `estado` (`OK`/`ERROR`), `codigo` y `mensaje`; los campos propios de cada operación van después, en orden fijo. Éxito y error usan **el mismo tipo**. | El cliente revisa siempre los mismos tres campos y el WSDL no cambia entre éxito y error. |
 | **R7** | **Datos simples como `string`.** Números con punto decimal y sin notación científica, fechas en ISO‑8601, sin tipos propios de una plataforma (`decimal`, `DateTime`, enumeraciones) en el contrato. Campos opcionales **omitidos** cuando no tienen valor. Las listas son un elemento contenedor con el elemento repetido dentro (`<elementos><elemento>…</elemento></elementos>`) y **llegan vacías, nunca ausentes**, en caso de error. | Evita diferencias de cultura, de precisión y de serialización entre plataformas. |
 | **R8** | **Los errores de negocio viajan en el cuerpo** (`estado=ERROR`, `codigo`, `mensaje`) con **HTTP 200**. El SOAP Fault queda para fallos de protocolo (operación inexistente, XML mal formado). Toda excepción no controlada se traduce a un código genérico (`ERR-500`) **sin filtrar detalles internos**. | El cliente distingue "falló la red/el protocolo" (excepción) de "falló el negocio" (respuesta). |
 | **R9** | **El cliente usa la URL completa del servicio, escrita como constante en el código** (un solo lugar, valor por defecto no secreto), y **no asume su forma** (Java: `/<contexto>/<Servicio>`; .NET: una ruta libre). Puede sobrescribirse sin recompilar (propiedad, variable de entorno), pero la constante es la fuente normal. El WSDL se publica en `<url>?wsdl`. | Cambiar de servidor es cambiar una línea; un clon del repositorio funciona en local sin configurar secretos. |
 | **R10** | **El cliente no depende de nombres que decide la plataforma**: nombre del puerto o del binding, número de documentos del WSDL, orden de las operaciones. Pide el puerto por la interfaz (`getPort(Interfaz)`) o usa la clase generada. | CoreWCF nombra el puerto `<Binding>_<Contrato>` y no se puede cambiar; Metro usa `<Servicio>Port`. |
 
-**Convención de errores/estado y de seguridad.** `estado/codigo/mensaje` (R6) y el paso de un *token* como parámetro son decisiones de este conjunto de proyectos, no del protocolo: otro dominio puede definir otra envoltura, pero debe cumplir R1–R5 y R7–R10.
+**Envoltura y autenticación.** `estado/codigo/mensaje` (R6) es la envoltura común de la familia: en REST es la R5 de `CONVENCION_REST.md` y la arquitectura la exige en ambos protocolos (`ARQUITECTURA_SERVIDOR.md` §4.3). **La autenticación no forma parte de esta convención**: cómo viajan las credenciales (parámetros de cada operación, una cabecera SOAP, un token…) no es un estándar único y lo decide cada proyecto, que lo documenta (§8). Sí se fija que las credenciales **no se registran** ni en el servidor ni en el cliente, y que el resto de reglas (R1–R10) se cumplen igual con cualquier mecanismo.
 
 ---
 
@@ -62,14 +64,14 @@ Medido contra el servicio real (no es teoría):
 
 | Aspecto | JAX-WS / JAXB (Java) | CoreWCF / DataContract (.NET) | Decisión |
 |---|---|---|---|
-| Campos dentro de los mensajes | **sin namespace** (`<usuario>`) | **con** el namespace del servicio | Calificados (R3): Java lo declara, .NET ya lo hace |
+| Campos dentro de los mensajes | **sin namespace** (`<parametro>`) | **con** el namespace del servicio | Calificados (R3): Java lo declara, .NET ya lo hace |
 | `SOAPAction` | `""` | `<TNS><Contrato>/<operación>` | URI por operación (R4): Java lo declara |
 | Nombre del puerto | `<Servicio>Port` | `<Binding>_<Contrato>` | No depender de él (R10) |
 | Campos `string` en el XSD | `minOccurs="0"` | `minOccurs="0"` y `nillable="true"` | Aceptado; ver §5 |
 | Binding en el WSDL | mismo documento | documento aparte con `wsdl:import` | Aceptado (R10) |
 | Binding sin `Namespace` | — | sale en `http://tempuri.org/` | Fijar `Namespace` del binding y del contrato |
 
-Consecuencia práctica de **no** aplicar R3/R4 (medida): un cliente escrito para un servidor leía **campos vacíos** del otro (login válido → «campos obligatorios») y el servidor .NET devolvía HTTP 500 a la `SOAPAction` vacía.
+Consecuencia práctica de **no** aplicar R3/R4 (medida): un cliente escrito para un servidor leía **campos vacíos** del otro (una petición válida respondía «campos obligatorios») y el servidor .NET devolvía HTTP 500 a la `SOAPAction` vacía.
 
 ---
 
@@ -117,7 +119,7 @@ Orden de preferencia: **(a) generar** desde el WSDL, **(b) contrato a mano** con
 | **(a) Generado** (`wsimport` / `jaxws-maven-plugin`, `dotnet-svcutil` / *WCF Web Service Reference*) | Guardar una copia del WSDL en el repositorio y generar desde ella. Fijar el endpoint por configuración (R9); no usar la URL fija del código generado. En Java, apuntar `wsdlLocation` a la copia del classpath para que el proxy no descargue el WSDL al crearse. En Java, si el XSD trae `nillable`, usar un archivo de binding con `generateElementProperty="false"` para evitar `JAXBElement<String>`. |
 | **(b) JAX-WS a mano** (Java) | Misma interfaz con `@WebService`, `@WebMethod(action=…)`, `@WebResult` y `@WebParam` con `targetNamespace`, y **el mismo `package-info.java`** en los DTO (§3.1). Crear el puerto con `Service.create(wsdlUrl, qnameServicio).getPort(Interfaz.class)` (**sin** `QName` de puerto) y fijar `ENDPOINT_ADDRESS_PROPERTY` con la URL completa (R9, R10). Timeouts con las propiedades del runtime. |
 | **(b) WCF a mano** (.NET) | Mismo `[ServiceContract]`/`[DataContract]` del servidor, `BasicHttpBinding` y `EndpointAddress` desde configuración. |
-| **(c) Sobre a mano** (Android, `HttpURLConnection`/`HttpClient`) | Petición: operación en el TNS con prefijo (`<ns:op xmlns:ns="<TNS>">`) y **cada parámetro con el mismo prefijo** (`<ns:usuario>`); cabecera `SOAPAction` con la URI de la operación (R4); `Content-Type: text/xml; charset=utf-8`. Respuesta: leer por **nombre local**, ignorando prefijos y namespaces; aceptar HTTP 200 y 500 (el 500 trae un Fault, que se trata como fallo de comunicación). URL en un recurso de configuración. HTTP sin cifrar: `network_security_config` con el host de desarrollo. |
+| **(c) Sobre a mano** (Android, `HttpURLConnection`/`HttpClient`) | Petición: operación en el TNS con prefijo (`<ns:op xmlns:ns="<TNS>">`) y **cada parámetro con el mismo prefijo** (`<ns:parametro>`); cabecera `SOAPAction` con la URI de la operación (R4); `Content-Type: text/xml; charset=utf-8`. Respuesta: leer por **nombre local**, ignorando prefijos y namespaces; aceptar HTTP 200 y 500 (el 500 trae un Fault, que se trata como fallo de comunicación). URL en un recurso de configuración. HTTP sin cifrar: `network_security_config` con el host de desarrollo. |
 
 Reglas comunes a todos los clientes:
 - Tratar **por separado** fallo de red/protocolo (excepción) y fallo de negocio (`estado`/`codigo`).
@@ -140,12 +142,12 @@ Reglas comunes a todos los clientes:
 
 ## 6. Verificación
 
-**Antes de dar por bueno un servicio nuevo o un cambio de contrato:**
+**Antes de dar por bueno un servicio nuevo o un cambio de contrato** (la lista paso a paso, con lo que debe verse en cada uno, está en `CONVENCION_PRUEBAS.md` §6; no hay pruebas automáticas de conformidad):
 1. **Revisar el WSDL/XSD generado:** TNS único; `elementFormDefault="qualified"` (o `form="qualified"` por elemento); `soapAction` con URI por operación; una operación por caso de uso; tipos con el nombre esperado y campos en orden; elemento de retorno `respuesta`.
-2. **Prueba de conformidad cruzada:** enviar las mismas peticiones (válidas, inválidas y casos límite) a ambos servidores y comparar, campo a campo, `estado/codigo/mensaje` y los campos propios (ignorando valores que cambian, como un token). En el servicio de referencia se usaron 86 peticiones.
+2. **Prueba de conformidad cruzada:** enviar las mismas peticiones (válidas, inválidas y casos límite) a ambos servidores y comparar, campo a campo, `estado/codigo/mensaje` y los campos propios (ignorando valores que cambian, como una fecha o un identificador generado). En la verificación original se usaron 86 peticiones.
 3. **Un cliente real de cada tipo** contra cada servidor: JAX-WS, proxy generado con `dotnet-svcutil` (desde el WSDL de cada servidor) y el cliente Android.
 
-**Resultado en el servicio de referencia (Payara ⇄ CoreWCF, 2026-10-16):**
+**Resultado de la verificación original (proyecto anterior; Payara ⇄ CoreWCF, 2026-10-16):**
 - 86 peticiones al Payara desplegado y al servidor .NET: **84 respuestas idénticas** (también los textos de los mensajes); las 2 distintas son números de más de 28 dígitos.
 - Cliente JAX-WS (consola, escritorio y web) y la lógica de red del cliente Android (probada contra Payara y .NET; la app se verificó en el emulador contra Payara): operan igual contra ambos servidores.
 - Proxies `dotnet-svcutil` generados desde el WSDL de cada servidor: operan igual contra el servidor .NET y contra el motor Metro de Payara publicado de forma independiente; **no se probaron aún contra el Payara desplegado**.
@@ -154,7 +156,7 @@ Reglas comunes a todos los clientes:
 
 ## 7. Aplicarla a otro servicio o dominio
 
-0. Partir de la plantilla de la plataforma: `soap_server_java` (Jakarta EE + JAX-WS) o `soap_server_dotnet` (CoreWCF); ambas llevan una copia de este documento y su servicio/estructura ya cumple la convención.
+0. Partir de la plantilla de la plataforma: `soap_java_server` (Jakarta EE + JAX-WS) o `soap_server_dotnet` (CoreWCF); ambas llevan una copia de este documento y su servicio/estructura ya cumple la convención.
 1. Elegir el **nombre del servicio** (R5). El **TNS no se elige**: es siempre `http://ws.monster.edu.ec/` (R2).
 2. Definir operaciones y parámetros (todo `string`, R7) y los tipos de respuesta que extienden `RespuestaBase` (R6).
 3. Aplicar la receta de la plataforma (§3). La lógica de negocio va en capas sin dependencias de SOAP.
@@ -163,14 +165,14 @@ Reglas comunes a todos los clientes:
 
 ---
 
-## 8. Estado en este proyecto (servicio "conversor de unidades")
+## 8. Qué especifica cada proyecto (y qué no)
 
-Contrato: 9 operaciones tras el catálogo ampliado (2026-10-20): `login`, `obtenerCategorias`, `obtenerUnidades`, `convertirLongitud`, `convertirMasa`, `convertirTemperatura`, `convertirVolumen`, `convertirTiempo`, `convertirArea`. Los cambios concretos por proyecto están en `soap_java/ACTUALIZACION_CATALOGO.md` y `soap_dotnet/ACTUALIZACION_CATALOGO.md`.
+Esta convención deja abierto lo que depende del proyecto. Cada proyecto lo documenta aparte:
 
-| Componente | Estado de la convención |
+| Qué | Dónde |
 |---|---|
-| Servidor Java (Payara) | Aplicada (§3.1): `package-info.java` + `targetNamespace` y `action` en cada operación. Las 3 operaciones nuevas deben llevar las mismas anotaciones |
-| Clientes Java: consola, escritorio, web | Hoy: contrato JAX-WS **escrito a mano** (§4 b) y `crear()` con URL base + `/WSConversorUnidades` (no cumple R9 frente a .NET). **Planificado:** migrar a proxy generado con `wsimport` (§0.1, §4 a) y `crear(String urlCompleta)`; ver `soap_java/ACTUALIZACION_CATALOGO.md` §2.0 |
-| Cliente móvil Android | Aplicada (§4 c): parámetros con prefijo, `SOAPAction` por operación, URL en `res/values/config.xml`. Se mantiene a mano |
-| Servidor .NET (CoreWCF) | Aplicada con el código idiomático (§3.2), con los mismos textos de login que Java. Única diferencia conocida: números de más de ~28 dígitos |
-| Clientes .NET (consola, WPF, MVC, MAUI) | **Construidos** con proxy generado por `dotnet-svcutil` (§4 a) desde `wsdl/WSConversorUnidades.wsdl`, envuelto por `IClienteConversor`/`ClienteWSConversor`, URL completa en `ConfiguracionServicio` |
+| Operaciones, parámetros, tipos de respuesta y su orden | El WSDL/XSD que genera el servidor y su `RESUMEN_FUNCIONALIDADES.md` |
+| Catálogo de códigos de error y sus mensajes (`PREFIJO-NNN`) | `RESUMEN_FUNCIONALIDADES.md`, según el catálogo de `ARQUITECTURA_SERVIDOR.md` §4.3 |
+| **Autenticación:** cómo viajan las credenciales o el token, en qué operaciones, qué responde el servidor ante credenciales inválidas y qué hace el cliente | `RESUMEN_FUNCIONALIDADES.md`. Si el mecanismo usa parámetros de la operación, siguen R3 a R5 y R7 (calificados y como texto); si usa una cabecera SOAP o WS-Security, se amplía el sobre del cliente a mano (§4 c) |
+| Nombre y URL completa de cada servicio (R9) | `RESUMEN_FUNCIONALIDADES.md` y el `docs/PROJECT.md` de cada cliente |
+| Estado de cada variante: construida, verificada, diferencias aceptadas | El `docs/PROJECT.md` del servidor o del cliente, **no** este documento |

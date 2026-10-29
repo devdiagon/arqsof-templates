@@ -3,7 +3,7 @@
 Reglas para que **cualquier servicio REST** del equipo —escrito en Java (JAX-RS/Jakarta EE) o en .NET (ASP.NET Core) y de cualquier dominio— sea consumible por **cualquier cliente** (Java, .NET, Android a mano) cambiando solo una URL. Es la contraparte de `CONVENCION_SOAP.md`.
 No describe el dominio del servicio: eso va en `RESUMEN_FUNCIONALIDADES.md`. **Tampoco fija cómo se autentica el cliente**: el mecanismo de credenciales no es 100 % estándar y se ajusta a cada proyecto, así que se especifica en su `ENDPOINTS_REST.md` (§6). Aquí solo se define **cómo se ve el REST en el cable** y qué hace cada plataforma para producirlo.
 
-> Estado: **diseño (2026-10-27); verificada en el servidor Java REST (2026-10-29).** R1 a R12 se tomaron de las plantillas `rest_dotnet_*` y de `ARQUITECTURA_SERVIDOR.md` (§4.3, §4.8, §8). Se aplicaron al construir el servidor Java REST sin cambios; lo comprobado y las decisiones de plataforma están en §8.1. **Sin verificar:** el servidor .NET REST y los clientes REST.
+> Estado: **diseño (2026-10-27); verificada en el servidor Java REST (2026-10-29).** R1 a R12 se tomaron de las plantillas `rest_dotnet_*` y de `ARQUITECTURA_SERVIDOR.md` (§4.3, §4.8, §8). Se aplicaron al construir el servidor Java REST sin cambios; lo comprobado y las decisiones de plataforma están en §8.1. **2026-10-29:** el cliente de consola Java REST también la aplica y se verificó a mano (§8.2). **Sin verificar:** el servidor .NET REST y los clientes REST de escritorio, web y móvil.
 
 ---
 
@@ -173,4 +173,21 @@ Primera variante construida (servidor Java, Payara 7, `jakartaee-api 11.0.0`), d
 
 **Diferencias de plataforma aceptadas:** ninguna en el mensaje del cable. **Pendiente para .NET REST:** comparar las mismas peticiones contra Java REST (§7, punto 3) y anotar aquí las diferencias de ASP.NET Core.
 
-> **Verificación pendiente:** `OPTIONS` y `HEAD` (los atiende el framework, fuera del contrato) y un cliente real de cada tipo contra el servidor (§7, punto 4).
+> **Verificación pendiente:** `OPTIONS` y `HEAD` (los atiende el framework, fuera del contrato) y un cliente real de cada tipo contra el servidor (§7, punto 4); **consola Java hecha** (§8.2), faltan escritorio, web y móvil.
+
+### 8.2 Lo aprendido al construir el cliente de consola Java REST (2026-10-29)
+
+Primer cliente REST construido (consola Java, `04. CLICON/CliCon_Eurekabank_java_REST_GR10`), copiando el núcleo de la consola Java SOAP y escribiendo solo `api`. Verificado a mano por el responsable contra el servidor Java REST; sus pruebas unitarias no usan red.
+
+| Tema | Hallazgo |
+|---|---|
+| Dependencias | HTTP con `java.net.http.HttpClient` (JDK 21) y JSON con Gson 2.11; los DTO del núcleo se leen sin anotaciones porque sus campos se llaman como el JSON (R4, R9) |
+| Separar transporte y traducción | Una interfaz mínima de transporte (verbo, ruta, cuerpo, `Authorization` → código y cuerpo) y una clase estática que arma y lee: todo el armado y la lectura se prueban sin red con un transporte falso; solo el transporte real abre conexiones |
+| Envoltura con HTTP de error | Se lee el cuerpo siempre, también con 400, 401, 404, 422 y 500; la decisión la toma `ServicioBase` por el `estado` y el `codigo` |
+| `SRV-000` | Cuerpo vacío, que no es JSON, que no es un objeto o sin `estado` (página de un proxy, `502`): el mensaje lleva el código HTTP |
+| `RED` | Cualquier `IOException` del transporte (servidor caído, red, tiempo agotado de 10 s, URL mal configurada) |
+| Credenciales | `login` en el cuerpo; el resto con `Authorization: Basic` por petición, puesta solo por la implementación; nunca en la ruta ni en cabeceras por defecto |
+| Rutas | Cada variable de ruta se codifica con `%20` y no con `+`; la URL base lleva «/» final y las rutas son relativas sin barra inicial |
+| Un solo `HttpClient` | Compartido por todo el programa (estático en el transporte real) |
+| Paridad con la consola SOAP | Fuera de `ws`/`api`, el núcleo difiere solo en el `import` de las interfaces del cliente y en comentarios que mencionaban SOAP (`ARQUITECTURA_CLIENTE.md` §5) |
+| Ejecución manual | Las pruebas manuales que usan `api` necesitan Gson en el *classpath* (`mvn exec:java` o *Run File* en el IDE lo resuelven; con `java -cp` hay que añadirlo) |
