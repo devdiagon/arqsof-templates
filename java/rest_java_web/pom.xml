@@ -4,7 +4,7 @@
     <!-- DOMINIO: nombre del proyecto (renombrar artifactId y name; el groupId/paquete ec.edu.monster no se cambia).
          Si se renombra, actualizar también el context root en WEB-INF/glassfish-web.xml -->
     <groupId>ec.edu.monster</groupId>
-    <artifactId>ClienteRestWeb</artifactId>
+    <artifactId>rest_java_web</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
     <name>Cliente REST web</name>
@@ -22,7 +22,8 @@
             <version>${jakartaee}</version>
             <scope>provided</scope>
         </dependency>
-        <!-- JSON (el transporte usa java.net.http.HttpClient del JDK, sin dependencia). Va en compile: entra en el WAR -->
+        <!-- JSON: HTTP usa java.net.http.HttpClient (JDK 21). Gson lee y escribe el JSON y SÍ va en el WAR (compile):
+             Payara aporta JSON-B y JSON-P, pero no Gson. -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>

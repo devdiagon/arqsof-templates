@@ -1,6 +1,7 @@
 package ec.edu.monster.controlador;
 
 import ec.edu.monster.excepciones.ExcepcionServicio;
+import ec.edu.monster.vista.Textos;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -45,6 +46,6 @@ public final class EjecutorAsincrono {
         if (causa instanceof ExcepcionServicio negocio) {
             return negocio;
         }
-        return new ExcepcionServicio("ERROR", "Ocurrió un error inesperado", causa);
+        return new ExcepcionServicio("ERROR", Textos.ERROR_INESPERADO, causa);
     }
 }

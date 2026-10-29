@@ -1,5 +1,5 @@
-// Mientras hay una petición en curso: controles deshabilitados e indicador visible.
-// Se deshabilita después del envío (setTimeout) porque un campo deshabilitado no viaja en el formulario.
+// Mientras hay una petición en curso: controles deshabilitados e indicador visible (el CSS oculta el mensaje y los
+// resultados anteriores). Se deshabilita después del envío (setTimeout) porque un campo deshabilitado no viaja en el formulario.
 (function () {
     'use strict';
 
@@ -39,5 +39,16 @@
             }
             setTimeout(function () { ocupar(enlace.closest('.columna'), true); }, 0);
         });
+    });
+
+    // Esc equivale a «Cancelar» (el enlace marcado con data-cancelar), salvo que la pantalla esté ocupada.
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') {
+            return;
+        }
+        var cancelar = document.querySelector('a[data-cancelar]');
+        if (cancelar && cancelar.getAttribute('aria-disabled') !== 'true') {
+            cancelar.click();
+        }
     });
 })();

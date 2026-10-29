@@ -21,8 +21,14 @@ public class PanelMensaje extends PanelRedondeado {
     private String texto = "";
     private boolean resultado;
 
+    /** Panel sobre la imagen de fondo de la aplicación (§6). */
     public PanelMensaje() {
-        super(Tema.SUPERFICIE);
+        this(Tema.PANEL_SOBRE_IMAGEN);
+    }
+
+    /** Panel con el fondo indicado ({@code SUPERFICIE} en la pantalla de acceso, que no tiene imagen debajo). */
+    public PanelMensaje(Color fondo) {
+        super(fondo);
         setLayout(new java.awt.BorderLayout());
         setBorder(new EmptyBorder(Tema.PADDING_PANEL_MENSAJE, Tema.PADDING_PANEL_MENSAJE + Tema.BARRA_ESTADO,
                 Tema.PADDING_PANEL_MENSAJE, Tema.PADDING_PANEL_MENSAJE));
@@ -65,7 +71,7 @@ public class PanelMensaje extends PanelRedondeado {
         // El resultado es una línea corta: texto plano centrado. Los mensajes pueden ser largos: HTML con ancho fijo.
         etiqueta.setHorizontalAlignment(resultado ? javax.swing.SwingConstants.CENTER : javax.swing.SwingConstants.LEFT);
         etiqueta.setText(resultado ? texto
-                : "<html><body style='width:" + ANCHO_TEXTO + "px'>" + escaparHtml(texto) + "</body></html>");
+                : "<html><body style='width:" + EstilosUi.anchoHtml(ANCHO_TEXTO) + "px'>" + escaparHtml(texto) + "</body></html>");
         setVisible(true);
         revalidate();
         repaint();

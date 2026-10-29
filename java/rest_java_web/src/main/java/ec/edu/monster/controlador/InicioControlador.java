@@ -8,19 +8,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * DOMINIO (ejemplo): controlador de una pantalla protegida; se reemplaza por los del dominio. Su ruta debe estar
- * también en {@code FiltroAcceso} (así sin token se redirige al login antes de llegar aquí).
+ * DOMINIO (ejemplo): controlador de la pantalla inicial; se reemplaza por los del dominio (punto de enganche: el proyecto
+ * lo sustituye por su login o su menú).
  *
  * Molde para una operación del servidor (ver README §4):
  * <pre>
  * try {
- *     peticion.setAttribute("items", ContextoWeb.items(peticion).items());
+ *     peticion.setAttribute("items", ContextoWeb.x(peticion).items());
  * } catch (ExcepcionServicio e) {
- *     if (e.exigeLogin()) {                                   // AUTH-002 / AUTH-003
- *         ContextoWeb.volverAlLogin(peticion, respuesta, e.getMessage());
- *         return;
- *     }
- *     peticion.setAttribute("error", e.getMessage());         // solo el mensaje
+ *     peticion.setAttribute("error", e.getMessage());         // solo el mensaje, nunca el código
  * }
  * ContextoWeb.mostrar(peticion, respuesta, "items");          // /WEB-INF/vistas/items.jsp
  * </pre>

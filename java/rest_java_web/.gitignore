@@ -5,3 +5,4 @@ target/
 *.iml
 nbproject/private/
 .DS_Store
+dependency-reduced-pom.xml

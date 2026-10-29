@@ -21,6 +21,8 @@ import javax.swing.border.EmptyBorder;
  */
 public final class EstilosUi {
 
+    private static double factorHtml;
+
     private EstilosUi() {
     }
 
@@ -35,6 +37,19 @@ public final class EstilosUi {
         UIManager.put("Label.foreground", Tema.TEXTO);
     }
 
+    /**
+     * Valor de {@code width} (en px de HTML) con el que un texto HTML mide {@code ancho} píxeles reales. Swing escala los
+     * px de HTML según la resolución de la pantalla (p. ej. 125 %), así que un ancho fijo en el HTML no coincide con el
+     * del componente y el texto se corta; se mide una vez con una etiqueta de prueba.
+     */
+    public static int anchoHtml(int ancho) {
+        if (factorHtml == 0) {
+            int medida = new JLabel("<html><div style='width:1000px'>x</div></html>").getPreferredSize().width;
+            factorHtml = medida > 0 ? medida / 1000.0 : 1.0;
+        }
+        return (int) Math.floor(ancho / factorHtml);
+    }
+
     /** Fuente del look and feel (no se fuerza otra familia) con el estilo y tamaño del rol. */
     public static Font fuente(int estilo, float tamano) {
         Font base = UIManager.getFont("Label.font");
@@ -45,16 +60,16 @@ public final class EstilosUi {
 
     /** Encabezado del login: título de aplicación, centrado. */
     public static PanelRedondeado encabezadoAplicacion(String texto) {
-        return encabezado(texto, Tema.TAM_TITULO_APLICACION, SwingConstants.CENTER);
+        return encabezado(texto, Tema.TAM_TITULO_APLICACION, SwingConstants.CENTER, Tema.SUPERFICIE);
     }
 
     /** Encabezado de pantalla: título de pantalla, a la izquierda. */
     public static PanelRedondeado encabezadoPantalla(String texto) {
-        return encabezado(texto, Tema.TAM_TITULO_PANTALLA, SwingConstants.LEFT);
+        return encabezado(texto, Tema.TAM_TITULO_PANTALLA, SwingConstants.LEFT, Tema.PANEL_SOBRE_IMAGEN);
     }
 
-    private static PanelRedondeado encabezado(String texto, float tamano, int alineacion) {
-        PanelRedondeado panel = new PanelRedondeado(Tema.SUPERFICIE);
+    private static PanelRedondeado encabezado(String texto, float tamano, int alineacion, Color fondo) {
+        PanelRedondeado panel = new PanelRedondeado(fondo);
         panel.setLayout(new BorderLayout());
         panel.setBorder(new EmptyBorder(Tema.PADDING_PANEL_TITULO, Tema.PADDING_PANEL_TITULO,
                 Tema.PADDING_PANEL_TITULO, Tema.PADDING_PANEL_TITULO));
@@ -145,6 +160,13 @@ public final class EstilosUi {
     /** Botón secundario sólido: acciones de salida o de regreso. */
     public static JButton botonSecundario(String texto) {
         return boton(texto, Tema.SECUNDARIO, Tema.SECUNDARIO_PRESIONADO);
+    }
+
+    /** Botón primario grande de la cuadrícula de acciones (§5.11). */
+    public static JButton botonPrimarioGrande(String texto) {
+        JButton boton = botonPrimario(texto);
+        boton.setPreferredSize(new java.awt.Dimension(0, Tema.ALTO_BOTON_CUADRICULA));
+        return boton;
     }
 
     private static JButton boton(String texto, Color relleno, Color presionado) {

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- DOMINIO: nombre del proyecto (renombrar artifactId y name; el groupId/paquete ec.edu.monster no se cambia) -->
     <groupId>ec.edu.monster</groupId>
-    <artifactId>ClienteRestEscritorio</artifactId>
+    <artifactId>rest_java_escritorio</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Cliente REST de escritorio</name>
@@ -13,7 +13,7 @@
         <exec.mainClass>ec.edu.monster.Main</exec.mainClass>
     </properties>
     <dependencies>
-        <!-- JSON (el transporte usa java.net.http.HttpClient del JDK, sin dependencia) -->
+        <!-- JSON: HTTP usa java.net.http.HttpClient (JDK 21), no hace falta dependencia; Gson lee y escribe el JSON -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -39,12 +39,13 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
             </plugin>
+            <!-- mvn compile exec:java  (exec:java no compila) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
             </plugin>
-            <!-- Jar ejecutable (java -jar target/...-shaded.jar): incluye Gson y FlatLaf -->
+            <!-- jar ejecutable con Gson y FlatLaf incluidos: java -jar target/...-shaded.jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -63,16 +64,6 @@
                                     <mainClass>${exec.mainClass}</mainClass>
                                 </transformer>
                             </transformers>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
                         </configuration>
                     </execution>
                 </executions>

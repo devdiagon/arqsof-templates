@@ -1,57 +1,47 @@
 package ec.edu.monster.controlador;
 
-import ec.edu.monster.api.ClienteApi;
-import ec.edu.monster.api.ClienteApiHttp;
-import ec.edu.monster.modelo.Sesion;
-import ec.edu.monster.servicio.ServicioAutenticacion;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Puente entre el contenedor web y el cliente. La {@link Sesion} (token) vive en la sesión HTTP de cada usuario
- * (nunca en un bean compartido: lo verían todos los usuarios) y los servicios se arman por petición con ella,
- * sobre el transporte compartido ({@link #api()}).
+ * Puente entre el contenedor web y el cliente: muestra las vistas, redirige y lleva datos de una petición a la siguiente. Es
+ * también el lugar donde se compone el cliente (el equivalente de {@code Main} en los clientes de escritorio y consola).
  *
- * DOMINIO: agregar aquí un método por cada servicio nuevo, con el molde de {@link #autenticacion}.
+ * DOMINIO: al agregar un servicio del servidor, crear aquí su cliente <b>una sola vez</b> con
+ * {@link ec.edu.monster.api.ClientePerezoso} y un método que arme el servicio, p. ej.
+ * <pre>
+ * private static final XCliente CLIENTE_X = ClientePerezoso.de(XCliente.class,
+ *         XClienteApi::crear);
+ *
+ * static XServicio x(HttpServletRequest peticion) { return new XServicio(CLIENTE_X); }
+ * </pre>
+ * Si el proyecto tiene login, el estado del empleado (credenciales o sesión) vive <b>solo en la sesión HTTP</b> de cada
+ * usuario, nunca en un campo estático ni en un bean de aplicación: lo verían todos los usuarios. En ese caso el
+ * contexto de cada empleado (su sesión y los servicios que la reciben) se crea por sesión HTTP y se guarda en ella.
+ *
+ * <b>Resultado de una sola lectura (flash).</b> Un {@code POST} que cambia datos no devuelve la página: guarda su resultado
+ * (o el error y lo escrito) con {@link #guardarFlash} y redirige a un {@code GET}, que lo recupera con {@link #cargarFlash} y lo
+ * borra. Así recargar la página no repite la operación (Post/Redirect/Get).
  */
 public final class ContextoWeb {
 
-    /** Nombre del atributo de la sesión HTTP que guarda la {@link Sesion}. */
-    public static final String ATRIBUTO_SESION = "sesion";
-    /** Mensaje de una sola lectura para el login (p. ej. «Sesión expirada»). */
-    static final String ATRIBUTO_AVISO = "aviso";
-    /** DOMINIO: ruta (relativa al contexto) a la que se llega tras autenticarse. */
+    private static final String ATRIBUTO_FLASH = "flash";
+    private static final String ATRIBUTO_AVISO = "aviso";
+
+    /** DOMINIO: ruta (relativa al contexto) de la pantalla inicial. */
     static final String PANTALLA_INICIAL = "/inicio";
     private static final String VISTAS = "/WEB-INF/vistas/";
-
-    /** Un solo transporte para toda la aplicación (no guarda estado de usuario; {@code HttpClient} admite llamadas concurrentes). */
-    private static final ClienteApi API = new ClienteApiHttp();
 
     private ContextoWeb() {
     }
 
-    /** La sesión del usuario actual; se crea (sin token) la primera vez. */
-    public static synchronized Sesion sesion(HttpServletRequest peticion) {
-        HttpSession http = peticion.getSession();
-        Sesion sesion = (Sesion) http.getAttribute(ATRIBUTO_SESION);
-        if (sesion == null) {
-            sesion = new Sesion();
-            http.setAttribute(ATRIBUTO_SESION, sesion);
-        }
-        return sesion;
-    }
-
-    /** Transporte único de la aplicación; los servicios lo reciben por constructor. */
-    static ClienteApi api() {
-        return API;
-    }
-
-    static ServicioAutenticacion autenticacion(HttpServletRequest peticion) {
-        return new ServicioAutenticacion(api(), sesion(peticion));
-    }
+    // ---- Navegación ----
 
     /** Muestra {@code /WEB-INF/vistas/<vista>.jsp}. Los datos se pasan como atributos de la petición. */
     static void mostrar(HttpServletRequest peticion, HttpServletResponse respuesta, String vista)
@@ -59,14 +49,64 @@ public final class ContextoWeb {
         peticion.getRequestDispatcher(VISTAS + vista + ".jsp").forward(peticion, respuesta);
     }
 
+    /** Redirige a una ruta relativa al contexto (patrón Post/Redirect/Get). */
     static void redirigir(HttpServletRequest peticion, HttpServletResponse respuesta, String ruta) throws IOException {
         respuesta.sendRedirect(peticion.getContextPath() + ruta);
     }
 
-    /** Sesión vencida o inválida (AUTH-002 / AUTH-003): vuelve al login mostrando el mensaje del servidor. */
-    static void volverAlLogin(HttpServletRequest peticion, HttpServletResponse respuesta, String mensaje)
-            throws IOException {
+    // ---- Resultado de una sola lectura ----
+
+    /** Guarda en la sesión lo que la siguiente petición {@code GET} mostrará una sola vez. Los valores deben ser serializables. */
+    static void guardarFlash(HttpServletRequest peticion, Map<String, Object> datos) {
+        peticion.getSession().setAttribute(ATRIBUTO_FLASH, new HashMap<>(datos));
+    }
+
+    /** Pasa a atributos de la petición lo guardado por {@link #guardarFlash} y lo borra de la sesión. */
+    @SuppressWarnings("unchecked")
+    static void cargarFlash(HttpServletRequest peticion) {
+        HttpSession http = peticion.getSession(false);
+        if (http == null) {
+            return;
+        }
+        Map<String, Object> datos = (Map<String, Object>) http.getAttribute(ATRIBUTO_FLASH);
+        if (datos != null) {
+            http.removeAttribute(ATRIBUTO_FLASH);
+            datos.forEach(peticion::setAttribute);
+        }
+    }
+
+    /** Aviso de una sola lectura para la pantalla de acceso (p. ej. sesión no válida). */
+    static void avisar(HttpServletRequest peticion, String mensaje) {
         peticion.getSession().setAttribute(ATRIBUTO_AVISO, mensaje);
-        redirigir(peticion, respuesta, "/login");
+    }
+
+    /** Devuelve y borra el aviso pendiente, o {@code null}. */
+    static String tomarAviso(HttpServletRequest peticion) {
+        HttpSession http = peticion.getSession(false);
+        if (http == null) {
+            return null;
+        }
+        String aviso = (String) http.getAttribute(ATRIBUTO_AVISO);
+        http.removeAttribute(ATRIBUTO_AVISO);
+        return aviso;
+    }
+
+    // ---- Sesión ----
+
+    /**
+     * Invalida la sesión HTTP y borra su cookie. Sin borrar la cookie, el navegador la sigue enviando y el siguiente acceso
+     * se tomaría por una sesión vencida (el filtro de acceso mostraría el aviso de sesión no válida).
+     */
+    static void cerrarSesion(HttpServletRequest peticion, HttpServletResponse respuesta) {
+        HttpSession http = peticion.getSession(false);
+        if (http != null) {
+            http.invalidate();
+        }
+        String nombre = peticion.getServletContext().getSessionCookieConfig().getName();
+        Cookie cookie = new Cookie(nombre == null ? "JSESSIONID" : nombre, "");
+        cookie.setMaxAge(0);
+        cookie.setPath(peticion.getContextPath().isEmpty() ? "/" : peticion.getContextPath());
+        cookie.setHttpOnly(true);
+        respuesta.addCookie(cookie);
     }
 }

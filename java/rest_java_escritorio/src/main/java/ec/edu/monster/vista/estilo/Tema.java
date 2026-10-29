@@ -42,6 +42,23 @@ public final class Tema {
     public static final int SEPARACION_ETIQUETA = 6;
     public static final int BARRA_ESTADO = 4;
 
+    // Dentro de la aplicación (CLIENT_STYLES_JAVA.md §5.11, §5.12, §5.13, §6, §7.0)
+    public static final Color PANEL_SOBRE_IMAGEN = new Color(0, 0, 0, 153);   // rgba(0,0,0,0.60)
+    public static final float OPACIDAD_IMAGEN = 0.40f;
+    /** Fracción del alto y del ancho de su contenedor que ocupa la imagen decorativa (completa y centrada); se ajusta según la imagen. */
+    public static final float ESCALA_IMAGEN = 0.60f;
+    public static final Color EXITO_CLARO = new Color(0x15803D);   // sobre blanco (tarjeta)
+    public static final Color ERROR_CLARO = new Color(0xB91C1C);   // sobre blanco (tarjeta)
+    public static final int ALTO_BOTON_CUADRICULA = 96;
+    public static final int ANCHO_TARJETA = 260;
+    public static final int PADDING_TARJETA = 16;
+    public static final Color DIVISOR_TARJETA = new Color(0xCBD5E1);              // borde de la presentación clara
+    public static final Color CONTORNO_TARJETA = new Color(3, 105, 161, 130);     // primario, sutil
+    public static final int ALTO_FILA_TABLA = 36;
+    public static final int FILAS_VISIBLES_TABLA = 10;
+    public static final int ANCHO_CONTENIDO_FORMULARIO = 480;
+    public static final int ANCHO_CONTENIDO_AMPLIO = 640;
+
     // Ventana y columna de contenido
     // Ventana: formulario a la izquierda (ancho fijo) e imagen a la derecha (el resto)
     public static final int VENTANA_ANCHO = 900;

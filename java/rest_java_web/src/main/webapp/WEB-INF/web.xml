@@ -24,7 +24,7 @@
     </session-config>
 
     <welcome-file-list>
-        <welcome-file>login</welcome-file>
+        <welcome-file>inicio</welcome-file>
     </welcome-file-list>
 
     <jsp-config>
