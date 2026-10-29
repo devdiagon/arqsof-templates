@@ -14,7 +14,7 @@
 | URL base completa (R1) | `http://<host>:<puerto>/<contexto>/api/` (con «/» final). Las rutas de la tabla son relativas y sin barra inicial; cada cliente guarda la URL base en un solo lugar |
 | Base de datos | *(la del proyecto)* |
 | Formato de los datos | *(los de la especificación del servidor: longitudes, decimales, formatos de fecha…)* |
-| Todo dato como texto (R9) | Las respuestas nunca llevan números JSON. *(Decidir y registrar qué hace el servidor con un número JSON recibido en una petición: la plantilla lo acepta y lo trata como su texto.)* |
+| Todo dato como texto (R9) | Las respuestas nunca llevan números JSON. En las **peticiones**, el servidor aplica la regla general de R9 (`CONVENCION_REST.md`): acepta un número JSON como valor de campo (`"importe": 100.50`) y lo trata como su texto (`"100.50"`); el validador decide. La plantilla ya lo hace (`CuerpoJson`). El cliente sigue enviando texto y no necesita ningún cuidado especial |
 | CORS | No se añade, salvo que un cliente web llame a la API desde el navegador |
 
 **Orden de validación en una operación** (el primer fallo es el que se informa): 1) forma de los datos (`DATA-001`), también de las variables de ruta; 2) credenciales, si el proyecto las tiene (`AUTH-…`); 3) existencia y reglas de negocio. Un cuerpo vacío, mal formado o que no es un objeto JSON da `400` `DATA-001` («Cuerpo de la petición inválido»).

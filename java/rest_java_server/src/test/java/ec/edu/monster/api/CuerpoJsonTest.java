@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ec.edu.monster.controlador.ValidadorForma;
 import ec.edu.monster.excepciones.CodigoError;
 import ec.edu.monster.excepciones.ExcepcionMonster;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,19 @@ class CuerpoJsonTest {
 
         assertEquals("10.50", json.texto("valor"));
         assertEquals("7", json.texto("entero"));
+    }
+
+    @Test
+    void unNumeroConNotacionCientificaOConDemasiadosDecimalesLlegaTalCualYElValidadorLoRechaza() {
+        CuerpoJson json = CuerpoJson.leer("{\"valor\":1E+2,\"otro\":10.999}");
+
+        assertEquals("1E+2", json.texto("valor"));
+        assertEquals("10.999", json.texto("otro"));
+        for (String texto : new String[]{json.texto("valor"), json.texto("otro")}) {
+            ExcepcionMonster e = assertThrows(ExcepcionMonster.class,
+                    () -> ValidadorForma.decimalPositivo(texto, "valor", 10, 2));
+            assertEquals(CodigoError.DATA_001, e.getError());
+        }
     }
 
     @Test

@@ -4,7 +4,7 @@ Plantilla para crear el **servidor** de un SOA Java REST: **Java 21 + Jakarta EE
 
 **No contiene nada del dominio.** Trae un **núcleo** que se copia sin cambios y un **ejemplo mínimo** (la entidad genérica `Elemento`) que se borra o se sustituye. Es la contraparte de `soap_java_server`: el núcleo es el mismo y solo cambia la capa de protocolo (`ws` ↔ `api`).
 
-> **Estado:** `mvn test` pasa sus **96 pruebas** (JDK 21, Maven 3.9); las 4 clases de pruebas manuales (`ec.edu.monster.pruebas`) dan 10/10; `mvn package` genera el WAR (sin Yasson ni Parsson: solo el driver de MySQL). *(No verificado):* el despliegue de **esta** plantilla en Payara y su ejecución contra una base MySQL real (las pruebas no usan base ni servidor). La misma capa `api` sí se desplegó y se probó a mano en un proyecto Java REST construido a partir de ella.
+> **Estado:** `mvn test` pasa sus **97 pruebas** (JDK 21, Maven 3.9); las 4 clases de pruebas manuales (`ec.edu.monster.pruebas`) dan 10/10; `mvn package` genera el WAR (sin Yasson ni Parsson: solo el driver de MySQL). *(No verificado):* el despliegue de **esta** plantilla en Payara y su ejecución contra una base MySQL real (las pruebas no usan base ni servidor). La misma capa `api` sí se desplegó y se probó a mano en un proyecto Java REST construido a partir de ella.
 
 ## 1. Qué contiene
 
@@ -73,7 +73,7 @@ Dependencias solo hacia abajo: `api → controlador → servicios → db`; `mode
 | **R6** errores de plataforma con envoltura | `ManejadorErrores` (`@Provider`, `ExceptionMapper<Throwable>`) | el framework responde con HTML si no está registrado |
 | **R7** HTTP por categoría | `CodigoHttp` + `RespuestasHttp` | agregar un error solo exige una entrada en el catálogo |
 | **R8** credenciales fuera de la URL y de los registros | **no se implementa** (ver §7) | cada proyecto define su mecanismo |
-| **R9** datos como texto | `ConversorTexto` | sin diferencias de cultura ni de tipos entre plataformas |
+| **R9** datos como texto; el servidor tolera un número JSON recibido | `ConversorTexto` (salida); `CuerpoJson.texto` (entrada: `"importe": 100.50` llega como `"100.50"` y el validador decide) | sin diferencias de cultura ni de tipos entre plataformas; el cliente no necesita ningún cuidado especial |
 
 ## 5. Ejecutar
 

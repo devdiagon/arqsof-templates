@@ -27,7 +27,7 @@ La **tabla de endpoints** de cada proyecto (`ENDPOINTS_REST.md`) es el contrato:
 | **R6** | **Errores de la plataforma con la misma estructura:** ruta inexistente (`404 ERR-404`), verbo no permitido (`405 ERR-405`), `Content-Type` incorrecto (`415 ERR-415`), JSON mal formado (`400 DATA-001`) y error interno (`500 ERR-500`) traen **solo** `estado`, `codigo` y `mensaje`. **Nunca** una página HTML ni un `ProblemDetails`. | Los frameworks responden por defecto con su propio formato; sin esta regla el cliente recibe cuerpos que no puede interpretar. |
 | **R7** | **Código HTTP + código propio.** El servidor decide el HTTP por la **categoría** del error (§2) y siempre incluye la envoltura. El cliente decide primero por el HTTP y luego por el `codigo`, y **lee el cuerpo también cuando el HTTP es de error**: nunca descarta el cuerpo por el código (en .NET, nunca `EnsureSuccessStatusCode()`). | En REST el código HTTP forma parte del contrato; en SOAP, en cambio, los errores de negocio llegan con 200. |
 | **R8** | **La autenticación no forma parte de esta convención.** El mecanismo (cabecera, cuerpo, token, sesión…) lo define cada proyecto en `ENDPOINTS_REST.md` (§6). Sí se fija: las **credenciales nunca viajan en la URL ni se registran** (ni en el servidor ni en el cliente), y una petición sin credenciales válidas recibe `401` con la envoltura y un código de categoría *No autorizado* del catálogo del proyecto. | No existe una forma estándar única de manejar credenciales; lo que sí es común es no filtrarlas y responder igual ante un fallo. |
-| **R9** | **Todo dato viaja como texto**, también los importes, cantidades y resultados; los decimales con **punto**, sin coma ni notación científica; fechas en ISO‑8601. Un número JSON sin comillas no forma parte del contrato. | Evita diferencias de cultura, de precisión y de serialización entre plataformas. |
+| **R9** | **Todo dato viaja como texto**, también los importes, cantidades y resultados; los decimales con **punto**, sin coma ni notación científica; fechas en ISO‑8601. **Quien emite** (cliente o servidor) escribe siempre texto entre comillas; las respuestas nunca llevan números JSON. **El servidor, al recibir, tolera** un número o un booleano JSON sin comillas como valor de un campo (`"importe": 100.50`) y lo trata como su texto escrito (`"100.50"`), sin convertirlo ni reformatearlo: el validador aplica las mismas reglas de siempre (un `1E+2` o un `10.999` se rechaza igual, con `DATA-001`). Un objeto, una lista o un `null` equivalen a campo ausente. Interpretarlo es responsabilidad del servidor: el cliente no necesita ningún cuidado especial. | Evita diferencias de cultura, de precisión y de serialización entre plataformas, y hace que cualquier cliente funcione con cualquier servidor aunque su biblioteca JSON serialice un valor como número. |
 | **R10** | **Rutas con variables codificadas:** el valor de un segmento de ruta se codifica (`Uri.EscapeDataString`, `URLEncoder`…); el servidor lo recibe ya decodificado. Los recursos van en plural, en minúscula y sin tilde; las operaciones de negocio son **subrecursos que se crean** (`POST cuentas/{codigo}/depositos`, no `POST depositar`). Filtros, orden y paginación, como parámetros de consulta. | Un código con espacios o caracteres reservados rompe la ruta si no se codifica. |
 | **R11** | **Sin respuesta no hay código:** servidor caído, red o tiempo agotado no son un error de la API. El cliente fija un **tiempo límite de 10 s** y lo traduce a «Servidor no disponible, intente más tarde» (código propio del cliente `RED`). | El cliente distingue «falló la red» de «falló el negocio». |
 | **R12** | **Cuerpo que no es JSON** (página de un proxy o de IIS Express, `502`): el cliente no deja escapar la excepción del deserializador; muestra un mensaje genérico con el código HTTP, si existe (código propio del cliente `SRV-000`). | Evita mostrar trazas o HTML al usuario. |
@@ -77,7 +77,7 @@ Marcadores: `<Recurso>` = recurso, `<op>` = operación de negocio. No hay lógic
 
 ### 3.1 Java (JAX-RS / JSON-B)
 1. **Prefijo común:** una clase `Application` con `@ApplicationPath("api")` (R1) y un **context root** propio, distinto del de un WAR SOAP si ambos conviven.
-2. **Recursos** con `@Path`, `@Produces`/`@Consumes` en JSON UTF-8 (R3); sin lógica: reciben, delegan al controlador y devuelven.
+2. **Recursos** con `@Path`, `@Produces`/`@Consumes` en JSON UTF-8 (R3); sin lógica: reciben, delegan al controlador y devuelven. Los **cuerpos de entrada** se reciben como texto y se leen con JSON-P (`JsonObject`): se busca cada nombre sin distinguir mayúsculas (R4; JSON-B no lo hace al deserializar) y cada valor se entrega como texto, **incluido un número JSON** (R9).
 3. **Tipos de contrato** como POJO con getters y setters, nombres en `camelCase`, todo `String`, campos sin valor omitidos y listas inicializadas vacías (R4, R5, R9).
 4. **`ExceptionMapper`** para ruta inexistente, verbo no permitido, `Content-Type` incorrecto, JSON mal formado y cualquier excepción no prevista, todos con la envoltura (R6). Debe estar registrado (`@Provider` dentro del paquete escaneado); si no, el servidor responde con su página HTML.
 5. **HTTP por categoría** (R7): el mapeador de respuestas obtiene la categoría del catálogo a partir del código del `Resultado`.
@@ -85,7 +85,7 @@ Marcadores: `<Recurso>` = recurso, `<op>` = operación de negocio. No hay lógic
 
 ### 3.2 .NET (ASP.NET Core)
 1. **Prefijo común** con `MapGroup`/ruta base (R1) y controladores o *endpoints* que reciben, delegan al controlador del núcleo y devuelven; sin lógica.
-2. **Serialización** con `System.Text.Json`: nombres en `camelCase` y **sin valores nulos**; todos los campos del cuerpo declarados como `string` para que el enlace de modelo no los convierta antes de validar (R4, R9).
+2. **Serialización** con `System.Text.Json`: nombres en `camelCase` y **sin valores nulos**; los campos del cuerpo se entregan al validador como `string` para que el enlace de modelo no los convierta antes de validar (R4, R9), **también cuando llegan como número JSON** (R9). Por defecto `System.Text.Json` no lee un número en una propiedad `string`: hace falta un convertidor o leer el cuerpo como `JsonElement`/`JsonObject` **(no verificado: se comprueba al construir .NET REST)**.
 3. **Validación automática del modelo desactivada** (`ApiController`): valida el controlador del núcleo, no el framework, para que el error salga con la envoltura (R6).
 4. **Manejador de errores de plataforma** (middleware o `UseStatusCodePages`/`UseExceptionHandler`) que cubra `404`, `405`, `415`, JSON mal formado y excepciones no controladas con la envoltura; **nunca** `ProblemDetails` ni páginas HTML (R6).
 5. **HTTP por categoría** (R7) igual que en Java.
@@ -103,7 +103,7 @@ Marcadores: `<Recurso>` = recurso, `<op>` = operación de negocio. No hay lógic
 Reglas comunes a todos los clientes:
 - Tratar **por separado** el fallo de red (`RED`, R11), la respuesta ilegible (`SRV-000`, R12) y el error de negocio (envoltura, R7).
 - Decidir por el código HTTP y luego por el `codigo` de la envoltura; mostrar el `mensaje`, nunca el código.
-- Enviar los datos como texto con punto decimal y cultura invariante (R9); un valor opcional o una lista pueden venir ausentes en una respuesta de error.
+- Enviar los datos como texto con punto decimal y cultura invariante (R9); un valor opcional o una lista pueden venir ausentes en una respuesta de error. Si por la biblioteca JSON un valor sale como número sin comillas, no es un error del cliente: el servidor lo interpreta como su texto (R9); el cliente no debe tratarlo de forma especial ni depender de ello.
 - No llamar al servidor en el hilo de la interfaz; fijar el tiempo límite (R11).
 - Un cambio de rutas, campos o códigos obliga a actualizar `api` y `dto` en **todos** los clientes (`ARQUITECTURA_CLIENTE.md` §8); la vista y el controlador no se tocan.
 
@@ -137,7 +137,7 @@ También se anotan ahí las rarezas del proyecto (por ejemplo, un error cuya cat
 
 La lista paso a paso, con lo que debe verse en cada uno, está en `CONVENCION_PRUEBAS.md` §6.2 (contrato REST: una fila de `ENDPOINTS_REST.md` por paso) y §6.3 (clientes); no hay pruebas automáticas de conformidad. Antes de dar por bueno un servicio nuevo o un cambio de contrato:
 
-1. **Recorrer `ENDPOINTS_REST.md`:** cada fila verifica verbo, ruta, HTTP de éxito, la forma exacta del JSON y al menos un error con su HTTP y su envoltura.
+1. **Recorrer `ENDPOINTS_REST.md`:** cada fila verifica verbo, ruta, HTTP de éxito, la forma exacta del JSON y al menos un error con su HTTP y su envoltura. En las operaciones con cuerpo, repetir una petición válida con los valores numéricos **sin comillas** (`"importe": 100.50`): debe dar la misma respuesta que con texto (R9).
 2. **Errores de plataforma:** ruta inexistente, verbo no permitido, `Content-Type` incorrecto y JSON mal formado devuelven la envoltura (R6), nunca HTML.
 3. **Comparación cruzada:** las mismas peticiones (válidas, inválidas y límite) contra Java REST y .NET REST dan los mismos `estado`, `codigo`, `mensaje` y campos propios, ignorando lo que cambia (cabeceras del servidor, fecha).
 4. **Un cliente real de cada tipo** contra cada servidor.
@@ -146,7 +146,7 @@ La lista paso a paso, con lo que debe verse en cada uno, está en `CONVENCION_PR
 
 ## 8. Aplicarla a otro servicio o dominio
 
-0. Partir de la plantilla de la plataforma (`rest_*_server`, aún por crear; mientras tanto, la plantilla SOAP del servidor).
+0. Partir de la plantilla de la plataforma: Java, `rest_java_server`; .NET, aún por crear (mientras tanto, la plantilla SOAP del servidor).
 1. Elegir el prefijo y el context root (R1).
 2. Escribir `ENDPOINTS_REST.md`: tabla de endpoints y autenticación (§6), **antes** de implementar.
 3. Aplicar la receta de la plataforma (§3). La lógica de negocio va en capas sin dependencias de REST.
@@ -163,7 +163,7 @@ Primera variante construida (servidor Java, Payara 7, `jakartaee-api 11.0.0`), d
 | POJO frente a *record* | Un *record* no puede heredar la envoltura; se usa un POJO con una clase base |
 | Campos sin valor | JSON-B omite los `null` por defecto (R5). Las listas se inicializan vacías para que salgan como `[]` |
 | Nombres sin distinguir mayúsculas (R4) | JSON-B no lo hace al deserializar. Se leen los cuerpos de entrada con JSON-P (`JsonObject`) buscando el nombre en minúscula |
-| Número JSON como valor de campo (R9) | R9 deja fuera el número sin comillas pero no dice qué hacer. Decisión de este proyecto: se acepta y se entrega como texto al validador (`100.50` llega como `"100.50"`). Otro proyecto puede decidir rechazarlo |
+| Número JSON como valor de campo (R9) | Regla general desde R9: el servidor lo acepta y lo trata como su texto escrito (`100.50` llega como `"100.50"`); el validador decide. En Java se logra leyendo el cuerpo con JSON-P (§3.1); en .NET habrá que configurarlo (§3.2). Verificado a mano en Java REST con dos decimales |
 | Manejador de errores | Un solo `ExceptionMapper<Throwable>` con `@Provider` clasifica ruta inexistente, verbo, `Content-Type`, petición mal formada y cualquier otra excepción; lo demás sale como `ERR-500` sin detalles. Conserva la cabecera `Allow` en el `405` |
 | Negociación de contenido | Sin `@Produces` en los recursos (el tipo se fija al construir la respuesta) para no recibir un `406` ajeno a la envoltura |
 | `401` | Todo `401` lleva `WWW-Authenticate` (`Basic realm=…`) y la envoltura |
