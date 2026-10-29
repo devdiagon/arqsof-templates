@@ -4,7 +4,7 @@ Plantilla para crear el **servidor** de un SOA Java SOAP: **Java 21 + Jakarta EE
 
 **No contiene nada del dominio.** Trae un **núcleo** que se copia sin cambios y un **ejemplo mínimo** (la entidad genérica `Elemento`) que se borra o se sustituye.
 
-> **Estado:** `mvn test` pasa sus **77 pruebas** (JDK 21, Maven 3.9), incluidas 6 de **conformidad** que publican el servicio con Metro —el mismo motor de Payara— y lo llaman por SOAP; las 4 clases de pruebas manuales (`ec.edu.monster.pruebas`) dan 10/10; `mvn package` genera el WAR. *(No verificado):* el despliegue del WAR en Payara y la ejecución contra una base MySQL real (las pruebas no usan base de datos).
+> **Estado:** `mvn test` pasa sus **80 pruebas** (JDK 21, Maven 3.9), incluidas 6 de **conformidad** que publican el servicio con Metro —el mismo motor de Payara— y lo llaman por SOAP; las 4 clases de pruebas manuales (`ec.edu.monster.pruebas`) dan 10/10; `mvn package` genera el WAR. *(No verificado):* el despliegue del WAR en Payara y la ejecución contra una base MySQL real (las pruebas no usan base de datos).
 
 ## 1. Qué contiene
 
@@ -24,7 +24,7 @@ soap_java_server/
 │   │   ├── ws/contrato/RespuestaBase           envoltura estado/codigo/mensaje (R6)
 │   │   ├── ws/contrato/package-info            campos calificados con el TNS (R3)
 │   │   ├── ws/contrato/ConvencionSoap          TNS y constantes (solo se agregan servicios/acciones)
-│   │   ├── excepciones/CodigoError             catálogo: DATA-001 y ERR-500 son núcleo; se agregan los del dominio
+│   │   ├── excepciones/CodigoError             catálogo: DATA-001, ERR-404/405/415 y ERR-500 son núcleo; se agregan los del dominio
 │   │   └── pruebas/Verificador                 aserciones para las pruebas manuales
 │   └── EJEMPLO (sustituir por el dominio)
 │       ├── modelo/Elemento · db/ElementoRepositorio(+MySql) · servicios/ElementoServicio
