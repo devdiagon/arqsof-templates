@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage x:Class="ec.edu.monster.vista.PaginaPrincipal"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vista="clr-namespace:ec.edu.monster.vista"
+             Title="{x:Static vista:Textos.NombreAplicacion}"
+             BackgroundColor="{StaticResource Fondo}">
+    <!-- Página única (CLIENT_STYLES_DOTNET.md §6, §7.1): una columna con la pantalla actual. Fuera del acceso, la imagen es
+         el fondo fijo (fuera del ScrollView), completa y centrada (AspectFit), al 40 % y compacta (Grid de 3 x 3, 20/60/20).
+         En el acceso la imagen es la cabecera del formulario (la pantalla de acceso, si el proyecto la tiene). -->
+    <Grid>
+        <Grid x:Name="CapaImagen" IsVisible="False" InputTransparent="True" BackgroundColor="{StaticResource Fondo}"
+              RowDefinitions="{StaticResource MargenImagen},{StaticResource CentroImagen},{StaticResource MargenImagen}"
+              ColumnDefinitions="{StaticResource MargenImagen},{StaticResource CentroImagen},{StaticResource MargenImagen}">
+            <Image Grid.Row="1" Grid.Column="1" Source="fondo_app" Aspect="AspectFit"
+                   Opacity="{StaticResource OpacidadImagen}" />
+        </Grid>
+
+        <ScrollView x:Name="Desplazamiento" HorizontalScrollBarVisibility="Never">
+            <Grid x:Name="Marco" Padding="24">
+                <ContentView x:Name="Contenedor" VerticalOptions="Center" />
+            </Grid>
+        </ScrollView>
+    </Grid>
+</ContentPage>

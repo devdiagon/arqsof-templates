@@ -1,49 +1,30 @@
-using ec.edu.monster.excepciones;
-using ec.edu.monster.modelo;
-using ec.edu.monster.servicio;
-using ec.edu.monster.vista;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Handlers;
 
 namespace ec.edu.monster
 {
-    /// <summary>
-    /// Punto de composición: registra la Sesion (una sola para toda la ejecución, app de un solo usuario), el servicio
-    /// y las pantallas. Conoce todas las capas, por eso no vive en vista/.
-    /// Flujo de la plantilla: login → inicio (cerrar sesión o sesión vencida vuelven al login).
-    /// </summary>
     public static class MauiProgram
     {
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
+            // Sin fuentes incrustadas: se usa la del sistema (docs/CLIENT_STYLES_DOTNET.md §3).
             builder.UseMauiApp<App>();
 
-            builder.Services.AddSingleton<Sesion>();
-
-            // DOMINIO: registrar el cliente generado y el servicio del dominio (ServicioXxx : ServicioBase, IAutenticador), p. ej.
-            //   builder.Services.AddSingleton<IClienteXxx>(_ => new ClienteWSXxx());
-            //   builder.Services.AddSingleton<ServicioXxx>();
-            //   builder.Services.AddSingleton<IAutenticador>(sp => sp.GetRequiredService<ServicioXxx>());
-            builder.Services.AddSingleton<IAutenticador, AutenticadorPendiente>();
-
-            builder.Services.AddSingleton<Navegacion>();
-            builder.Services.AddTransient<LoginVista>();
-            builder.Services.AddTransient<InicioVista>();   // DOMINIO: reemplazar por las pantallas del dominio
+            // El Entry va dentro de un Border de radio 8 (CampoTexto): se quita su subrayado de Android.
+            EntryHandler.Mapper.AppendToMapping("SinSubrayado", (handler, _) =>
+            {
+#if ANDROID
+                handler.PlatformView.BackgroundTintList =
+                    Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent);
+#endif
+            });
 
 #if DEBUG
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
             return builder.Build();
-        }
-
-        /// <summary>Marcador mientras la plantilla no tiene dominio: explica qué falta en lugar de fallar en silencio.</summary>
-        private sealed class AutenticadorPendiente : IAutenticador
-        {
-            public Task IniciarSesionAsync(string usuario, string contrasenia) =>
-                throw new ExcepcionServicio(
-                    "Plantilla sin dominio: genere el proxy y conecte el servicio de autenticación (README, sección 4).",
-                    "ERR-500");
         }
     }
 }

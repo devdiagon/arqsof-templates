@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentView x:Class="ec.edu.monster.vista.CampoTexto"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Name="Raiz">
+    <!-- Campo de texto (CLIENT_STYLES_DOTNET.md §5.3, §7.1): Border de radio 8 con CampoFondo y alto mínimo 48; el Entry
+         interior va transparente. Foco: borde de 2 en Acento; error: borde de 2 en Error (lo fija el código). -->
+    <Border x:Name="Marco"
+            BackgroundColor="{StaticResource CampoFondo}"
+            StrokeShape="RoundRectangle 8"
+            StrokeThickness="0"
+            Padding="12,0"
+            MinimumHeightRequest="48">
+        <Entry x:Name="Caja"
+               BackgroundColor="Transparent"
+               TextColor="{StaticResource CampoTexto}"
+               PlaceholderColor="{StaticResource CampoPlaceholder}"
+               FontSize="16"
+               VerticalOptions="Center"
+               Text="{Binding Text, Source={x:Reference Raiz}}"
+               Placeholder="{Binding Placeholder, Source={x:Reference Raiz}}"
+               IsPassword="{Binding EsClave, Source={x:Reference Raiz}}"
+               Keyboard="{Binding Teclado, Source={x:Reference Raiz}}"
+               Focused="AlEnfocar"
+               Unfocused="AlDesenfocar" />
+    </Border>
+</ContentView>
