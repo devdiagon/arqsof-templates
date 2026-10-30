@@ -1,14 +1,15 @@
 <UserControl x:Class="ec.edu.monster.vista.InicioVista"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Focusable="False">
-    <!-- DOMINIO: pantalla de ejemplo. Se reemplaza por las pantallas del dominio. -->
+             xmlns:vista="clr-namespace:ec.edu.monster.vista">
+    <!-- DOMINIO (ejemplo): pantalla inicial de la plantilla (punto de enganche: el proyecto la reemplaza por su login o su
+         menú). Muestra el patrón de toda pantalla de la aplicación: solo XAML con los estilos de estilos/controles.xaml,
+         su encabezado y su contenido. Una pantalla con operaciones lleva además su controlador como DataContext, la
+         zona de estado (vista:ZonaEstado) y IsEnabled enlazado a NoOcupado (README §4 y docs/CLIENT_STYLES_DOTNET.md §5). -->
     <StackPanel>
-        <Border Style="{StaticResource PanelEncabezado}">
-            <TextBlock Text="Inicio" Style="{StaticResource TextoTitulo}" />
+        <Border Style="{StaticResource PanelSobreImagenEstilo}">
+            <TextBlock Text="{x:Static vista:Textos.Inicio}" Style="{StaticResource TituloPantalla}"
+                       TextAlignment="Center" />
         </Border>
-
-        <Button Content="Cerrar sesión" Command="{Binding CerrarSesion}" Style="{StaticResource BotonSecundario}"
-                Margin="0,32,0,0" />
     </StackPanel>
 </UserControl>

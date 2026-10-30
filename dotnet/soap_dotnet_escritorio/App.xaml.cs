@@ -1,56 +1,55 @@
 using System.Windows;
+using System.Windows.Controls;
 using ec.edu.monster.controlador;
-using ec.edu.monster.excepciones;
-using ec.edu.monster.modelo;
-using ec.edu.monster.servicio;
 using ec.edu.monster.vista;
 
 namespace ec.edu.monster;
 
 /// <summary>
-/// Punto de composición: crea la Sesion (una sola para toda la ejecución), el servicio y los controladores
-/// (ViewModels), y decide el orden de las pantallas. Conoce todas las capas, por eso no vive en vista/.
-/// Flujo de la plantilla: login → inicio (cerrar sesión o sesión vencida vuelven al login).
+/// Punto de arranque y de composición: crea los clientes de los servicios, los servicios, los controladores y las vistas,
+/// y decide la navegación entre pantallas (los controladores avisan qué ocurrió; aquí se decide a dónde ir). Es el
+/// equivalente del <c>Main</c> de la plantilla Java.
 /// </summary>
 public partial class App : Application
 {
-    private readonly Sesion _sesion = new();
-    private NavegadorControlador _navegador = null!;
-    private IAutenticador _autenticador = null!;
+    private VentanaPrincipal _ventana = null!;
+    private readonly Dictionary<Pantalla, (UserControl Vista, ControladorBase? Controlador)> _pantallas = new();
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-
-        // DOMINIO: crear el cliente generado y el servicio del dominio, p. ej.
-        //   var servicio = new ServicioXxx(new ClienteWSXxx(), _sesion);   // ServicioXxx : ServicioBase, IAutenticador
-        //   _autenticador = servicio;
-        _autenticador = new AutenticadorPendiente();
-
-        _navegador = new NavegadorControlador();
-        MostrarLogin();
-        new VentanaPrincipal { DataContext = _navegador }.Show();
+        try
+        {
+            Componer();
+            _ventana.Show();
+        }
+        catch (Exception)
+        {
+            MessageBox.Show(Textos.ErrorInesperado, Textos.NombreAplicacion, MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+        }
     }
 
-    private void MostrarLogin(string? mensaje = null) =>
-        _navegador.Mostrar(new LoginControlador(_autenticador, MostrarInicio, mensaje));
-
-    // DOMINIO: reemplazar por la pantalla inicial del dominio. Una pantalla que carga datos al abrirse hace
-    //   _navegador.Mostrar(pantalla); _ = pantalla.CargarAsync();   (CargarAsync no lanza: deja el fallo en Mensaje)
-    // y avisa la sesión vencida (ExigeLogin) con MostrarLogin(mensaje).
-    private void MostrarInicio() =>
-        _navegador.Mostrar(new InicioControlador(alCerrarSesion: () =>
-        {
-            _sesion.Token = null;
-            MostrarLogin();
-        }));
-
-    /// <summary>Marcador mientras la plantilla no tiene dominio: explica qué falta en lugar de fallar en silencio.</summary>
-    private sealed class AutenticadorPendiente : IAutenticador
+    private void Componer()
     {
-        public Task IniciarSesionAsync(string usuario, string contrasenia) =>
-            throw new ExcepcionServicio(
-                "Plantilla sin dominio: genere el proxy y conecte el servicio de autenticación (README, sección 4).",
-                "ERR-500");
+        _ventana = new VentanaPrincipal();
+
+        // TODO (DOMINIO, README §4): crear el cliente SOAP de cada servicio
+        //         IXCliente cliente = XClienteWS.Crear();
+        //       los servicios (reciben el cliente), los controladores (reciben el servicio y la navegación como acciones)
+        //       y las vistas (reciben su controlador). Registrar cada pantalla:
+        //         _pantallas[Pantalla.X] = (new XVista(controlador), controlador);
+        //       y navegar con Ir(Pantalla.X) desde las acciones que los controladores reciben.
+        _pantallas[Pantalla.Inicio] = (new InicioVista(), null);
+
+        Ir(Pantalla.Inicio);
+    }
+
+    /// <summary>Deja limpia la pantalla pedida (su controlador, si tiene) y la muestra en el modo que le corresponde.</summary>
+    private void Ir(Pantalla pantalla)
+    {
+        (UserControl vista, ControladorBase? controlador) = _pantallas[pantalla];
+        controlador?.AlMostrar();
+        _ventana.Mostrar(pantalla, vista);
     }
 }
