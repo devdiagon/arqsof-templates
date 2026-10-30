@@ -2,27 +2,31 @@ using System.Windows.Input;
 
 namespace ec.edu.monster.controlador;
 
-/// <summary>Comando síncrono con parámetro opcional (p. ej. la categoría elegida en un botón de la lista).</summary>
-public class Comando : ICommand
+/// <summary>
+/// Comando mínimo para enlazar botones al controlador. Siempre puede ejecutarse: mientras hay una llamada en curso la
+/// pantalla entera está deshabilitada y el controlador ignora cualquier segunda acción.
+/// </summary>
+public sealed class Comando : ICommand
 {
-    private readonly Action<object?> _ejecutar;
+    private readonly Action<object?> _accion;
 
-    public Comando(Action<object?> ejecutar)
-    {
-        _ejecutar = ejecutar;
-    }
-
-    public Comando(Action ejecutar) : this(_ => ejecutar())
+    public Comando(Action accion) : this(_ => accion())
     {
     }
 
+    public Comando(Action<object?> accion)
+    {
+        _accion = accion;
+    }
+
+    // Nunca cambia: el evento existe solo por el contrato de ICommand.
     public event EventHandler? CanExecuteChanged
     {
         add { }
         remove { }
     }
 
-    public bool CanExecute(object? parametro) => true;
+    public bool CanExecute(object? parameter) => true;
 
-    public void Execute(object? parametro) => _ejecutar(parametro);
+    public void Execute(object? parameter) => _accion(parameter);
 }

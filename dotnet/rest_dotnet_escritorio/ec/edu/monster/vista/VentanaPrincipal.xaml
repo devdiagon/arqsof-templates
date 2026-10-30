@@ -1,34 +1,70 @@
 <Window x:Class="ec.edu.monster.vista.VentanaPrincipal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:ec.edu.monster.vista"
-        xmlns:ctl="clr-namespace:ec.edu.monster.controlador"
-        Title="{x:Static local:Textos.NombreAplicacion}" Width="1100" Height="720" MinWidth="1040" MinHeight="640"
-        WindowStartupLocation="CenterScreen" Style="{StaticResource VentanaBase}">
-    <!-- Disposición dividida (CLIENT_STYLES_DOTNET.md §7.0): la pantalla actual a la izquierda (560 fijo), en una
-         columna de 420 centrada, y la imagen decorativa a la derecha (el resto), completa y centrada.
-         La imagen es de la ventana, no de cada pantalla. Para no usarla, quitar el Image. -->
+        Width="{StaticResource VentanaAncho}" Height="{StaticResource VentanaAlto}"
+        MinWidth="{StaticResource VentanaAnchoMinimo}" MinHeight="{StaticResource VentanaAltoMinimo}"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Fondo}" Foreground="{StaticResource Texto}"
+        FontFamily="{StaticResource FuenteBase}" FontSize="{StaticResource TamCuerpo}"
+        UseLayoutRounding="True">
+    <!-- Ventana única con dos modos (CLIENT_STYLES_DOTNET.md §7.0, §7.3). No contiene lógica de negocio:
+         quien arma las pantallas llama a Mostrar. -->
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="560" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+        <!-- Acceso (dividido): izquierda, la pantalla en una columna de 420 centrada; derecha, la imagen
+             completa y centrada a opacidad plena (compacta al 60 %, §6). -->
+        <Grid x:Name="Acceso">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{StaticResource AnchoPanelFormulario}" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ScrollViewer Grid.Column="0" x:Name="DesplazamientoAcceso" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled" Padding="{StaticResource MargenPantalla}">
+                <Grid MinHeight="{Binding ViewportHeight, ElementName=DesplazamientoAcceso}">
+                    <ContentControl x:Name="ContenidoAcceso" Width="{StaticResource AnchoColumna}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    IsTabStop="False" />
+                </Grid>
+            </ScrollViewer>
+            <Grid Grid.Column="1" Background="{StaticResource Fondo}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="{StaticResource MargenImagen}" />
+                    <RowDefinition Height="{StaticResource CentroImagen}" />
+                    <RowDefinition Height="{StaticResource MargenImagen}" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{StaticResource MargenImagen}" />
+                    <ColumnDefinition Width="{StaticResource CentroImagen}" />
+                    <ColumnDefinition Width="{StaticResource MargenImagen}" />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Row="1" Grid.Column="1" Stretch="Uniform"
+                       Source="/estaticos/fondo_app.png" />
+            </Grid>
+        </Grid>
 
-        <ContentControl Grid.Column="0" Content="{Binding Actual}" Margin="24"
-                        MaxWidth="{StaticResource AnchoColumna}" VerticalAlignment="Center" Focusable="False">
-            <ContentControl.Resources>
-                <!-- Un DataTemplate por pantalla: controlador → vista -->
-                <DataTemplate DataType="{x:Type ctl:LoginControlador}">
-                    <local:LoginVista />
-                </DataTemplate>
-                <DataTemplate DataType="{x:Type ctl:InicioControlador}">
-                    <local:InicioVista />
-                </DataTemplate>
-                <!-- DOMINIO: un DataTemplate por pantalla del dominio -->
-            </ContentControl.Resources>
-        </ContentControl>
-
-        <Image Grid.Column="1" Source="/ec/edu/monster/estaticos/fondo_app.png" Stretch="Uniform"
-               HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <!-- Aplicación (ancho completo): la imagen es el fondo de la ventana, completa, centrada, con opacidad 0,4
+             y reescalable; la pantalla se centra encima, con el ancho de §7.0, y se desplaza si no cabe en alto. -->
+        <Grid x:Name="Aplicacion" Visibility="Collapsed" Background="{StaticResource Fondo}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="{StaticResource MargenImagen}" />
+                    <RowDefinition Height="{StaticResource CentroImagen}" />
+                    <RowDefinition Height="{StaticResource MargenImagen}" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{StaticResource MargenImagen}" />
+                    <ColumnDefinition Width="{StaticResource CentroImagen}" />
+                    <ColumnDefinition Width="{StaticResource MargenImagen}" />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Row="1" Grid.Column="1" Stretch="Uniform"
+                       Opacity="{StaticResource OpacidadImagen}" Source="/estaticos/fondo_app.png" />
+            </Grid>
+            <ScrollViewer x:Name="DesplazamientoAplicacion" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled" Padding="{StaticResource MargenPantalla}">
+                <Grid MinHeight="{Binding ViewportHeight, ElementName=DesplazamientoAplicacion}">
+                    <ContentControl x:Name="ContenidoAplicacion" HorizontalAlignment="Stretch"
+                                    IsTabStop="False" />
+                </Grid>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Window>

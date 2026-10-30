@@ -7,26 +7,30 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <RootNamespace>ec.edu.monster</RootNamespace>
-    <!-- Las pruebas viven en este mismo proyecto (ec.edu.monster.pruebas): el punto de entrada lo genera App.xaml -->
+    <!-- Las pruebas (xUnit) viven en este mismo proyecto, en ec/edu/monster/pruebas: el punto de entrada lo genera App.xaml. -->
     <GenerateProgramFile>false</GenerateProgramFile>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Imagen decorativa de la ventana (docs/CLIENT_STYLES_DOTNET.md §6); sustituirla conservando el nombre -->
-    <Resource Include="ec\edu\monster\estaticos\fondo_app.png" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="Moq" Version="4.21.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
+  <!-- El SDK de WPF no incluye System.Net.Http entre los using implícitos (el de la consola sí): se agrega aquí para que la
+       capa api sea idéntica a la de la consola, sin un using explícito en sus archivos. -->
   <ItemGroup>
-    <Using Include="Xunit" />
     <Using Include="System.Net.Http" />
   </ItemGroup>
 
-  <!-- El transporte HTTP/JSON (System.Net.Http.Json) viene en el SDK: solo se agregan paquetes de pruebas. -->
+  <!-- Imagen decorativa (docs/CLIENT_STYLES_DOTNET.md §6, §7.3): PNG con Build Action Resource; sustituirla conservando el nombre. -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <Resource Include="estaticos\fondo_app.png" />
   </ItemGroup>
 
 </Project>

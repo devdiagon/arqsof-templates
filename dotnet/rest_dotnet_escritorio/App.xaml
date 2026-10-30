@@ -1,16 +1,14 @@
-﻿<Application x:Class="ec.edu.monster.App"
+<Application x:Class="ec.edu.monster.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vista="clr-namespace:ec.edu.monster.vista">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Sin StartupUri: la ventana la crea App.OnStartup al componer la aplicación. -->
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Controles.xaml incorpora Tema.xaml -->
-                <ResourceDictionary Source="ec/edu/monster/estilos/Controles.xaml" />
+                <ResourceDictionary Source="estilos/tema.xaml" />
+                <ResourceDictionary Source="estilos/controles.xaml" />
             </ResourceDictionary.MergedDictionaries>
-
-            <vista:NegacionConvertidor x:Key="Negacion" />
-            <BooleanToVisibilityConverter x:Key="BooleanAVisibilidad" />
+            <BooleanToVisibilityConverter x:Key="BoolAVisibilidad" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
