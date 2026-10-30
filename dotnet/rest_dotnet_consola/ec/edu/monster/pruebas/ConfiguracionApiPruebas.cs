@@ -1,37 +1,43 @@
 using ec.edu.monster.api;
+using Xunit;
 
 namespace ec.edu.monster.pruebas;
 
 public class ConfiguracionApiPruebas
 {
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Sin_variable_se_usa_la_url_por_defecto(string? variable)
+    [Fact]
+    public void SinVariableSeUsaLaUrlPorDefectoConBarraFinal()
     {
-        Assert.Equal(ConfiguracionApi.Normalizar(ConfiguracionApi.UrlBasePorDefecto), ConfiguracionApi.Resolver(variable));
+        Assert.Equal(ConfiguracionApi.UrlBasePorDefecto, ConfiguracionApi.UrlBase(_ => null));
+        Assert.EndsWith("/", ConfiguracionApi.UrlBasePorDefecto);
     }
 
     [Fact]
-    public void La_variable_sobrescribe_la_url_por_defecto()
+    public void LaVariableApiBaseUrlSobrescribeLaUrlSinRecompilar()
     {
-        Assert.Equal("http://192.168.1.10:57592/api/", ConfiguracionApi.Resolver("http://192.168.1.10:57592/api/"));
-    }
+        string url = ConfiguracionApi.UrlBase(nombre => nombre == "API_BASE_URL" ? "http://10.0.2.2:5267/api" : null);
 
-    [Theory]
-    [InlineData("http://localhost:5267/api", "http://localhost:5267/api/")]
-    [InlineData("http://localhost:5267/api/", "http://localhost:5267/api/")]
-    [InlineData("  http://localhost:8080/Contexto/api  ", "http://localhost:8080/Contexto/api/")]
-    public void La_url_siempre_termina_en_una_sola_barra(string entrada, string esperada)
-    {
-        Assert.Equal(esperada, ConfiguracionApi.Normalizar(entrada));
+        Assert.Equal("http://10.0.2.2:5267/api/", url);
     }
 
     [Fact]
-    public void La_url_por_defecto_es_una_url_absoluta_valida()
+    public void UnaVariableEnBlancoSeIgnora()
     {
-        Assert.True(Uri.TryCreate(ConfiguracionApi.Resolver(null), UriKind.Absolute, out var uri));
-        Assert.EndsWith("/", uri!.AbsoluteUri);
+        Assert.Equal(ConfiguracionApi.UrlBasePorDefecto, ConfiguracionApi.UrlBase(_ => "   "));
+    }
+
+    [Theory]
+    [InlineData("http://h:1/api", "http://h:1/api/")]
+    [InlineData("http://h:1/api/", "http://h:1/api/")]
+    [InlineData("  http://h:1/api///  ", "http://h:1/api/")]
+    public void LaUrlSeNormalizaConUnaSolaBarraFinal(string entrada, string esperado)
+    {
+        Assert.Equal(esperado, ConfiguracionApi.NormalizarUrl(entrada));
+    }
+
+    [Fact]
+    public void ElTiempoLimiteEsDeDiezSegundos()
+    {
+        Assert.Equal(TimeSpan.FromSeconds(10), ConfiguracionApi.TiempoLimite);
     }
 }

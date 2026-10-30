@@ -208,3 +208,21 @@ Los tres se construyeron con el núcleo y la capa `api` de la consola REST y la 
 | Móvil | La URL base no puede venir de una propiedad ni de una variable de entorno: vive en un recurso y la aplicación la entrega a la configuración al arrancar. Si no se fijó, falla en lugar de usar una por defecto |
 | Móvil | Gson lee los DTO por reflexión: con R8 activado hay que conservar los DTO o dejar la optimización de `release` desactivada **(no verificado con R8 activado)** |
 | Móvil | Las pruebas JUnit del núcleo se traducen de JUnit 5 a JUnit 4 (solo imports, `@Before` y `public`); las de `api` se portan igual y se agrega una de Base64 |
+
+### 8.4 Lo aprendido al construir el servidor y la consola .NET REST (2026-10-30)
+
+El servidor se construyó con el núcleo de .NET SOAP copiado byte a byte y la capa `api` nueva; la consola, con el núcleo de la consola .NET SOAP y su capa `api`. El responsable ejecutó a mano los casos C01–C29 del servidor y el recorrido de la consola. Hallazgos:
+
+| Parte | Hallazgo |
+|---|---|
+| Servidor | Los errores de plataforma salen de **un middleware propio, el primero de la canalización**: captura las excepciones y da la envoltura a las respuestas vacías del framework (404 de ruta inexistente, 405 de verbo no permitido). Sin él, ASP.NET Core responde vacío. El 415 lo lanza el recurso al leer el cuerpo (`Content-Type` distinto de `application/json`) |
+| Servidor | El cuerpo de entrada se lee con `JsonDocument`, no con un POCO: nombres sin distinguir mayúsculas (R4) y un número JSON llega como su texto (R9, receta de §3.2) |
+| Servidor | La serialización fija los nombres con `JsonPropertyName` y el orden con `JsonPropertyOrder` (envoltura con órdenes negativos, campos propios desde 1), omite los nulos y usa el codificador relajado para que las tildes salgan literales. Se serializa con el **tipo real** de la respuesta, no con el de la base |
+| Servidor | Los parámetros de ruta se declaran sin restricción (`string`): los valida el controlador del núcleo (`DATA-001` 400), no el enrutador (que daría 404) |
+| Servidor | Las rutas de ASP.NET Core no distinguen mayúsculas; las de JAX-RS sí. Sin efecto en el contrato |
+| Consola | **Mapeo JSON ↔ DTO sin anotar los DTO** (`ARQUITECTURA_CLIENTE.md` §4.5): `JsonSerializerOptions` con camelCase, lectura sin distinguir mayúsculas y `PreferredObjectCreationHandling = Populate`. Sin `Populate`, `System.Text.Json` no rellena una lista de solo lectura (`List<T> { get; }`); confirmado con una prueba unitaria |
+| Consola | Sin respuesta es `HttpRequestException`; el **tiempo agotado de `HttpClient` llega como `TaskCanceledException`**, no como `TimeoutException`: las dos (y `TimeoutException`) se traducen a `RED`. Cualquier otra excepción se propaga |
+| Consola | `HttpClient` no lanza excepción con un HTTP de error: la envoltura se lee del cuerpo; nunca `EnsureSuccessStatusCode()` |
+| Consola | La cabecera `Authorization` se añade a cada `HttpRequestMessage` (con `TryAddWithoutValidation`), nunca a `DefaultRequestHeaders`. `StringContent(…, Encoding.UTF8, "application/json")` envía `application/json; charset=utf-8` |
+| Consola | `ITransporte` / `TransporteHttp` separan la red de `TraductorApi`; el transporte se prueba con un `HttpMessageHandler` simulado y los clientes `…Api`, con un transporte falso: ninguna prueba abre red |
+| Ambos | La paridad se cumplió con la regla de siempre: fuera de `api`, el núcleo difiere del par SOAP solo en el `using` de las interfaces y en comentarios que mencionaban SOAP |

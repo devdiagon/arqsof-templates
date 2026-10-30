@@ -1,42 +1,89 @@
 namespace ec.edu.monster.vista;
 
-/// <summary>Única capa que lee el teclado y escribe en la consola. Sin lógica de negocio ni acceso al servidor.</summary>
+/// <summary>
+/// Única capa que lee el teclado y escribe en la consola. Los métodos públicos son <c>virtual</c> para que las pruebas
+/// de los controladores los sustituyan con Moq.
+/// </summary>
 public abstract class VistaBase
 {
-    protected static void Titulo(string texto)
+    /// <summary>
+    /// Pide un dato y lo devuelve recortado. Si la entrada se cierra (Ctrl+Z / Ctrl+D o <c>stdin</c> agotado) lanza
+    /// <see cref="EndOfStreamException"/>: el bucle principal la trata como fin del programa en lugar de girar
+    /// indefinidamente en un menú.
+    /// </summary>
+    public virtual string Pedir(string etiqueta)
     {
-        Console.WriteLine();
-        Console.WriteLine(new string('=', 40));
-        Console.WriteLine(texto);
-        Console.WriteLine(new string('=', 40));
+        Console.Write(etiqueta + ": ");
+        return LeerLinea().Trim();
     }
 
-    /// <summary>Pide un texto y lo devuelve recortado. Lanza <see cref="EndOfStreamException"/> si la entrada se cerró.</summary>
-    protected static string Pedir(string etiqueta)
-    {
-        Console.Write($"{etiqueta}: ");
-        // ReadLine devuelve null al cerrarse la entrada (Ctrl+Z / redirección): se corta en vez de repetir.
-        return (Console.ReadLine() ?? throw new EndOfStreamException()).Trim();
-    }
+    /// <summary>Muestra una lista numerada y devuelve el índice elegido (base 0), o -1 si cancela.</summary>
+    protected int Elegir(string titulo, IReadOnlyList<string> opciones) =>
+        Elegir(titulo, opciones, Textos.Cancelar);
 
-    /// <summary>Lista numerada; devuelve el índice (base 0) o -1 si se elige «0. Cancelar».</summary>
-    protected static int Elegir(string titulo, IReadOnlyList<string> opciones)
+    /// <summary>
+    /// Igual que la anterior, pero la opción «0» lleva el texto indicado (p. ej. «Salir» o «Cerrar sesión»).
+    /// Devuelve el índice elegido (base 0) o -1 si elige «0». Un título vacío no se imprime.
+    /// </summary>
+    protected int Elegir(string titulo, IReadOnlyList<string> opciones, string textoCero)
     {
-        Console.WriteLine();
-        Console.WriteLine(titulo);
-        for (var i = 0; i < opciones.Count; i++)
+        if (titulo.Length > 0)
+        {
+            Console.WriteLine(titulo);
+        }
+        for (int i = 0; i < opciones.Count; i++)
+        {
             Console.WriteLine($"  {i + 1}. {opciones[i]}");
-        Console.WriteLine("  0. Cancelar");
+        }
+        Console.WriteLine($"  0. {textoCero}");
 
         while (true)
         {
-            if (int.TryParse(Pedir("Opción"), out var n) && n >= 0 && n <= opciones.Count)
-                return n - 1;
-            MostrarError("Opción inválida");
+            string entrada = Pedir(Textos.Opcion);
+            if (int.TryParse(entrada, System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out int n))
+            {
+                if (n == 0)
+                {
+                    return -1;
+                }
+                if (n >= 1 && n <= opciones.Count)
+                {
+                    return n - 1;
+                }
+            }
+            MostrarError(Textos.OpcionInvalida);
         }
     }
 
-    public static void Mostrar(string mensaje) => Console.WriteLine(mensaje);
+    /// <summary>Detiene la pantalla hasta que el usuario pulse Enter.</summary>
+    public virtual void Pausar()
+    {
+        Console.Write(Textos.PulseEnter);
+        LeerLinea();
+    }
 
-    public static void MostrarError(string mensaje) => Console.WriteLine($"[Error] {mensaje}");
+    /// <summary>Línea en blanco, el título y su subrayado.</summary>
+    public virtual void MostrarTitulo(string titulo)
+    {
+        Console.WriteLine();
+        Console.WriteLine(titulo);
+        Console.WriteLine(new string('-', titulo.Length));
+    }
+
+    /// <summary>Imprime <see cref="Textos.Portada"/> si tiene contenido.</summary>
+    public virtual void MostrarPortada()
+    {
+        if (!string.IsNullOrWhiteSpace(Textos.Portada))
+        {
+            Mostrar(Textos.Portada.TrimEnd());
+        }
+    }
+
+    public virtual void Mostrar(string mensaje) => Console.WriteLine(mensaje);
+
+    public virtual void MostrarError(string mensaje) => Console.WriteLine("[!] " + mensaje);
+
+    private static string LeerLinea() =>
+        Console.ReadLine() ?? throw new EndOfStreamException("La entrada de la consola se cerró");
 }

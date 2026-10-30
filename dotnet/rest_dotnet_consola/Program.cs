@@ -1,26 +1,22 @@
 using System.Text;
-using ec.edu.monster.api;
-using ec.edu.monster.modelo;
+using ec.edu.monster;
 
-// Las tildes y la ñ salen bien si la terminal también está en UTF-8 (PowerShell y Windows Terminal suelen estarlo)
-Console.OutputEncoding = Encoding.UTF8;
-Console.InputEncoding = Encoding.UTF8;
+// Las tildes y la ñ salen bien si la terminal también está en UTF-8 (chcp 65001 en cmd). Sin BOM.
+// Si no hay consola asociada (entrada y salida redirigidas) el cambio de página de códigos puede fallar: se ignora.
+var utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+try { Console.InputEncoding = utf8; } catch (IOException) { }
+try { Console.OutputEncoding = utf8; } catch (IOException) { }
 
 try
 {
-    // Un solo HttpClient para toda la ejecución (uno por petición agotaría los sockets) y una sola Sesion.
-    using var http = ClienteApi.CrearHttpClient();
-    var cliente = new ClienteApi(http);
-    var sesion = new Sesion();
-    // TODO: servicios (reciben cliente y sesion), vistas y controladores del dominio, y un bucle que alterne
-    //       entre ellos según su enum Resultado (ver README §4).
-    Console.WriteLine($"Plantilla lista. API: {http.BaseAddress} (sesión: {sesion.Token is not null}, cliente: {cliente.GetType().Name})");
+    await Aplicacion.EjecutarAsync();
 }
 catch (EndOfStreamException)
 {
-    // La entrada se cerró: fin del programa.
+    // entrada cerrada (Ctrl+Z / Ctrl+D o stdin agotado): fin del programa
+    Console.WriteLine();
 }
-catch (Exception ex)
+catch (Exception e)
 {
-    Console.Error.WriteLine($"No fue posible iniciar el cliente: {ex.Message}");
+    Console.Error.WriteLine("No fue posible iniciar el cliente: " + e.Message);
 }
