@@ -11,6 +11,8 @@ Aquí solo se define **cómo se ve**. El flujo, los textos concretos, las imáge
 > Revisión 2026-10-26 (primeros clientes gráficos construidos): el **escritorio y la web** conservan la disposición dividida solo en la pantalla de acceso; en el resto de la aplicación usan el ancho completo y la imagen pasa a ser el fondo de la ventana, centrada y con opacidad (§6, §7.0, §7.2, §7.3). Se agregan los componentes **cuadrícula de acciones**, **tarjeta de resultado** y **tabla** (§5.11 a §5.13).
 >
 > Revisión 2026-10-27 (cliente móvil construido): el **móvil** usa la imagen con `fitCenter` (completa y centrada, nunca recortada): en el acceso como cabecera y en el resto como fondo fijo con opacidad (§6); una **imagen horizontal** se muestra compacta (60 % de su contenedor) en escritorio y web (§6); se agregan la **zona de estado** (§5.14) y las particularidades de la columna única (§7.1).
+>
+> Revisión 2026-10-29 (correcciones de coherencia, sin cambios de diseño): las cifras de contraste de la tarjeta (§5.12) se dan sobre blanco; la regla de pesos (§3) admite *Medium* y *Semibold* donde ya se usaban; los fragmentos de CSS (§7.2) muestran la imagen compacta con `--margen-imagen`; `<ui:pantalla>` queda en una sola fila; y la lista de verificación (§9) deja de pedir la imagen recortada en el móvil.
 
 ---
 
@@ -101,7 +103,7 @@ Escala por rol (tamaño en **sp** en móvil, **px** en web y escritorio):
 | Mensajes y ayudas | 14 | 14 | 13 | Regular (400) |
 | Botón | 18 | 16 | 15 | Bold (700) |
 
-Reglas: máximo **dos pesos** por pantalla (regular y bold); sin cursiva; sin mayúsculas forzadas; los textos llevan las tildes y caracteres propios del idioma.
+Reglas: máximo **dos pesos** por pantalla (regular y bold; *Medium* solo para el resultado y *Semibold* solo para el título de la tarjeta de resultado, §5.12); sin cursiva; sin mayúsculas forzadas; los textos llevan las tildes y caracteres propios del idioma.
 
 ---
 
@@ -183,7 +185,7 @@ Resume **un cambio de un valor** (por ejemplo, el efecto de una operación sobre
 | **Divisor**: línea de 1 en `borde` de la presentación clara | — | — |
 | **Pie**: identificación del origen del cambio, alineado a la derecha | Mensajes y ayudas | `campo-placeholder` |
 
-- Fondo `campo-fondo` (blanco) en **ambas** presentaciones: es una superficie de lectura, como un campo. Por eso sus textos usan los tokens de formulario y los `exito` y `error` **de la presentación clara**, que son los más suaves que alcanzan 4,5:1 sobre blanco (4,7:1 y 6,0:1). Un verde o rojo más pálido incumpliría el contraste.
+- Fondo `campo-fondo` (blanco) en **ambas** presentaciones: es una superficie de lectura, como un campo. Por eso sus textos usan los tokens de formulario y los `exito` y `error` **de la presentación clara**, que son los más suaves que alcanzan 4,5:1 sobre blanco (**5,0:1 y 6,5:1** sobre blanco; 4,7:1 y 6,0:1 sobre el `fondo` claro, §2.3). Un verde o rojo más pálido incumpliría el contraste.
 - El signo (`+`, `-`) acompaña siempre al color: el color nunca es el único indicador.
 - Varias tarjetas se disponen en fila, separadas `espacio-bloque`, centradas.
 - Oculta hasta que hay contenido.
@@ -265,7 +267,8 @@ Los tokens son variables CSS; el tema por defecto se fija con **una clase en `<b
 ```css
 :root { --radio: 8px; --primario: #0369A1; --primario-p: #075985; --secundario: #475569;
         --secundario-p: #334155; --acento: #0EA5E9; --sobre-accion: #FFFFFF;
-        --campo-fondo: #FFFFFF; --campo-texto: #0F172A; --campo-borde: #64748B; }
+        --campo-fondo: #FFFFFF; --campo-texto: #0F172A; --campo-borde: #64748B;
+        --margen-imagen: 20%;                        /* imagen horizontal compacta (§6); 0 para una vertical */ }
 .tema-oscuro { --fondo: #111E2F; --superficie: #1B2B42; --texto: #F1F5F9; --texto-sec: #94A3B8;
                --borde: #2D3F5A; --error: #F87171; --exito: #4ADE80; --foco: var(--acento); }
 .tema-claro  { --fondo: #F4F7FB; --superficie: #FFFFFF; --texto: #0F172A; --texto-sec: #475569;
@@ -288,7 +291,9 @@ Disposición **dividida** (§7.0): rejilla de dos zonas a pantalla completa, con
 .pagina { display: grid; grid-template-columns: 560px 1fr; min-height: 100vh; background: var(--fondo); }
 .zona-contenido { display: grid; place-items: center; padding: 24px; }
 .columna { width: 100%; max-width: 420px; }
-.zona-imagen { background: var(--fondo) url("imagen-decorativa.png") center / contain no-repeat; }
+.zona-imagen { position: relative; background: var(--fondo); }
+.zona-imagen::before { content: ""; position: absolute; inset: var(--margen-imagen);   /* imagen compacta (§6) */
+                       background: url("imagen-decorativa.png") center / contain no-repeat; }
 @media (max-width: 899px) {                   /* bajo el mínimo del escritorio: columna única, sin imagen */
   .pagina { grid-template-columns: 1fr; }
   .zona-imagen { display: none; }
@@ -301,7 +306,7 @@ Disposición **dividida** (§7.0): rejilla de dos zonas a pantalla completa, con
 ```css
 .pagina--aplicacion { position: relative; min-height: 100vh; }
 .pagina--aplicacion::before {                  /* imagen de fondo: fija, completa, centrada, con opacidad */
-  content: ""; position: fixed; inset: 0; z-index: -1; opacity: .4;
+  content: ""; position: fixed; inset: var(--margen-imagen); z-index: -1; opacity: .4;
   background: url("imagen-decorativa.png") center / contain no-repeat; }
 .pagina--aplicacion .contenido { width: 100%; max-width: 480px; margin: 0 auto; padding: 24px; }
 .contenido--amplio { max-width: 640px !important; }      /* menú, transferencia */
@@ -316,7 +321,7 @@ Cada componente de §5 es un tag file (de `WEB-INF/tags`); en un JSP se declara 
 
 | Etiqueta | Componente (§) | Atributos principales |
 |---|---|---|
-| `<ui:pantalla titulo>` | Estructura de página, disposición dividida, fondo (§5.10, §7.0) | `titulo` (obligatorio). Incluye CSS, imagen y `app.js` |
+| `<ui:pantalla titulo modo ancho>` | Estructura de página, disposición dividida o de aplicación, fondo (§5.10, §7.0) | `titulo` (obligatorio), `modo` (`acceso`, por defecto: dividida; `aplicacion`: ancho completo con imagen de fondo), `ancho` (`formulario`, `amplio`, `completo`). Incluye CSS, imagen y `app.js` |
 | `<ui:formulario accion>` | Formulario POST + indicador de progreso (§5.8) | `accion` (ruta del contexto), `clase` |
 | `<ui:encabezado>` | Encabezado de pantalla (§5.1) | `aplicacion="true"` en el acceso |
 | `<ui:campo id>` | Etiqueta + campo de texto (§5.3, §5.4) | `etiqueta`, `tipo`, `valor`, `placeholder`, `autocomplete`, `inputmode`, `invalido`, `autofocus` |
@@ -325,7 +330,6 @@ Cada componente de §5 es un tag file (de `WEB-INF/tags`); en un JSP se declara 
 | `<ui:boton>` | Botón primario / secundario (§5.6, §5.7) | `tipo`, `href` (enlace; sin él envía el formulario), `ancho`, `centrado`, `salida`, `deshabilitado` |
 | `<ui:lista-acciones elementos destino parametro>` | Lista de acciones (§5.9) con datos del servidor | un botón primario por elemento |
 | `<ui:cerrar-sesion/>` | Botón secundario de salida separado 32 (§5.7) | — |
-| `<ui:pantalla titulo modo>` | (ampliado) `modo="acceso"` (dividida, por defecto) o `modo="aplicacion"` (ancho completo con imagen de fondo) | `modo`, `ancho` (`formulario`, `amplio`, `completo`) |
 | `<ui:cuadricula-acciones>` | Cuadrícula de acciones (§5.11) | un `<ui:boton>` por acción; 2 columnas, 1 bajo 600 px |
 | `<ui:fila-campos>` | Dos campos en horizontal con una flecha entre ellos | cuerpo: dos `<ui:campo>`; bajo 600 px se apilan y la flecha apunta hacia abajo |
 | `<ui:tarjeta>` | Tarjeta de resultado (§5.12) | `titulo`, `suma`, `monto`, `variacion`, `pie` |
@@ -381,7 +385,7 @@ Antes de dar por terminado un cliente comprobar:
 - [ ] Una sola acción principal por pantalla; las acciones de salida son botones secundarios.
 - [ ] Mensajes sin códigos técnicos; cargas con progreso y controles deshabilitados.
 - [ ] Sin sombras; sin más de dos pesos de fuente por pantalla.
-- [ ] Si hay imagen decorativa: sin deformar, `fondo` de respaldo; en columna única recortada con paneles `panel-sobre-imagen`; en disposición dividida completa (`contain`) y paneles `superficie`.
+- [ ] Si hay imagen decorativa: sin deformar, `fondo` de respaldo; en columna única completa y centrada (`fitCenter`, nunca recortada): cabecera a opacidad plena en el acceso y fondo fijo al 40 % con paneles `panel-sobre-imagen` en el resto; en disposición dividida completa (`contain`) y paneles `superficie`.
 - [ ] En disposición dividida: columna de contenido centrada, imagen en la ventana (no en cada pantalla) y mínimo de ventana definido.
 - [ ] Escritorio y web: dividida solo en el acceso; en el resto, imagen de fondo centrada (`contain`) con opacidad, que se reescala con la ventana, y paneles `panel-sobre-imagen`.
 - [ ] Tarjetas de resultado: signo y color (`exito`/`error` de la presentación clara) juntos, y textos con contraste ≥ 4,5:1 sobre blanco.
