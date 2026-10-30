@@ -1,0 +1,8 @@
+@* DOMINIO (ejemplo): pantalla inicial de la plantilla (punto de enganche: el proyecto la reemplaza por sus pantallas).
+   Muestra el patrón de toda pantalla: solo `ui-*`, con su encabezado y su contenido. Una pantalla con operaciones lleva
+   además un <ui-formulario>, el mensaje (<ui-mensaje>) y, si cambia datos, el resultado tras redirigir (README §4). *@
+@{
+    ViewData["Titulo"] = Textos.Inicio;
+    ViewData["Modo"] = "aplicacion";
+}
+<ui-encabezado>@Textos.Inicio</ui-encabezado>

@@ -1,21 +1,54 @@
-// Único script de la aplicación (CLIENT_STYLES_DOTNET.md §7.2): al enviar un formulario deshabilita sus
-// controles y muestra el indicador de progreso, para evitar el doble envío.
+// Mientras hay una petición en curso: controles deshabilitados e indicador visible (el CSS oculta el mensaje y los
+// resultados anteriores). Se deshabilita después del envío (setTimeout) porque un campo deshabilitado no viaja en el formulario.
 (function () {
-    "use strict";
+    'use strict';
 
-    function marcarOcupado(formulario, ocupado) {
-        var controles = formulario.querySelector(".formulario__controles");
-        var progreso = formulario.querySelector(".progreso");
-        if (controles) controles.disabled = ocupado;
-        if (progreso) progreso.hidden = !ocupado;
+    function ocupar(contenedor, ocupado) {
+        contenedor.classList.toggle('ocupado', ocupado);
+        contenedor.querySelectorAll('input, select, button, a.boton').forEach(function (control) {
+            if (control.tagName === 'A') {
+                control.setAttribute('aria-disabled', String(ocupado));
+            } else {
+                control.disabled = ocupado;
+            }
+        });
     }
 
-    document.querySelectorAll("form[data-formulario]").forEach(function (formulario) {
-        formulario.addEventListener("submit", function () {
-            // Un fieldset deshabilitado no envía sus campos: se deshabilita después de que el navegador los reúna.
-            setTimeout(function () { marcarOcupado(formulario, true); }, 0);
+    document.querySelectorAll('form[data-ocupable]').forEach(function (formulario) {
+        formulario.addEventListener('submit', function () {
+            setTimeout(function () { ocupar(formulario.closest('.columna'), true); }, 0);
         });
-        // Al volver con "atrás" el navegador puede restaurar la página en estado ocupado.
-        window.addEventListener("pageshow", function () { marcarOcupado(formulario, false); });
+    });
+
+    // Al volver con «Atrás» el navegador puede restaurar la página en estado ocupado.
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+            document.querySelectorAll('.columna.ocupado').forEach(function (c) { ocupar(c, false); });
+        }
+    });
+
+    // Enlaces de acción: evita el doble clic mientras carga la siguiente pantalla.
+    document.querySelectorAll('a.boton').forEach(function (enlace) {
+        enlace.addEventListener('click', function (e) {
+            if (enlace.getAttribute('aria-disabled') === 'true') {
+                e.preventDefault();
+                return;
+            }
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+                return; // abre en otra pestaña: esta página sigue activa
+            }
+            setTimeout(function () { ocupar(enlace.closest('.columna'), true); }, 0);
+        });
+    });
+
+    // Esc equivale a «Cancelar» (el enlace marcado con data-cancelar), salvo que la pantalla esté ocupada.
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') {
+            return;
+        }
+        var cancelar = document.querySelector('a[data-cancelar]');
+        if (cancelar && cancelar.getAttribute('aria-disabled') !== 'true') {
+            cancelar.click();
+        }
     });
 })();

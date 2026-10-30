@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace ec.edu.monster.vista.componentes;
 
 /// <summary>
-/// Formulario POST con token anti-falsificación e indicador de progreso (CLIENT_STYLES_DOTNET.md §5.8).
-/// <c>app.js</c> deshabilita los controles y muestra el indicador mientras se envía.
+/// Formulario POST de una pantalla con token anti-falsificación e indicador de progreso (CLIENT_STYLES_DOTNET.md §5.8).
+/// <c>accion</c>: ruta de la aplicación, p. ej. <c>/consulta</c>. <c>ocupado</c>: texto mientras espera. <c>app.js</c>
+/// deshabilita los controles y muestra el indicador al enviarse. <c>clase</c>: por defecto <c>formulario</c> (separa los
+/// hijos 16).
 /// </summary>
 [HtmlTargetElement("ui-formulario")]
 public class UiFormularioTagHelper(IHtmlGenerator generador, IUrlHelperFactory fabricaUrl) : TagHelper
@@ -16,23 +18,22 @@ public class UiFormularioTagHelper(IHtmlGenerator generador, IUrlHelperFactory f
     public ViewContext ViewContext { get; set; } = null!;
 
     public string Accion { get; set; } = string.Empty;
-    public string? Controlador { get; set; }
+    public string? Ocupado { get; set; }
+    public string Clase { get; set; } = "formulario";
 
     public override async Task ProcessAsync(TagHelperContext contexto, TagHelperOutput salida)
     {
-        var hijos = await salida.GetChildContentAsync();
-        var url = fabricaUrl.GetUrlHelper(ViewContext).Action(Accion, Controlador);
+        TagHelperContent hijos = await salida.GetChildContentAsync();
 
         salida.TagName = "form";
         salida.TagMode = TagMode.StartTagAndEndTag;
+        salida.Attributes.SetAttribute("class", Clase);
         salida.Attributes.SetAttribute("method", "post");
-        salida.Attributes.SetAttribute("action", url);
-        salida.Attributes.SetAttribute("class", "formulario");
-        salida.Attributes.SetAttribute("data-formulario", "");
+        salida.Attributes.SetAttribute("action", fabricaUrl.GetUrlHelper(ViewContext).Content("~" + Accion));
+        salida.Attributes.SetAttribute("data-ocupable", "");
 
-        salida.Content.SetHtmlContent("<fieldset class=\"formulario__controles\">");
-        salida.Content.AppendHtml(hijos);
-        salida.Content.AppendHtml("</fieldset><div class=\"progreso\" role=\"status\" aria-label=\"Cargando\" hidden></div>");
+        salida.Content.SetHtmlContent(hijos);
+        salida.Content.AppendHtml(UiProgresoTagHelper.Construir(Ocupado));
         salida.Content.AppendHtml(generador.GenerateAntiforgery(ViewContext));
     }
 }

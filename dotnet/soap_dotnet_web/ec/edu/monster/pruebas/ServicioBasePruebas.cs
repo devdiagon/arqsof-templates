@@ -1,110 +1,66 @@
+using ec.edu.monster.dto;
 using ec.edu.monster.excepciones;
-using ec.edu.monster.modelo;
-using ec.edu.monster.servicio;
+using ec.edu.monster.servicios;
+using Xunit;
 
 namespace ec.edu.monster.pruebas;
 
 public class ServicioBasePruebas
 {
-    // Servicio mínimo que expone los miembros protegidos de ServicioBase.
-    private class ServicioEjemplo : ServicioBase
+    /// <summary>Expone la verificación protegida de la base para poder probarla.</summary>
+    private sealed class ServicioDePrueba : ServicioBase
     {
-        public ServicioEjemplo(Sesion sesion) : base(sesion) { }
-        public string Token() => ExigirToken();
-        public void Comprobar(string? estado, string? codigo, string? mensaje) => Verificar(estado, codigo, mensaje);
-        public object Presente(object? respuesta) => ExigirRespuesta(respuesta);
+        public R Comprobar<R>(R? respuesta) where R : RespuestaBaseDto => Verificar(respuesta);
     }
 
-    private readonly Sesion _sesion = new();
-    private readonly ServicioEjemplo _servicio;
+    private readonly ServicioDePrueba _servicio = new();
 
-    public ServicioBasePruebas()
+    private static RespuestaBaseDto Respuesta(string? estado, string? codigo, string? mensaje) =>
+        new() { Estado = estado, Codigo = codigo, Mensaje = mensaje };
+
+    [Fact]
+    public void UnaRespuestaOkSeDevuelveSinCambios()
     {
-        _servicio = new ServicioEjemplo(_sesion);
+        RespuestaBaseDto ok = Respuesta("OK", "200", "Operación exitosa");
+
+        Assert.Same(ok, _servicio.Comprobar(ok));
     }
 
     [Fact]
-    public void Sin_token_se_exige_login_sin_llamar_al_servidor()
+    public void UnaRespuestaDeErrorLanzaExcepcionConElCodigoYElMensajeDelServidor()
     {
-        var ex = Assert.Throws<ExcepcionServicio>(_servicio.Token);
+        ExcepcionServicio e = Assert.Throws<ExcepcionServicio>(
+            () => _servicio.Comprobar(Respuesta("ERROR", "ABC-001", "Regla de negocio incumplida")));
 
-        Assert.Equal("AUTH-002", ex.Codigo);
-        Assert.True(ex.ExigeLogin);
+        Assert.Equal("ABC-001", e.Codigo);
+        Assert.Equal("Regla de negocio incumplida", e.Message);
+        Assert.False(e.ServidorNoDisponible);
     }
 
     [Fact]
-    public void Con_token_se_devuelve_el_de_la_sesion()
+    public void UnErrorTecnicoDelServidorConservaSuCodigoYSuMensajeGenerico()
     {
-        _sesion.Token = "ABC";
+        ExcepcionServicio e = Assert.Throws<ExcepcionServicio>(
+            () => _servicio.Comprobar(Respuesta("ERROR", "ERR-500", "Error interno del servidor")));
 
-        Assert.Equal("ABC", _servicio.Token());
-        Assert.True(_servicio.HaySesion);
-    }
-
-    [Theory]
-    [InlineData("OK")]
-    [InlineData("ok")]
-    public void Estado_OK_no_lanza(string estado)
-    {
-        _servicio.Comprobar(estado, "200", "Correcto");
+        Assert.Equal("ERR-500", e.Codigo);
+        Assert.Equal("Error interno del servidor", e.Message);
     }
 
     [Fact]
-    public void Error_de_negocio_lanza_con_codigo_y_mensaje_del_servidor_y_conserva_la_sesion()
+    public void UnaRespuestaNulaSeTrataComoRespuestaIlegible()
     {
-        _sesion.Token = "ABC";
+        ExcepcionServicio e = Assert.Throws<ExcepcionServicio>(() => _servicio.Comprobar<RespuestaBaseDto>(null));
 
-        var ex = Assert.Throws<ExcepcionServicio>(() => _servicio.Comprobar("ERROR", "DATA-001", "El valor debe ser numérico"));
-
-        Assert.Equal("DATA-001", ex.Codigo);
-        Assert.Equal("El valor debe ser numérico", ex.Message);
-        Assert.False(ex.ServidorNoDisponible);
-        Assert.True(_servicio.HaySesion);
-    }
-
-    [Theory]
-    [InlineData("AUTH-002")]
-    [InlineData("AUTH-003")]
-    public void Token_invalido_o_vencido_descarta_la_sesion(string codigo)
-    {
-        _sesion.Token = "ABC";
-
-        var ex = Assert.Throws<ExcepcionServicio>(() => _servicio.Comprobar("ERROR", codigo, "Sesión expirada"));
-
-        Assert.True(ex.ExigeLogin);
-        Assert.False(_servicio.HaySesion);
+        Assert.Equal(ExcepcionServicio.Srv000, e.Codigo);
+        Assert.Equal(ExcepcionServicio.MensajeSrv000, e.Message);
+        Assert.True(e.RespuestaIlegible);
     }
 
     [Fact]
-    public void Campos_ausentes_en_un_error_no_rompen()
+    public void UnEstadoDistintoDeOkSeTrataComoError()
     {
-        var ex = Assert.Throws<ExcepcionServicio>(() => _servicio.Comprobar(null, null, null));
-
-        Assert.Equal("ERR-500", ex.Codigo);
-    }
-
-    [Fact]
-    public void Respuesta_nula_lanza_error()
-    {
-        Assert.Throws<ExcepcionServicio>(() => _servicio.Presente(null));
-    }
-
-    [Theory]
-    [InlineData("1,5", "1.5")]
-    [InlineData(" 2.25 ", "2.25")]
-    [InlineData("-3,0", "-3.0")]
-    public void El_valor_decimal_se_envia_con_punto(string escrito, string enviado)
-    {
-        Assert.Equal(enviado, ServicioBase.NormalizarValor(escrito));
-    }
-
-    [Fact]
-    public void Cerrar_sesion_descarta_el_token()
-    {
-        _sesion.Token = "ABC";
-
-        _servicio.CerrarSesion();
-
-        Assert.False(_servicio.HaySesion);
+        Assert.Throws<ExcepcionServicio>(() => _servicio.Comprobar(Respuesta(null, null, "sin estado")));
+        Assert.Throws<ExcepcionServicio>(() => _servicio.Comprobar(Respuesta("ok", "200", "minúsculas")));
     }
 }

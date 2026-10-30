@@ -1,278 +1,256 @@
 # Plantilla: cliente web .NET (ASP.NET Core MVC) para servicios SOAP
 
-Base reutilizable para construir el cliente web de **cualquier sistema** cuyo servidor exponga un servicio **SOAP**
-con el esquema de respuesta de esta familia de proyectos. Contiene lo que **todo** cliente necesita (acceso, sesión, estilos,
-componentes de vista, transporte y pruebas) y deja claramente marcado lo que cambia con el **dominio**.
+Base reutilizable para construir el cliente web de **cualquier sistema** cuyo servidor exponga servicios **SOAP**
+con el esquema de respuesta de esta familia de proyectos. Trae el transporte, los tipos comunes, la verificación de la envoltura,
+el layout con sus estilos y los componentes de vista, y deja marcado lo que cambia con el **dominio**.
+No incluye pantallas de dominio ni autenticación: se construyen con la receta de §4.
 
-- **Lenguaje:** C# 14, `net10.0`, `Nullable` e `ImplicitUsings` habilitados. **Plataforma:** ASP.NET Core 10 (Kestrel o IIS Express). **Interfaz:** controladores MVC + **vistas Razor** (`.cshtml`) escritas a código, sin librerías de UI (ni Bootstrap, ni jQuery, ni framework de JavaScript). **Arquitectura:** MVC por capas.
-- **Transporte:** WCF cliente (`System.ServiceModel.Http` y `Primitives` `10.0.652802`) con un **proxy generado desde el WSDL** por `dotnet-svcutil` (§4, paso 1). No se escribe el contrato a mano.
+Sigue `ARQUITECTURA_CLIENTE.md` (v1). Si este README y esa arquitectura discrepan, **prevalece la arquitectura**.
+
+- **Lenguaje:** C# 14, `net10.0` (`Nullable` e `ImplicitUsings` habilitados). **Plataforma:** ASP.NET Core 10 (Kestrel o IIS Express). **Interfaz:** controladores MVC + **vistas Razor** (`.cshtml`) escritas a código, sin librerías de UI (ni Bootstrap, ni jQuery, ni framework de JavaScript). **Arquitectura:** capas, con MVC.
+- **Transporte:** WCF cliente (`System.ServiceModel.Http` y `Primitives` 10.0.652802) con **proxy generado**: `dotnet-svcutil` genera las clases a partir de una copia del WSDL del servidor que va dentro del proyecto (`wsdl/`), y `ws/ConfiguracionServicio` solo fija la URL completa, el binding y los tiempos límite. El WSDL **no se descarga en ejecución**.
 - **El navegador no habla SOAP:** quien llama al servidor es el controlador (el servidor del cliente web), nunca JavaScript. Por eso el servidor SOAP no necesita CORS.
-- **Estilo:** `docs/CLIENT_STYLES_DOTNET.md` (tema **oscuro**, tipografía, medidas, componentes, disposición dividida). Se aplica con **componentes reutilizables** (*tag helpers* `ui-*`) y un único `wwwroot/css/estilos.css`.
-- **Convención SOAP:** sigue `CONVENCION_SOAP.md` (copia en esta carpeta): así entiende a un servidor Java o .NET que la cumpla. Con un proxy generado, el generador cumple por sí mismo R3 y R4.
-- **Contraparte de escritorio:** `soap_dotnet_escritorio` comparte con esta plantilla las capas `modelo`, `excepciones`, `ws`, `servicio` y los estilos (mismos nombres, mismo código). Cambian `controlador` y `vista`.
-- **Verificada:**
-  - `dotnet test` → **61 pruebas xUnit en verde**, sin servidor SOAP ni interacción: URL y binding http/https, traducción del fallo de red a `RED`, `ServicioBase`, controlador de acceso (con un autenticador falso), **cada componente `ui-*`** (HTML, clases y escape de todo texto dinámico) y un **recorrido en memoria de la aplicación completa** (`PantallasWebPruebas`: rutas, convención de controladores, vistas Razor, sesión, cookies, token anti-falsificación, acceso, pantalla protegida y cierre de sesión).
-  - La aplicación se **ejecutó** (`dotnet run`) y se comprobó con `curl`: `/` sin sesión redirige a `/Acceso/Acceder`, la pantalla de acceso carga con título y componentes resueltos, el acceso responde el mensaje del marcador «Falta conectar el servicio del dominio.» y se sirven `estilos.css`, `app.js` y la imagen.
-  - La receta de §4 es la que se siguió y verificó en el cliente web del conversor de unidades (acceso, categorías, unidades y conversión contra un servidor .NET real, con sus errores de negocio).
-  - **No se ha hecho:** ver la plantilla en un navegador (el aspecto no se comprobó), una llamada a un servidor real desde la plantilla sin tocar (no tiene proxy ni dominio), la presentación clara, `dotnet publish`, ni la ejecución desde Visual Studio con el perfil `IIS Express`.
+- **Estilo:** `docs/CLIENT_STYLES_DOTNET.md` (presentación oscura, tipografía, medidas, componentes, disposición). Se aplica con **componentes reutilizables** (*tag helpers* `ui-*`) y un único `wwwroot/css/estilos.css`.
+- **Convención SOAP:** sigue `docs/CONVENCION_SOAP.md` (copia en `docs/`, con el TNS fijo `http://ws.monster.edu.ec/` de R2): así entiende a un servidor Java o .NET que la cumpla. Pruebas: `docs/CONVENCION_PRUEBAS.md`.
+- **Autenticación:** **fuera de la plantilla base.** Cómo se identifica quien opera lo define cada servidor y cada proyecto (§8); la plantilla no trae ninguna pantalla ni estado de usuario.
+- **Núcleo:** `dto`, `excepciones`, `servicios/ServicioBase` y `ws` (`ConfiguracionServicio`, `TraductorRed`) son los mismos archivos que la plantilla `soap_dotnet_consola`: un proyecto con consola y web los copia **sin editarlos** (`COMPARTIR_CLIENTE.md`).
+- **Verificada:** `dotnet test` → 77 pruebas xUnit en verde, sin servidor SOAP ni navegador: configuración de la URL y del binding, verificación de la envoltura (`ServicioBase`), traducción de fallos de red (`TraductorRed`, con un canal simulado), excepción del cliente, base de los controladores (`ControladorBase`: texto, vacíos y resultado de una sola lectura), **cada componente `ui-*`** (HTML, clases y escape de todo texto dinámico) y **la aplicación arrancada dentro de la prueba** (`PantallasWebPruebas`: rutas, layout en sus dos modos, vistas Razor, tag helpers resueltos, recursos estáticos, página de error y token anti-falsificación). `dotnet build` sin errores ni advertencias.
+  Las recetas de §4, los componentes y los estilos son los que se siguieron y verificaron al construir un cliente web .NET sobre esta base (probado a mano en un navegador contra su servidor .NET).
+  **No se ha hecho:** ver la plantilla en un navegador (el aspecto no se comprobó), una llamada a un servidor real (la plantilla no trae proxy ni dominio), la presentación clara, `dotnet publish`, ni la ejecución desde Visual Studio con el perfil `IIS Express`.
 
-> Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `PROJECT.md` **de ese proyecto** (estado real,
+> Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `docs/PROJECT.md` **de ese proyecto** (estado real,
 > decisiones, pendientes) y usa este README solo como guía de la estructura y de las recetas.
 
 ---
 
 ## 1. Crear un proyecto a partir de la plantilla
 
-1. **Copiar la carpeta** completa a un directorio nuevo, **sin `bin/`, `obj/` ni `.vs/`**. Usar una **ruta corta** si se va a generar el proxy en ella: `dotnet-svcutil` falla con rutas muy largas (§9).
-2. **Renombrar** `soap_dotnet_web.csproj` y `soap_dotnet_web.slnx`, y corregir en el `.slnx` la ruta del `<Project Path="…csproj" />`. **Además, en `ec/edu/monster/vista/_ViewImports.cshtml` cambiar `@addTagHelper *, soap_dotnet_web` por el nuevo nombre del proyecto** (es el nombre del ensamblado): si no, los componentes `ui-*` salen como texto y las pantallas no se ven bien. El espacio de nombres **`ec.edu.monster`** (`RootNamespace`) es la convención y **no se cambia**.
+1. **Copiar la carpeta** completa a un directorio nuevo, **sin `bin/`, `obj/` ni `.vs/`**. Usar una **ruta corta** para generar los proxies: `dotnet-svcutil` falla con rutas largas (§4, paso 1).
+2. **Renombrar** `soap_dotnet_web.csproj` y `.slnx`, y corregir en el `.slnx` la ruta del `<Project Path="…csproj" />`. **Corregir también `@addTagHelper *, soap_dotnet_web` en `ec/edu/monster/vista/_ViewImports.cshtml`** con el nuevo nombre del proyecto (es el nombre del ensamblado). El espacio de nombres **`ec.edu.monster`** (`RootNamespace`) es la convención y **no se cambia**: es la raíz y cada capa es un espacio de nombres directo bajo ella (`ec.edu.monster.servicios`, `ec.edu.monster.ws`…), sin intermedio de módulo. Las carpetas de código van en minúscula y coinciden con el espacio de nombres (`ec/edu/monster/<capa>/`); `wwwroot/`, `wsdl/` y `docs/` también; los archivos, en PascalCase.
 3. **Abrir el `.slnx`** en Visual Studio 2026 (o usar `dotnet` desde la carpeta). Requiere el SDK de .NET 10; la primera vez restaura los paquetes (Internet).
-4. **Configurar el servidor SOAP:** en `ec/edu/monster/ws/ConfiguracionServicio.cs`, `UrlPorDefecto` = **URL completa del servicio** (sin `?wsdl`, sin «/» final; incluye host, puerto y ruta, tal como la entrega el servidor). No hay nombre de puerto ni «base + servicio»: ver §8.
-5. **Poner el nombre de la aplicación** en `vista/Textos.cs` (`NombreAplicacion`: título de la pestaña y de la pantalla de acceso) y, si se quiere, **sustituir la imagen** `wwwroot/img/fondo_app.png` conservando el nombre (requisitos en `docs/CLIENT_STYLES_DOTNET.md` §6).
-6. **Generar el proxy** desde el WSDL del servidor (§4, paso 1) y conectar el servicio en `Program.cs` (§4, paso 6).
-7. **Crear `PROJECT.md`** a partir del esqueleto de esta carpeta y mantenerlo al día.
-8. **Probar el servidor** (el WSDL abre en el navegador) y ejecutar (F5 en Visual Studio o `dotnet run --launch-profile http`). Con la plantilla sin tocar abre `http://localhost:5193/`, redirige al acceso y este responde que falta conectar el dominio.
+4. **Configurar el servidor:** en `ws/ConfiguracionServicio.cs`, `UrlPorDefecto` = **URL completa del servicio** (sin `?wsdl`, sin «/» final; incluye host, puerto y ruta, tal como la entrega el servidor). Con el servidor **ya actualizado y en marcha**, guardar su WSDL y sus esquemas en `wsdl/` y generar el proxy (§4, paso 1).
+   **Si el servidor publica varios servicios** (cada uno con su WSDL y su **URL completa**; R9 prohíbe asumir «base + nombre del servicio»):
+   - Guardar el WSDL y los esquemas de cada uno en `wsdl/` y generar **un proxy por servicio, cada uno en su propio espacio de nombres** (p. ej. `ec.edu.monster.ws.generado.consulta`): los esquemas de un mismo servidor suelen definir los mismos tipos (como `RespuestaBase`) y en un espacio común las clases generadas chocan.
+   - En `ConfiguracionServicio`, una constante con la URL completa de cada servicio y un método que la lea con `UrlConfigurada(servicio, urlPorDefecto)`:
+     ```csharp
+     public const string UrlConsultaPorDefecto = "http://localhost:5267/Consulta";
+     public static string UrlConsulta() => UrlConfigurada("consulta", UrlConsultaPorDefecto);
+     ```
+   - Cada servicio se sobrescribe sin recompilar con la variable de entorno `WS_URL_CONSULTA` (el nombre del servicio, en mayúsculas). Los nombres de los servicios y de sus URL se registran en el `docs/PROJECT.md` del proyecto.
+5. **Poner el nombre de la aplicación** en `vista/Textos.cs` (`NombreAplicacion`: título de la pestaña) y, si se quiere, **sustituir la imagen** `wwwroot/img/fondo_app.png` (requisitos en `docs/CLIENT_STYLES_DOTNET.md` §6). La imagen es un **PNG** (admite transparencia); si se cambia por otra, **se conserva el nombre `fondo_app.png`** para no tocar el CSS. Una imagen horizontal se muestra compacta al 60 % de su contenedor (`--margen-imagen: 20%` en `estilos.css`).
+6. **Completar `docs/PROJECT.md`** (viene como esqueleto) y mantenerlo al día.
+7. **Probar el servidor** (el WSDL abre en el navegador) y ejecutar (F5 en Visual Studio o `dotnet run`). Con la plantilla sin tocar abre la pantalla `Inicio`.
 
 ## 2. Qué es compartido y qué se adapta
 
 | Parte | Archivos | ¿Se toca? |
 |---|---|---|
-| **Acceso (compartido)** | `controlador/AccesoControlador`, `vista/acceso/Acceder.cshtml`, `modelo/AccesoModelo`, `servicio/IAutenticador` | No; el servicio del dominio implementa `IAutenticador`. Solo la pantalla de destino (`RedirectToAction("Index", "Inicio")`) |
-| **Transporte SOAP** | `ws/ClienteWS` (binding por esquema http/https, timeouts, `LlamarAsync` con traducción de fallos de red) | No |
-| **URL del servicio** | `ws/ConfiguracionServicio` (`UrlPorDefecto`, variable `WS_URL`, normalización) | `UrlPorDefecto` siempre; el resto no |
-| **Proxy generado** | — (`ws/Reference.cs` y `dotnet-svcutil.params.json`, generados desde `wsdl/`) | **Se genera** por proyecto; **no se edita** |
-| **Fábrica del cliente del dominio** | — (`ws/IClienteXxx` + `ws/ClienteWSXxx` sobre el proxy) | **Se crea** (receta §4) |
-| **Sesión y errores** | `modelo/Sesion` (token), `excepciones/ExcepcionServicio` (`ExigeLogin`, `ServidorNoDisponible`) | No |
-| **Base de servicios** | `servicio/ServicioBase` (`ExigirToken`, `Verificar`, `ExigirRespuesta`, `NormalizarValor`, `HaySesion`, `CerrarSesion`) | No; los servicios del dominio la extienden |
-| **Base web** | `controlador/ControladorBase` (`VolverAlAcceso`), `ConvencionControlador`, `SesionWeb`, `PersistirSesionFiltro`, `ExigirSesionAttribute` | No |
-| **Composición** | `Program.cs` (servicios, sesión, rutas de vistas, filtros, codificación) | Se registra el servicio del dominio (marcado `DOMINIO`) |
-| **Estilos y componentes** | `wwwroot/css/estilos.css`, `wwwroot/js/app.js`, `vista/componentes/Ui*TagHelper.cs`, `vista/compartido/_Layout.cshtml`, `docs/CLIENT_STYLES_DOTNET.md` | Colores solo si se cambia de presentación; **no** se escriben clases ni estilos en las vistas |
-| **Textos comunes** | `vista/Textos` | `NombreAplicacion` |
-| **Pantalla de ejemplo (dominio)** | `controlador/InicioControlador`, `vista/inicio/Index.cshtml` | **Se reemplaza** por las pantallas del dominio (conservar la acción `Error`) |
-| **Pruebas** | `pruebas/` (URL, binding, transporte, `ServicioBase`, acceso, componentes, recorrido de la aplicación) | Se conservan; se agregan las del dominio |
-| **Dominio (vacío)** | — | Nuevos `ws/`, `servicio/`, `controlador/`, `vista/`, `modelo/` |
+| **Configuración del transporte** | `ws/ConfiguracionServicio` (`CrearBinding`: binding y tiempos límite; `UrlConfigurada()` y `UrlConfigurada(servicio, urlPorDefecto)`; nada del dominio) | `UrlPorDefecto` siempre (o una constante por servicio, §1 paso 4); el resto no |
+| **Traducción de fallos de red** | `ws/TraductorRed` (`CommunicationException` y `TimeoutException` → `ExcepcionServicio` con código `RED`; un canal por llamada) | No |
+| **Proxy generado** | `wsdl/` (copias del WSDL y los esquemas) → `dotnet-svcutil` → `ws/generado/<servicio>/Reference.cs` | **Se genera** por proyecto y servicio (§4, paso 1) |
+| **Interfaz y envoltorio** | — (`ws/IXCliente.cs` y `ws/XClienteWS.cs`) | **Se crean** por proyecto, una firma por operación del servidor (§4, paso 2) |
+| **DTO base** | `dto/RespuestaBaseDto` (`Estado`, `Codigo`, `Mensaje`, `EsOk`) | No; se agregan DTO del dominio al lado |
+| **Verificación de la envoltura** | `servicios/ServicioBase` (`Verificar`) | No; los servicios del dominio la extienden |
+| **Errores** | `excepciones/ExcepcionServicio` (código + mensaje; códigos propios `RED` y `SRV-000`) | No |
+| **Composición** | `Program.cs` y `Aplicacion.cs` (`Construir`: antiforgery, codificación, ubicación de las vistas, `TODO` del registro de clientes y servicios) | `Aplicacion` se completa con los clientes y servicios del dominio |
+| **Base de los controladores** | `controlador/ControladorBase` (`Texto`, `Vacio`, `GuardarFlash`/`TomarFlash` para Post/Redirect/Get) | No; los controladores del dominio la extienden |
+| **Layout y vistas base** | `vista/_Layout.cshtml` (dos modos y tres anchos), `_ViewImports.cshtml`, `_ViewStart.cshtml`, `Error.cshtml` | No (`_ViewImports`: el nombre del ensamblado, §1 paso 2) |
+| **Componentes** | `vista/componentes/Ui*TagHelper` (15 *tag helpers* `ui-*`) | No |
+| **Estilos y JavaScript** | `wwwroot/css/estilos.css`, `wwwroot/js/app.js`, `docs/CLIENT_STYLES_DOTNET.md` | Colores solo si se cambia de presentación; **no** se repiten valores en las vistas |
+| **Textos** | `vista/Textos` | `NombreAplicacion` y los textos del dominio |
+| **Pantalla de ejemplo** | `controlador/InicioControlador`, `vista/Inicio.cshtml` | **Se reemplaza** por las pantallas del dominio |
+| **Servicios, controladores, modelos y vistas** | `servicios/`, `controlador/`, `vista/`, `modelo/` | **Se crean** (receta §4) |
 
-Las zonas a adaptar están marcadas con **`DOMINIO`**, **`CAMBIAR`** y **`TODO`** en el código (`grep -rnE "DOMINIO|CAMBIAR|TODO" ec Program.cs`).
+Las zonas a adaptar están marcadas con **`DOMINIO`**, **`CAMBIAR`** y **`TODO`** en el código (`grep -rnE "DOMINIO|CAMBIAR|TODO" ec`).
 
 ## 3. Estructura
 
 ```
-Program.cs                         punto de composición: servicios, sesión, rutas de vistas, filtros y codificación
-wsdl/                              copia del WSDL del servidor (fuente de verdad del contrato); versionada
-docs/CLIENT_STYLES_DOTNET.md       guía de estilos
-wwwroot/                           css/estilos.css, js/app.js, img/fondo_app.png    lo único público (se sirve tal cual)
-ec/edu/monster/                    todos los directorios en minúscula; el espacio de nombres coincide con la ruta
-├── modelo/        Sesion, AccesoModelo, ErrorModelo                entidades y modelos de vista: solo propiedades, sin lógica
-├── excepciones/   ExcepcionServicio                                código + mensaje; ExigeLogin, ServidorNoDisponible
-├── ws/            ClienteWS, ConfiguracionServicio (+ Reference.cs generado, IClienteXxx y ClienteWSXxx del dominio)
-├── servicio/      ServicioBase, IAutenticador, AutenticadorPendiente (+ los servicios del dominio)    única capa que conoce los tipos generados
-├── controlador/   ControladorBase, AccesoControlador, InicioControlador, ConvencionControlador,
-│                  SesionWeb, PersistirSesionFiltro, ExigirSesionAttribute
-├── vista/         Textos, _ViewImports, _ViewStart,
-│   ├── acceso/        Acceder.cshtml                               una carpeta por controlador, una vista por acción
-│   ├── inicio/        Index.cshtml
-│   ├── compartido/    _Layout.cshtml, Error.cshtml
-│   └── componentes/   UiEncabezado, UiCampo, UiSelector, UiMensaje, UiBoton, UiListaAcciones, UiFormulario, UiCerrarSesion  (tag helpers)
-└── pruebas/       xUnit en el mismo proyecto, sin servidor SOAP
+Program.cs                      arranca la aplicación (Aplicacion.Construir)
+wwwroot/       css/estilos.css, js/app.js, img/fondo_app.png, favicon.ico     recursos estáticos
+wsdl/                           copias del WSDL y de los esquemas de cada servicio (de aquí se genera el proxy)
+docs/                           CLIENT_STYLES_DOTNET.md, CONVENCION_SOAP.md y CONVENCION_PRUEBAS.md (copias vigentes) y PROJECT.md (esqueleto del proyecto)
+README.md                       esta guía: el único documento que queda en la raíz
+ec/edu/monster/
+├── Aplicacion.cs               punto de composición (clientes SOAP, servicios, MVC)
+├── modelo/                     datos propios del cliente que no son de una pantalla; vacía en la plantilla
+├── excepciones/   ExcepcionServicio                       código + mensaje; ServidorNoDisponible, RespuestaIlegible
+├── dto/           RespuestaBaseDto (+ los del dominio)    clases sin atributos de serialización, todos los campos como texto
+├── servicios/     ServicioBase (+ los del dominio)        verifican la envoltura; única capa que conoce dto y la INTERFAZ del cliente
+├── ws/            ConfiguracionServicio, TraductorRed (+ IXCliente y XClienteWS del dominio)
+│   └── generado/  <servicio>/Reference.cs                 proxy de dotnet-svcutil: se regenera, no se edita
+├── controlador/   ControladorBase, InicioControlador, ErrorControlador (+ uno por pantalla)   rutas con atributos
+├── vista/         _Layout, _ViewImports, _ViewStart, Inicio, Error, Textos, Modelos (+ una vista y un modelo por pantalla)
+│   └── componentes/  Ui*TagHelper                         los componentes ui-*
+└── pruebas/                                               xUnit + Moq, en el mismo proyecto (ver §4, paso 8)
 ```
 
-Dependencias permitidas: `vista (Razor) ← controlador → servicio → ws`; `modelo` y `excepciones` no dependen de nadie.
-**Los tipos generados (el «Dto» de la familia) viven en `ws/Reference.cs` y no salen de `servicio/`**; no hay carpeta `dto` ni clases `Dto` a mano.
-Los controladores **nunca importan `ws`**: hablan con los servicios y entregan a la vista un modelo de `modelo/`. La vista (`.cshtml`) no tiene lógica de negocio ni llama al servidor.
-Si el WSDL cambia solo se tocan `ws` y `servicio`.
-
-**Las vistas no viven en `Views/`** sino en `ec/edu/monster/vista/{controlador}/{vista}.cshtml` y `vista/compartido/` (`Program.cs` configura `RazorViewEngineOptions.ViewLocationFormats`), para respetar los directorios en minúscula de la familia.
-**Los controladores se llaman `XxxControlador`** y la ruta usa `Xxx`: `ConvencionControlador` quita el sufijo y `[Controller]` en `ControladorBase` los hace descubribles.
-
-**Una petición, de punta a punta:** navegador → `UseSession` → filtro global (token anti-falsificación en todo POST) → `[ExigirSesion]` (si la pantalla es protegida) → controlador (`*Controlador`) → servicio (por petición, con la `Sesion` del usuario) → `ClienteWS` (SOAP) → el controlador entrega un modelo → vista Razor → `PersistirSesionFiltro` guarda el token en la sesión antes de escribir la respuesta.
-El estado del usuario (el token) vive en la **sesión de ASP.NET Core** (`ISession`), cargado en una `Sesion` *scoped*, **nunca** en un servicio *singleton*: lo compartirían todos los usuarios. El cliente SOAP (`ClienteWSXxx`), en cambio, no guarda estado (un canal por llamada) y sí es *singleton*.
+Dependencias permitidas: `vista → controlador → servicios → ws`, y `modelo`, `dto` y `excepciones` son transversales (no dependen de nadie).
+**La vista nunca usa `ws` ni `dto`**: recibe de su controlador un modelo con el texto ya listo para mostrar y usa `Textos`.
+**`servicios` solo conoce la interfaz del cliente (`IXCliente`), no su implementación**; solo la implementación de `ws` conoce el protocolo, los tipos generados y las excepciones de WCF.
+Si el WSDL cambia solo se tocan `ws`, `dto` y `servicios`. **Quien llama al servidor es el controlador**, nunca el navegador.
 
 ## 4. Receta: agregar una operación SOAP y su pantalla
 
-Ejemplo: operación `obtenerItems(token)` que devuelve una lista y su pantalla. Se sigue **siempre el mismo orden**, de abajo hacia arriba.
+Ejemplo: operación `obtenerItems()` que devuelve una lista. Se sigue **siempre el mismo orden**, de abajo hacia arriba:
 
-1. **Proxy generado** — guardar el WSDL y generar:
+1. **WSDL y proxy** — con el servidor en marcha, guardar por servicio el WSDL y sus esquemas: `<URL>?wsdl`, `<URL>?xsd=xsd0` y `<URL>?xsd=xsd1` (un servidor CoreWCF; uno Java publica un solo `.xsd`), como `wsdl/<Servicio>.wsdl`, `<Servicio>.xsd0.xsd`, `<Servicio>.xsd1.xsd`.
+   En cada `.wsdl`, **reescribir los `schemaLocation` absolutos a los nombres de archivo locales**. Instalar la herramienta una vez (`dotnet tool install -g dotnet-svcutil`, 8.0.0; con el SDK 10 conviene `DOTNET_ROLL_FORWARD=LatestMajor`) y, **en una carpeta de ruta corta** con un proyecto `net10.0` descartable, por cada servicio:
    ```
-   curl -o wsdl/Servicio.wsdl "<URL del servicio>?singleWsdl"      # servidor .NET: un solo archivo con los esquemas
-   dotnet tool install dotnet-svcutil --tool-path <carpeta corta>\herr
-   dotnet-svcutil wsdl/Servicio.wsdl -n "*,ec.edu.monster.ws" -d ec/edu/monster/ws -o Reference.cs -nl
+   dotnet-svcutil wsdl/Consulta.wsdl -d . -o gen/consulta/Reference.cs -n "*,ec.edu.monster.ws.generado.consulta" --noLogo
    ```
-   - Un servidor **Java** no entrega `?singleWsdl`: guardar `?wsdl` **y** el XSD que importa (`schemaLocation`) y cambiar el `schemaLocation` a un nombre relativo.
-   - La herramienta modifica el `.csproj` (añade `System.ServiceModel.*` `4.10.*`): **dejar solo** `System.ServiceModel.Http` y `Primitives` `10.0.652802`.
-   - Generar desde una copia en una ruta corta si la del repositorio es larga (§9); puede hacer falta `DOTNET_ROLL_FORWARD=Major`. Conservar `dotnet-svcutil.params.json` (documenta cómo regenerar; ajustar la ruta del WSDL) y **no editar** `Reference.cs`.
-   - El proxy trae `RespuestaBase` (`estado`, `codigo`, `mensaje`), los tipos de cada operación, la interfaz del contrato y `ServicioXxxClient` (derivada de `ClientBase<T>`).
-2. **Interfaz y fábrica del cliente** — en `ws/`, una interfaz `IClienteXxx` con las operaciones que usa el cliente (permite el doble de pruebas) y `ClienteWSXxx` que la implementa sobre el proxy:
+   Copiar cada `Reference.cs` a `ec/edu/monster/ws/generado/<servicio>/`. **No dejar que `dotnet-svcutil` modifique este proyecto** (añade paquetes `System.ServiceModel.*` 4.10 que no se usan). Lo generado: la clase `…Client` con constructor `(Binding, EndpointAddress)`, métodos `<operación>Async` con el nombre de la operación en minúscula inicial (`obtenerItemsAsync`), tipos con propiedades en minúscula (`estado`, `codigo`, `mensaje`) y las listas como clases que heredan de `List<T>` (se usa `Count`, no `Length`).
+   **El código generado no se edita.** Cuando el servidor cambia su contrato: volver a guardar el WSDL y repetir.
+2. **Interfaz y envoltorio** — `ws/IXCliente.cs` (interfaz propia con las operaciones que usa el cliente, retorno `Task<DTO propio?>`) y `ws/XClienteWS.cs`, que implementa la interfaz sobre el cliente generado, copia cada respuesta generada a un DTO propio y **traduce los fallos de red con `TraductorRed`**. **El cliente no usa la URL de `Reference.cs`**: se crea con su propio binding y la URL configurada (R9, R10):
    ```csharp
-   public class ClienteWSXxx : IClienteXxx
+   public sealed class XClienteWS : IXCliente
    {
-       private readonly string _url;
-       public ClienteWSXxx(string? url = null) { _url = url ?? ConfiguracionServicio.ObtenerUrl(); }
+       private readonly Func<ConsultaClient> _crearProxy;          // clase generada por dotnet-svcutil
 
-       public Task<RespuestaLista> ObtenerItemsAsync(string token) =>
-           ClienteWS.LlamarAsync(CrearCliente, c => c.obtenerItemsAsync(token));
+       public XClienteWS(Func<ConsultaClient> crearProxy) { _crearProxy = crearProxy; }
 
-       private ServicioXxxClient CrearCliente() =>
-           new(ClienteWS.CrearBinding(_url), new EndpointAddress(_url));   // URL completa; no usar la del código generado
-   }
-   ```
-   Un cliente por llamada (un cliente en estado *Faulted* no se reutiliza); `LlamarAsync` lo cierra, o hace `Abort()` y convierte el fallo de red en `ExcepcionServicio` con código `RED`.
-3. **Servicio** — `servicio/ServicioXxx(IClienteXxx cliente, Sesion sesion) : ServicioBase(sesion), IAutenticador`. Es la **única** capa que ve los tipos generados:
-   ```csharp
-   public async Task IniciarSesionAsync(string usuario, string contrasenia)        // IAutenticador
-   {
-       var r = ExigirRespuesta(await cliente.LoginAsync(usuario, contrasenia));
-       Verificar(r.estado, r.codigo, r.mensaje);
-       if (string.IsNullOrEmpty(r.token)) throw new ExcepcionServicio("El servidor no entregó un token de sesión", "ERR-500");
-       Sesion.Token = r.token;
-   }
-
-   public async Task<IReadOnlyList<string>> ObtenerItemsAsync()
-   {
-       var token = ExigirToken();
-       var r = ExigirRespuesta(await cliente.ObtenerItemsAsync(token));
-       Verificar(r.estado, r.codigo, r.mensaje);
-       return r.elementos?.ToList() ?? [];     // las listas pueden venir ausentes
-   }
-   ```
-   - `ExigirToken()` lanza `AUTH-002` sin llamar al servidor si la `Sesion` no tiene token. `Verificar(...)` deja pasar si `estado` es `OK`; si no, lanza `ExcepcionServicio(codigo, mensaje)` del servidor y descarta el token si `ExigeLogin`.
-   - Aquí van las reglas **del cliente** (formato, `NormalizarValor`: coma decimal → punto); las reglas del dominio las decide el servidor y el cliente muestra su `mensaje`.
-4. **Modelo de vista y controlador** — `modelo/ItemsModelo` (solo propiedades) y `controlador/ItemsControlador(ServicioXxx servicio) : ControladorBase` con `[ExigirSesion]` (molde: `AccesoControlador` e `InicioControlador`):
-   ```csharp
-   [ExigirSesion]
-   public class ItemsControlador(ServicioXxx servicio) : ControladorBase
-   {
-       public async Task<IActionResult> Index()
+       public static IXCliente Crear()
        {
-           try { return View(new ItemsModelo { Items = await servicio.ObtenerItemsAsync() }); }
-           catch (ExcepcionServicio ex) when (ex.ExigeLogin) { return VolverAlAcceso(ex); }   // vuelve al acceso con el mensaje
-           catch (ExcepcionServicio ex) { return View(new ItemsModelo { Mensaje = ex.Message }); }   // solo el mensaje, nunca el código
-           catch (Exception) { return View(new ItemsModelo { Mensaje = "Ocurrió un error inesperado. Intente de nuevo." }); }
+           string url = ConfiguracionServicio.UrlConfigurada("consulta", "http://localhost:5267/Consulta");
+           return new XClienteWS(() => new ConsultaClient(ConfiguracionServicio.CrearBinding(url), new EndpointAddress(url)));
+       }
+
+       public Task<RespuestaListaDto?> ObtenerItemsAsync() =>
+           TraductorRed.LlamarAsync(_crearProxy, async proxy => Convertir(await proxy.obtenerItemsAsync()));
+
+       internal static RespuestaListaDto? Convertir(RespuestaLista? r)     // internal: lo prueban las pruebas del mismo proyecto
+       {
+           if (r is null) { return null; }                                 // ServicioBase la trata como SRV-000
+           var dto = new RespuestaListaDto { Estado = r.estado, Codigo = r.codigo, Mensaje = r.mensaje };
+           if (r.elementos is not null) { foreach (var e in r.elementos) { dto.Elementos.Add(e); } }
+           return dto;
        }
    }
    ```
-   - Un `POST` valida lo trivial (campo vacío), llama al servicio y vuelve a mostrar **la misma vista** con el resultado o el error, **conservando lo capturado** (devolver los valores en el modelo). El token anti-falsificación se valida solo en todo POST.
-   - Un fallo de red no cierra la aplicación: se muestra el mensaje y la pantalla sigue usable (con «Reintentar» si no hay datos). Si una pantalla necesita recargar un catálogo para volver a dibujarse y no puede, conservar las opciones elegidas por el usuario.
-5. **Vista** — `vista/items/Index.cshtml` (carpeta con el nombre del controlador), **solo con componentes `ui-*`** y `@model`. Sin `class`, sin `style`, sin lógica; muestra lo que dejó el controlador. Moldes: `acceso/Acceder.cshtml` e `inicio/Index.cshtml`.
-   ```html
-   @model ItemsModelo
-   @{ ViewData["Titulo"] = "Elementos"; }
-   <ui-encabezado>Elementos</ui-encabezado>
-   <ui-mensaje mensaje="@Model.Mensaje" />
-   <ui-lista-acciones elementos="@Model.Items" controlador="Detalle" accion="Ver" parametro="clave" />
-   <ui-cerrar-sesion />
-   ```
-   Un formulario es `<ui-formulario accion="Guardar" controlador="Items">…</ui-formulario>`; los enlaces a otras pantallas, `<ui-boton href="@Url.Action(...)">`.
-6. **Composición** — en `Program.cs`, en lugar de `AutenticadorPendiente` (que se elimina):
+   Los nombres exactos (`ConsultaClient`, `obtenerItemsAsync`, `RespuestaLista`) los decide `dotnet-svcutil` y solo se usan en este archivo. Con varios servicios, cada `Reference.cs` está en su espacio de nombres: importar solo el del servicio en cada envoltorio.
+3. **DTO propio** — clase `…Dto` en `dto` que extienda `RespuestaBaseDto`, con propiedades `{ get; set; }`, todas texto y `string?`; una lista se inicializa vacía (`public List<string> Elementos { get; } = [];`): **nunca nula**.
+4. **Servicio** — `servicios/XServicio : ServicioBase` (con sufijo `Async` en lo que llama a la red; los métodos públicos, `virtual`: Moq los necesita):
    ```csharp
-   builder.Services.AddSingleton<IClienteXxx>(_ => new ClienteWSXxx());
-   builder.Services.AddScoped<ServicioXxx>();
-   builder.Services.AddScoped<IAutenticador>(sp => sp.GetRequiredService<ServicioXxx>());
+   public virtual async Task<IReadOnlyList<string>> ItemsAsync()
+   {
+       RespuestaListaDto respuesta = Verificar(await _cliente.ObtenerItemsAsync());
+       return respuesta.Elementos;
+   }
    ```
-   Cambiar la pantalla de destino del acceso si ya no es `Inicio`, y reemplazar `InicioControlador`/`inicio/Index.cshtml` por las pantallas del dominio (**conservar la acción `Error`**: la usa `UseExceptionHandler`).
-7. **Pruebas** (en `ec/edu/monster/pruebas/`):
-   - Un doble escrito a mano de `IClienteXxx` que devuelve respuestas simuladas (con los tipos del proxy), para el servicio: OK, error de negocio, red, sesión vencida, coma enviada como punto, sin sesión no se consulta nada.
-   - **Una prueba de recorrido por pantalla** en `PantallasWebPruebas`: reemplazar `IClienteXxx` por el doble en `ConfigureServices` y comprobar el HTML (datos, mensajes sin código, escape, redirección al acceso por token vencido, formulario conservado ante error). **Es la que detecta una vista o un componente inválido**, que compila pero falla al abrir la pantalla.
-   - Una **prueba de humo** contra un servidor falso local (CoreWCF) con el mismo contrato detecta un WSDL desactualizado (opcional).
+   `Verificar(...)` devuelve la respuesta si `EsOk`; si no, lanza `ExcepcionServicio(codigo, mensaje)` del servidor; una respuesta nula es `SRV-000`. **No captura excepciones de red** (ya llegan como `RED`). Aquí van las reglas **del cliente**: preparar los datos de pantalla (recortar; decimales con **punto**, cultura invariante). Las reglas del dominio las decide el servidor y el cliente muestra su mensaje.
+5. **Modelo de la pantalla** — un `record` en `vista/Modelos.cs` con el texto ya listo para mostrar: lo escrito, el mensaje, el campo con error y, si hay resultado, sus datos. Es lo único que la vista recibe.
+6. **Controlador** — `controlador/XControlador : ControladorBase`, con las rutas por atributos (`[HttpGet("consulta")]`, `[HttpPost("consulta")]`) y el servicio por constructor (`ILogger<T>` para registrar lo inesperado). Invariantes (`ARQUITECTURA_CLIENTE.md` §4.6): validar los campos vacíos **antes** de llamar, en el orden de la pantalla (se informa el primero); mostrar solo el mensaje del error, nunca el código; conservar lo escrito ante un error salvo las contraseñas; no conocer la pantalla siguiente:
+   ```csharp
+   [HttpPost("consulta")]
+   public async Task<IActionResult> Consultar([FromForm] string? codigo)
+   {
+       var modelo = Inicial with { Codigo = Texto(codigo) };
+       if (Vacio(modelo.Codigo))
+           return View("Consulta", modelo with { Error = Textos.CampoObligatorio(Textos.Codigo), Invalido = "codigo" });
+       try { modelo = modelo with { Items = await _servicio.ItemsAsync() }; }
+       catch (ExcepcionServicio e) { modelo = modelo with { Error = e.Message }; }
+       catch (Exception e) { _registro.LogError(e, "…"); modelo = modelo with { Error = Textos.ErrorInesperado }; }
+       return View("Consulta", modelo);          // una consulta devuelve la página directamente
+   }
+   ```
+   **Una operación que cambia datos usa Post/Redirect/Get**: el `POST` valida, llama al servicio, `GuardarFlash(modelo)` y `Redirect("~/ruta")`; el `GET` hace `View("…", TomarFlash<Modelo>() ?? Inicial)`. Así F5 no repite la operación y el resultado se lee una sola vez. `GuardarFlash` nunca debe llevar una contraseña. Si el servidor no debe recibir un envío repetido mientras el anterior sigue en curso, el controlador lo descarta (`app.js` solo deshabilita los controles en el navegador).
+7. **Vista** — `vista/Consulta.cshtml` (`@model` del paso 5), solo `ui-*`: sin `class`, `style` ni lógica. `ViewData["Titulo"]` (obligatorio), `["Modo"]` y `["Ancho"]` dan la disposición. Patrón de toda pantalla: `<ui-formulario accion="/consulta" ocupado="@Textos.Consultando">` con `<ui-encabezado>`, los `<ui-campo>` (con `invalido` y `autofocus`), `<ui-fila-botones>` (el principal y `Cancelar` con `cancelar="true"`) y `<ui-mensaje mensaje="@Model.Error">`; el resultado (`<ui-tarjetas>`, `<ui-tabla>`) va **después** del formulario. Ver `Inicio.cshtml` y `docs/CLIENT_STYLES_DOTNET.md` §5 y §7.2.
+8. **Registro** — en `Aplicacion.Construir`: `AddSingleton(_ => XClienteWS.Crear())` y `AddSingleton<XServicio>()`. La ruta ya la declara el controlador.
+9. **Pruebas** (xUnit + Moq, en `ec/edu/monster/pruebas`, en el mismo proyecto):
+   - **Servicios:** la interfaz del cliente (`IXCliente`) se sustituye con Moq (OK, error de negocio, red, respuesta nula, coma enviada como punto).
+   - **Envoltorio:** `Convertir` se prueba campo a campo con los tipos generados.
+   - **Pantallas:** `ServidorWeb` arranca la aplicación en la prueba, en un puerto libre; `Aplicacion.Construir(args, servicios => …)` permite sustituir el cliente SOAP por uno simulado (`RemoveAll<IXCliente>()` y `AddSingleton(simulado)`). Se recorre cada ruta con `HttpClient` (`AllowAutoRedirect = false`): éxito, campos vacíos, error de negocio, redirección y resultado de una sola lectura. Un `POST` necesita el token anti-falsificación: se toma del formulario de la página (`__RequestVerificationToken`) y las cookies del mismo `HttpClient`. Revisar también que no quede ningún `<ui-` sin resolver.
+   - El contrato y el envoltorio de protocolo **no** se prueban con código: se verifican a mano con `docs/CONVENCION_PRUEBAS.md` §6.3.
 
 Reglas que se repiten en todo dominio:
-- **Los errores de negocio no son SOAP Fault**: el servidor responde HTTP 200 con `estado = ERROR`; solo red, timeout y `Fault` son `RED`.
-- **El token** vive en `Sesion` (en la sesión de ASP.NET Core, en memoria del servidor web), no se guarda en disco, ni en la cookie (la cookie solo lleva el identificador de la sesión), ni en logs, ni en la página. Ante `AUTH-002`/`AUTH-003` se descarta y se vuelve al acceso; no se cuenta el tiempo en el cliente.
-  `[ExigirSesion]` solo comprueba que *haya* token; si el servidor ya lo venció, lo detecta el servicio al llamar.
-- Todo dato viaja como **texto**; los decimales con **punto** (`ServicioBase.NormalizarValor`, o `CultureInfo.InvariantCulture`, nunca `double.Parse` con la cultura actual). El campo numérico de la vista es `type="text"` con `inputmode="decimal"`, no `type="number"`.
-- Mostrar solo el **mensaje** del servidor, nunca el código. Textos propios del cliente **con tildes**.
-- **Escapar todo texto dinámico**: Razor y los componentes ya lo hacen; **no** usar `Html.Raw` con datos del servidor ni del usuario. La contraseña nunca se devuelve a la página.
-- Todo `POST` va con token anti-falsificación (`<ui-formulario>` y `<ui-cerrar-sesion>` lo incluyen; es obligatorio por el filtro global). Cerrar sesión es un `POST`.
-- **Nunca red en el hilo de la petición sin `async/await`:** usar las operaciones `…Async`. Un fallo de red no cierra la aplicación.
-- Cada `POST` que cambie algo debería terminar en redirección (Post/Redirect/Get) si el resultado no es la página de respuesta del mismo formulario; el acceso y el cierre de sesión ya lo hacen.
+- **Los errores de negocio no son SOAP Fault**: el servidor responde HTTP 200 con `estado = ERROR`; solo red, tiempo agotado y `Fault` son `RED`, y una respuesta que no se puede interpretar es `SRV-000`.
+- Todo dato viaja como **texto**; los decimales con **punto** (normalizar la coma antes de enviar, en el servicio).
+- Mostrar solo el **mensaje** del servidor, nunca el código. Textos propios del cliente **con tildes**, centralizados en `Textos` y **los mismos en todos los clientes** del proyecto.
+- Un fallo de red no cierra la aplicación: se muestra el mensaje en la zona de estado de la pantalla.
+- **Un fallo al cerrar el canal después de una operación exitosa no es un error de la operación** (`TraductorRed` lo descarta con `Abort`).
+- Todo texto dinámico sale escapado (`@Modelo.Mensaje`); **nunca** `@Html.Raw` con datos del servidor.
 
 ## 5. Estilos (resumen; detalle en `docs/CLIENT_STYLES_DOTNET.md`)
 
-Las vistas **solo usan los componentes** `ui-*`; no escriben clases, estilos ni colores. Componentes disponibles:
+Las vistas **solo usan los componentes `ui-*`**; no colorean ni dimensionan elementos sueltos.
 
-| Etiqueta | Para qué |
+| Componente | Para qué |
 |---|---|
-| `_Layout` | Estructura de toda página: cabecera HTML, imagen a la izquierda y columna de contenido (420, centrada) a la derecha. `ViewData["Titulo"]` es obligatorio |
-| `<ui-formulario accion controlador>` | Formulario POST con token anti-falsificación; al enviarlo `app.js` deshabilita los controles y muestra el progreso |
-| `<ui-encabezado>` | Título de pantalla (`aplicacion="true"` para el título de la aplicación en el acceso) |
-| `<ui-campo id etiqueta>`, `<ui-selector id etiqueta opciones seleccionada>` | Etiqueta + campo de texto/contraseña, etiqueta + lista desplegable (`invalido="true"` marca el borde de error) |
-| `<ui-mensaje mensaje>` | Mensaje o resultado (`tipo`: `error`, `exito`, `resultado`); no se dibuja si no hay texto |
-| `<ui-boton>` | Botón primario (acción principal) o `tipo="secundario"` (salida o regreso); con `href` es un enlace; `completo` y `salida` ajustan ancho y separación |
-| `<ui-lista-acciones elementos controlador accion parametro>` | Una columna de botones primarios generados con datos del servidor; cada uno enlaza a `controlador/accion?parametro=elemento` |
-| `<ui-cerrar-sesion />` | Botón secundario «Cerrar sesión» (POST) separado 32 |
+| `<ui-formulario accion ocupado>` | Formulario `POST` de una pantalla con el indicador de progreso y el token anti-falsificación |
+| `<ui-encabezado>` | Título de pantalla (`aplicacion="true"`: el de la aplicación, centrado; `plano="true"`: texto grande sin panel) |
+| `<ui-campo>`, `<ui-selector>` | Etiqueta + campo o lista desplegable; `invalido` marca el borde de error |
+| `<ui-boton>` | Primario (acción principal) o secundario; con `href` es un enlace (`cancelar="true"`: lo activa `Esc`), sin él envía el formulario |
+| `<ui-fila-botones>`, `<ui-fila-campos>`, `<ui-campo-con-acciones>` | Disposición: botones centrados, dos campos con una flecha, un campo con sus botones |
+| `<ui-cuadricula-acciones>`, `<ui-lista-acciones>` | Botones grandes en dos columnas; una columna de botones generada con datos del servidor |
+| `<ui-mensaje>` | Mensaje de error, éxito o resultado; no se dibuja vacío |
+| `<ui-tarjetas>`, `<ui-tarjeta>` | Resumen de un cambio de un valor, con los textos ya preparados |
+| `<ui-tabla>` | Tabla con encabezado fijo y columnas numéricas a la derecha |
+| `<ui-progreso>` | Indicador de espera (lo incluye `<ui-formulario>`) |
 
-- **Tema oscuro** fijo (`<body class="tema-oscuro">` en `_Layout`); no hay selector. Los tokens son variables CSS en `estilos.css`. Para la presentación clara, agregar el bloque `.tema-claro` con los valores de `docs/CLIENT_STYLES_DOTNET.md` §2.3 y cambiar la clase del `<body>` (la clara no usa imagen).
-- **Disposición:** ventana dividida: **imagen a la izquierda** (560, fija, completa y centrada) y la pantalla a la derecha (columna de máximo 420, centrada); bajo 900 px, columna única sin imagen y sin scroll horizontal. La imagen es del **layout**, no de cada vista. Es la misma disposición que `soap_dotnet_escritorio` (el documento de estilos la define con las zonas invertidas, §7.0).
-- **Las imágenes** van en `wwwroot/img` y se referencian desde el CSS con ruta relativa (`../img/...`).
-- **Componente nuevo:** crear `vista/componentes/UiXxxTagHelper.cs` (con `AppendHtml`/`TagBuilder`, que **escapan** el texto) y su CSS en `estilos.css`, con tokens (`var(--…)`), nunca con colores sueltos. Agregar su prueba en `ComponentesPruebas` (incluido el escape) y probarlo en un navegador a 1100 px y a menos de 900 px.
-- Una vista o un componente inválido **compila** y falla al abrir la pantalla (HTTP 500) o, si falta el `@addTagHelper`, se ve como etiqueta literal: probar cada pantalla nueva con `PantallasWebPruebas` y abrirla.
+- **Disposición:** dos modos en `_Layout.cshtml`. `ViewData["Modo"] = "acceso"` (por defecto) es dividida: pantalla a la izquierda (columna de 420) e imagen a la derecha. `"aplicacion"` usa el ancho completo y la imagen es una capa fija de fondo: completa, centrada, con opacidad 40 %, con los paneles sobre ella. `ViewData["Ancho"]`: `formulario` (480, por defecto), `amplio` (640) o `completo` (sin máximo; la pantalla con tabla va arriba). Bajo 900 px no hay imagen; bajo 600 px las cuadrículas y las filas pasan a una columna. **La página nunca se desplaza en horizontal**: la tabla se desplaza dentro de su contenedor.
+- **JavaScript:** un único `wwwroot/js/app.js`: al enviar un formulario o pulsar un botón-enlace marca la pantalla como ocupada (controles deshabilitados e indicador visible), la libera al volver con «Atrás» y `Esc` activa `Cancelar`.
+- **Presentación clara:** cambiar la clase del `<body>` en `_Layout.cshtml` a `tema-claro` (la imagen no se usa).
+- Los textos con tildes, «…» y «→» salen sin entidades (`WebEncoderOptions` en `Aplicacion`); `<`, `>`, `&`, las comillas y «+» siguen escapándose.
+- Antes de construir las pantallas de un proyecto conviene especificarlas en su `docs/PANTALLAS.md` (orden de los elementos, anchos, estados y decisiones).
 
 ## 6. Servidor y ejecución
 
-- **Servidor SOAP por defecto:** `ConfiguracionServicio.UrlPorDefecto` (URL completa). Sin recompilar: variable de entorno `WS_URL`
-  (PowerShell: `$env:WS_URL = "http://<ip>:57592/Ruta"; dotnet run --launch-profile http`).
-- **HTTP y HTTPS:** el esquema de la URL decide el modo de seguridad del binding (`ClienteWS.CrearBinding`): `http://` sin seguridad, `https://` con seguridad de transporte. **HTTPS exige un certificado de servidor válido y de confianza** (en desarrollo, `dotnet dev-certs https --trust`, y que el nombre al que se conecta esté en el certificado).
-  La validación del certificado **no** se desactiva en el cliente. Si falla, el cliente solo muestra «No se pudo comunicar con el servidor» (no distingue la causa).
-- **El WSDL no se usa en ejecución:** un cliente WCF no lo descarga; usa el binding y la URL indicados. Con el servidor SOAP apagado la aplicación arranca igual y la llamada falla con `RED` tras el tiempo límite (10 s).
-- **Entorno de desarrollo de la familia:** IIS Express por HTTP (`http://localhost:57592/<Ruta>`); el perfil `http` (Kestrel) del servidor usa el puerto `5267`. Reglas de red y firewall: `IIS_CONFIG.md` del proyecto del servidor.
-- **Puerto del cliente web:** `5193` (perfil `http` de `Properties/launchSettings.json`); debe ser **distinto** del del servidor (`5267` / `57592`). Cambiarlo ahí si hay otro proyecto abierto a la vez.
-- **Visual Studio:** *Run* (F5) con el perfil `http`. Detener la ejecución antes de compilar desde la terminal (el `.dll` queda bloqueado).
-- **Terminal:** `dotnet run --launch-profile http`, y abrir `http://localhost:5193/`.
-- **Sesión:** la cookie `.Cliente.Sesion` (`HttpOnly`) dura 20 minutos de inactividad (`Program.cs`); es independiente del token del servidor (que vence a su ritmo y se reconoce por el código `AUTH-003`). Si la aplicación se reinicia, las sesiones en memoria se pierden y el usuario vuelve al acceso.
-- **Publicación:** `dotnet publish -c Release`. **Probarla** antes de darla por buena (las vistas se compilan dentro del ensamblado).
+- **Servidor por defecto:** `ConfiguracionServicio.UrlPorDefecto` (URL completa). Sin recompilar: la variable de entorno `WS_URL`. Con varios servicios, una por servicio: `WS_URL_<SERVICIO>` (§1, paso 4). En PowerShell: `$env:WS_URL_CONSULTA = 'http://host:5267/Consulta'` antes de `dotnet run`.
+- **Servidor .NET local:** con el perfil `http` (Kestrel) el puerto por defecto es 5267; con `IIS Express`, 57592 (solo HTTP; ver `context/entornos/IIS_CONFIG.md`). Si el servidor corre en IIS Express, es Visual Studio quien lo mantiene vivo: si se detiene, el servidor está apagado.
+- **Esta aplicación** escucha en `http://localhost:5193` (`Properties/launchSettings.json`, perfil `http`).
+- **El WSDL está empaquetado** (`wsdl/`): crear el cliente no abre ninguna conexión, así que con el servidor SOAP apagado la aplicación arranca y el fallo llega al **llamar** una operación, donde `TraductorRed` lo traduce a `RED` («Servidor no disponible, intente más tarde»).
+- **Visual Studio:** *Run* ejecuta el proyecto; **detener la depuración antes de volver a compilar** (si no, `MSB3021`/`MSB3027`: el `.exe` queda bloqueado).
 
 ## 7. Comandos y verificación
 
 ```
-dotnet test                              # pruebas locales (sin servidor SOAP ni interacción); detener la aplicación antes
-dotnet run --launch-profile http         # ejecutar contra el servidor configurado
+dotnet test                  # pruebas locales (sin servidor SOAP ni navegador)
+dotnet build                 # compilar
+dotnet run                   # ejecutar contra el servidor configurado
 ```
 Probar el servidor sin la aplicación: abrir `<URL del servicio>?wsdl` en el navegador; si carga el XML, el cliente conectará.
 
-Verificación con la aplicación en marcha (la vista se revisa a mano; los controladores y los componentes, con pruebas):
-1. Sin sesión, abrir una ruta protegida (p. ej. `/`): debe redirigir al acceso.
-2. Acceso con credenciales incorrectas: muestra el mensaje del servidor (sin código) y conserva el usuario; correcto: entra a la primera pantalla; «Cerrar sesión» vuelve al acceso y «Atrás» no muestra la pantalla protegida.
-3. Error de negocio: se muestra el mensaje y la pantalla sigue usable, con lo capturado.
-4. Con el servidor SOAP apagado: aparece «No se pudo comunicar con el servidor» (≈ 10 s) y la aplicación sigue respondiendo.
-5. Token vencido (reiniciar el servidor SOAP con la sesión abierta): vuelve al acceso con el mensaje.
-6. Ventana ancha (≥ 900 px: imagen a la izquierda) y estrecha (columna única, sin imagen, sin scroll horizontal); tildes y «ñ» en pantalla.
+Verificación con la aplicación en marcha, en un navegador:
+1. Operación correcta: el resultado se muestra con el formato esperado, y recargar la página (F5) no repite una operación que cambia datos.
+2. Error de negocio: se muestra el mensaje del servidor y se conserva lo escrito.
+3. Con el servidor SOAP apagado: aparece «Servidor no disponible, intente más tarde» y la aplicación sigue respondiendo.
+4. Doble clic en una acción: se envía **una** petición (controles deshabilitados mientras espera).
+5. Ventana ancha, intermedia (< 900 px) y estrecha (< 600 px); sin barra de desplazamiento horizontal; tildes y «ñ» en campos y mensajes; `Esc` como `Cancelar`.
 
-Un agente que no pueda abrir el navegador debe decir explícitamente qué verificó (pruebas, peticiones HTTP con `curl`, contra qué servidor) y que **no vio la aplicación en un navegador real** si es el caso.
-Con `curl` en Windows, los textos con tildes deben enviarse codificados en UTF-8 (`--data-raw` con `%C3%B3`…); la consola puede alterarlos y producir falsos errores de «unidad no soportada».
+Un agente que no pueda abrir un navegador debe decir explícitamente qué verificó (pruebas, recorrido en memoria) y que **no vio la página real** si es el caso.
 
 ## 8. Qué asume la plantilla del servidor
 
-Si el nuevo servidor no cumple alguno de estos puntos, el cambio se limita a `ws` y `servicio`. Es la convención común de la familia (`CONVENCION_SOAP.md`):
+Es la convención común de la familia (`docs/CONVENCION_SOAP.md`). Si el nuevo servidor no cumple alguno de estos puntos, el cambio se limita a `ws`, `dto` y `servicios`:
 
-- SOAP **1.1**, *document/literal wrapped*, `BasicHttpBinding`. Elementos **calificados** con el namespace del servicio y `SOAPAction` = `TNS + Servicio + "/" + operación`: con el proxy generado los cumple el generador (R3, R4); un servidor .NET rechaza la acción vacía con HTTP 500.
-- **El cliente no depende del nombre del puerto ni del binding** (R10): usa el proxy con una URL explícita. **La URL completa** del servicio se recibe por configuración; no se asume puerto ni «base + servicio» (R9).
-- Cada respuesta es un elemento `respuesta` con `estado` (`OK`/`ERROR`), `codigo` y `mensaje`, más los datos de la operación. Éxito y error usan el mismo tipo.
-- **Lo que el código no puede imponer** (acuerdo con el servidor): todos los datos viajan como texto (R6); los errores de negocio van en el cuerpo con HTTP 200, no como Fault (R7); los nombres de operaciones, parámetros y campos son fijos (R5/R8).
-  Si el servidor cambia su contrato hay que **regenerar el proxy** y revisar `servicio`.
-- Los campos que pueden faltar (`token`, listas) llegan `null` en un error: no darlos por existentes.
-- Existe `login(usuario, contrasenia)` que devuelve `token`, y las operaciones protegidas reciben el `token` como parámetro (no como cabecera).
-- Los códigos `AUTH-002` / `AUTH-003` significan «token inválido / vencido» (`ExcepcionServicio.ExigeLogin`).
-- Si el servidor usa **cabecera SOAP** para el token, WS-Security u otro estilo, ampliar `ClienteWS` (comportamientos del cliente WCF).
-- Para un servicio **REST** reutilizar de esta plantilla todo salvo `ws/` (la capa `servicio` solo depende de `IClienteXxx`).
+- SOAP **1.1**, *document/literal wrapped*. **Elementos calificados** con el namespace del servicio (`elementFormDefault="qualified"`): si la copia del esquema no lo declara, los campos llegan `null` sin error (R3).
+- **Namespace (TNS) fijo `http://ws.monster.edu.ec/`** en todos los servicios del equipo (R2). **SOAPAction = `TNS + Servicio + "/" + operación`**, que viene en el WSDL (R4).
+- **El cliente no depende del nombre del puerto ni del binding** (R10) y recibe la **URL completa** por configuración (R9).
+- Cada respuesta es un elemento `respuesta` con `estado` (`OK`/`ERROR`), `codigo` y `mensaje`, más los datos de la operación. Los campos propios nunca se llaman `estado`, `codigo` ni `mensaje`.
+- Todos los datos viajan como texto (R7); los errores de negocio van en el cuerpo con HTTP 200, no como Fault (R8); los nombres de operaciones, parámetros y campos son fijos e iguales en Java y .NET (R5).
+- Un WSDL de CoreWCF trae el esquema de serialización de Microsoft (`xsd1`) y una lista como clase que hereda de `List<T>`; un WSDL Java, un solo `.xsd`.
+- **Autenticación:** no la asume la plantilla. Cómo se identifica quien opera (credenciales en cada operación, un token, nada) lo define cada servidor, y su cliente lo implementa en `servicios`.
+- Para un servicio **REST** usar la plantilla `rest_dotnet_web`.
 
 ## 9. Problemas frecuentes
 
 | Síntoma | Causa / solución |
 |---|---|
-| Las pantallas salen sin estilo de componentes: se ven `<ui-campo …>` o `asp-append-version` literales en el HTML | Falta o es incorrecto el `@addTagHelper` de `vista/_ViewImports.cshtml`: debe haber uno para `Microsoft.AspNetCore.Mvc.TagHelpers` y otro con **el nombre del ensamblado** (el del `.csproj` renombrado) |
-| 404 en una pantalla recién creada, o «The view … was not found» | La vista no está en `vista/{controlador}/{Acción}.cshtml` (o `vista/compartido/`), o el controlador no termina en `Controlador` ni hereda de `ControladorBase` |
-| Error CS0616 en un tag helper nuevo (`ViewContext` no es una clase de atributos) | Falta `using Microsoft.AspNetCore.Mvc.ViewFeatures;` |
-| 400 al enviar un formulario | Falta el token anti-falsificación: usar `<ui-formulario>`, no un `<form>` a mano |
-| La pantalla protegida vuelve siempre al acceso | La sesión no persistió: `PersistirSesionFiltro` debe estar registrado en `Program.cs` y `UseSession()` antes de los endpoints; las cookies deben estar permitidas |
-| El usuario ve la sesión de otro | El token se guardó en un *singleton* o en un campo estático; debe vivir solo en la `Sesion` por petición (`SesionWeb`) |
-| `UseExceptionHandler` muestra 405/400 en vez de la página de error | La acción `Error` perdió `[IgnoreAntiforgeryToken]` o se le puso un verbo; se reejecuta con el verbo original |
-| Tildes o «ñ» salen como entidades (`&#xF1;`) | Se quitó la configuración de `WebEncoderOptions` en `Program.cs` |
-| «No se pudo comunicar con el servidor» | Servidor SOAP apagado, URL distinta de la real, firewall, o (HTTPS) certificado sin confiar/vencido/de otro host. Abrir `<URL>?wsdl` en el navegador |
-| Por HTTPS falla y por HTTP funciona | Certificado de desarrollo sin confiar: `dotnet dev-certs https --trust`; consultar por el mismo nombre que figura en el certificado |
-| `400 Invalid Hostname` | IIS Express solo atiende `localhost`: falta el binding comodín |
-| Respuesta con campos vacíos / `null` | El servidor no califica los campos (R3) o el proxy está desactualizado: regenerar desde el WSDL actual |
-| HTTP 500 *ActionNotSupported* | Se envía `SOAPAction` vacía: el proxy no es el generado o se alteró el atributo `Action` |
-| El servidor responde `DATA-001` con un número | Se envió coma decimal: usar `ServicioBase.NormalizarValor` |
-| `dotnet-svcutil` falla (`MSB3030`, ruta demasiado larga, o pide otro runtime) | Generar en una copia con ruta corta (p. ej. `C:\Temp\gen`) y copiar `Reference.cs`; definir `DOTNET_ROLL_FORWARD=Major` |
-| Avisos `NU1902`/`NU1903` de `System.Security.Cryptography.*` | Dependencia transitiva de los paquetes WCF; no impide funcionar. Revisar si hay una versión corregida |
-| `MSB3027`/`MSB3021`: no se puede copiar el `.dll` | Hay una instancia de la aplicación en ejecución: cerrarla antes de compilar |
-| `CS0017` (más de un punto de entrada) al agregar pruebas | Falta `<GenerateProgramFile>false</GenerateProgramFile>` en el `.csproj` |
-| Pruebas: «Solution root could not be located» o `DirectoryNotFoundException` al crear la aplicación | Falta el `.slnx` en la carpeta del proyecto, o `PantallasWebPruebas` no fija el *content root* (`UseContentRoot` hacia la carpeta del `.csproj`) |
+| Un componente aparece como etiqueta sin resolver (`<ui-campo …>` en el HTML) | `@addTagHelper *, <Proyecto>` de `vista/_ViewImports.cshtml` no coincide con el nombre del ensamblado (§1, paso 2) |
+| `The view '…' was not found` | La vista no está en `ec/edu/monster/vista/` o su nombre no coincide con el de `View("…")`: la aplicación solo busca allí (`ViewLocationFormats`) |
+| El controlador no responde (404) | La clase no deriva de `ControladorBase` (el atributo `[Controller]` se hereda) o la acción no tiene atributo de ruta (`[HttpGet("…")]`) |
+| `POST` con HTTP 400 | Falta el token anti-falsificación: el formulario debe ser un `<ui-formulario>` |
+| Tildes o «…» salen como `&#xF3;` | El texto no pasa por el codificador de `Aplicacion` (no usar `Html.Raw` ni armar HTML a mano) |
+| El resultado de una operación reaparece al recargar | El `POST` devolvió la página en vez de redirigir: usar `GuardarFlash` + `Redirect` (§4, paso 6) |
+| `CommunicationException` / «Servidor no disponible» al llamar una operación | Servidor apagado (con IIS Express, Visual Studio detenido) o `UrlPorDefecto` distinta de la real. Abrir `<URL>?wsdl` en el navegador |
+| `dotnet-svcutil` falla (`MSB3030`, rutas demasiado largas) | Generar en una carpeta de ruta corta (§4, paso 1) |
+| `dotnet-svcutil` añade paquetes `System.ServiceModel.*` 4.10 a un proyecto | Se ejecutó dentro del proyecto: generar en una carpeta descartable y copiar solo los `Reference.cs` |
+| 26 avisos `NU1902`/`NU1903` al restaurar | Dependencias transitivas de `System.ServiceModel.*`: fijar `System.Security.Cryptography.Pkcs` y `.Xml` en 10.0.14 en el `.csproj` (con esta plataforma web no aparecen) |
+| Cambió el servidor y el cliente no ve la operación nueva | Guardar de nuevo el WSDL y los esquemas, regenerar el proxy y agregar la operación a la interfaz y al envoltorio (§4) |
+| Respuesta con campos vacíos | Se guardó un WSDL antiguo, o el envoltorio no copia un campo de la respuesta generada al DTO propio |
+| Servidor .NET responde HTTP 500 *ActionNotSupported* | El WSDL guardado no trae el `soapAction` de la operación: guardar el WSDL del servidor actualizado y regenerar |
+| El servidor no recibe los parámetros (llegan vacíos) | El esquema guardado no califica los elementos (`elementFormDefault="qualified"`) |
+| `ListaX` no tiene `Length` | Es una lista (`List<T>`): usar `Count` |
+| Errores por tipos duplicados (`RespuestaBase`…) | Varios servicios generados en el mismo espacio de nombres: darle a cada uno el suyo |
+| Una prueba se cuelga | Un canal simulado cuyo `BeginClose` no invoca el callback: `Task.Factory.FromAsync` espera para siempre (ver `TraductorRedPruebas`) |
+| `MSB3021`/`MSB3027`: no se puede copiar `apphost.exe` al compilar | La aplicación sigue en ejecución (p. ej. depurando en Visual Studio): detenerla antes de compilar |

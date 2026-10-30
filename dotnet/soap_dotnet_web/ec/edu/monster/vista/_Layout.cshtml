@@ -1,0 +1,46 @@
+@*
+    Estructura común de toda pantalla (CLIENT_STYLES_DOTNET.md §7.0 y §7.2). Cada vista fija:
+      ViewData["Titulo"]  título de la pestaña (obligatorio; se completa con el nombre de la aplicación)
+      ViewData["Modo"]    "acceso" (por defecto): disposición dividida, columna de contenido + imagen decorativa;
+                          "aplicacion": ancho completo, con la imagen como capa fija de fondo (CSS)
+      ViewData["Ancho"]   solo en modo aplicacion: "formulario" (480, por defecto), "amplio" (640) o "completo"
+    La imagen no contiene información ni controles: solo decora.
+*@
+@{
+    string modo = ViewData["Modo"] as string ?? "acceso";
+    string ancho = ViewData["Ancho"] as string ?? "formulario";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Titulo"] · @Textos.NombreAplicacion</title>
+    <link rel="icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/css/estilos.css" asp-append-version="true" />
+</head>
+<body class="tema-oscuro">
+@if (modo == "aplicacion")
+{
+    <div class="pagina pagina--aplicacion">
+        <main class="contenido contenido--@ancho">
+            <div class="columna">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+}
+else
+{
+    <div class="pagina">
+        <main class="zona-contenido">
+            <div class="columna">
+                @RenderBody()
+            </div>
+        </main>
+        <div class="zona-imagen" aria-hidden="true"></div>
+    </div>
+}
+    <script src="~/js/app.js" asp-append-version="true"></script>
+</body>
+</html>
