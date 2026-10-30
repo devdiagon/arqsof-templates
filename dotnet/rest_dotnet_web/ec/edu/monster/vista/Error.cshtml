@@ -1,0 +1,8 @@
+@model ErrorModelo
+@* Página de último recurso: el mensaje genérico, sin traza ni código. *@
+@{
+    ViewData["Titulo"] = Textos.NombreAplicacion;
+}
+<ui-encabezado aplicacion="true">@Textos.NombreAplicacion</ui-encabezado>
+<ui-mensaje mensaje="@Model.Mensaje" />
+<ui-boton centrado="true" href="/">@Textos.Inicio</ui-boton>

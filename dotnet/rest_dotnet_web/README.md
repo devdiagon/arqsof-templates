@@ -1,266 +1,227 @@
-# Plantilla: cliente web .NET (ASP.NET Core MVC) para APIs REST
+# Plantilla: cliente web .NET (ASP.NET Core MVC) para servicios REST
 
-Base reutilizable para construir el cliente web de **cualquier sistema** cuyo servidor exponga una API **REST/JSON**
-con el esquema de respuesta de esta familia de proyectos (`CONVENCION_REST.md`). Contiene lo que **todo** cliente necesita (acceso, sesión, estilos,
-componentes de vista, transporte HTTP y pruebas) y deja claramente marcado lo que cambia con el **dominio**. Es la contraparte REST de `soap_dotnet_web` y la versión web de `rest_dotnet_consola` y `rest_dotnet_escritorio`.
+Base reutilizable para construir el cliente web de **cualquier sistema** cuyo servidor exponga una API **REST** con el esquema de respuesta de esta familia de proyectos (envoltura `estado` / `codigo` / `mensaje`). Trae el transporte HTTP, los tipos comunes, la verificación de la envoltura, el layout con sus estilos y los componentes de vista, y deja marcado lo que cambia con el **dominio**. No incluye pantallas de dominio ni autenticación: se construyen con la receta de §4. Es la contraparte de `soap_dotnet_web`: todo es igual salvo la capa de protocolo (`ws` ↔ `api`).
 
-- **Lenguaje:** C# 14, `net10.0`, `Nullable` e `ImplicitUsings` habilitados. **Plataforma:** ASP.NET Core 10 (Kestrel o IIS Express). **Interfaz:** controladores MVC + **vistas Razor** (`.cshtml`) escritas a código, sin librerías de UI (ni Bootstrap, ni jQuery, ni framework de JavaScript). **Arquitectura:** MVC por capas.
-- **Transporte:** `HttpClient` + `System.Net.Http.Json` + `System.Text.Json`, todo incluido en el SDK: **ningún paquete** en producción. No hay proxy ni WSDL: los DTO se escriben a mano. Las capas `api/`, `dto/RespuestaBaseDto`, `excepciones/`, `modelo/Sesion` y `servicio/ServicioBase` son **las mismas** de `rest_dotnet_escritorio` y `rest_dotnet_consola` (copiarlas entre plantillas, no reescribirlas).
-- **El navegador no habla con la API:** quien la llama es el controlador (el servidor del cliente web), nunca JavaScript. Por eso la API no necesita CORS.
-- **Estilo:** `docs/CLIENT_STYLES_DOTNET.md`, en su **presentación clara** y con la **pantalla a la izquierda y la imagen a la derecha** (§5). Se aplica con **componentes reutilizables** (*tag helpers* `ui-*`) y un único `wwwroot/css/estilos.css`.
-- **Convención REST:** sigue `CONVENCION_REST.md` (copia en esta carpeta): así entiende a un servidor Java o .NET que la cumpla; cambiar de servidor es cambiar solo la URL base.
-- **Contraparte de escritorio:** `rest_dotnet_escritorio` comparte con esta plantilla las capas `modelo`, `excepciones`, `api`, `dto` (base), `servicio` y los estilos (mismos nombres, mismo código). Cambian `controlador` y `vista`.
-- **Verificada:**
-  - `dotnet test` → **86 pruebas xUnit en verde**, sin servidor ni interacción: URL base, transporte con un `HttpMessageHandler` falso, traducción de fallos de red, `ServicioBase` (códigos HTTP, token, cuerpos que no son JSON), controlador de acceso (con un autenticador falso), **cada componente `ui-*`** (HTML, clases y escape de todo texto dinámico), la **composición de `Program.cs`** (`ComposicionPruebas`: transporte tipado y `Sesion` por petición) y un **recorrido en memoria de la aplicación completa** (`PantallasWebPruebas`: rutas, convención de controladores, vistas Razor, sesión, cookies, token anti-falsificación, acceso, pantalla protegida y cierre de sesión).
-  - La aplicación se **ejecutó** (`dotnet run`) y se comprobó con `curl`: `/` sin sesión redirige a `/Acceso/Acceder`, la pantalla de acceso carga con título, `<body class="tema-claro">`, la zona de imagen y los componentes resueltos, el acceso responde el mensaje del marcador «Falta conectar el servicio del dominio.» y se sirven `estilos.css`, `app.js` y la imagen.
-  - La receta de §4 es la que se siguió y verificó en el cliente web del conversor de unidades (acceso, categorías, unidades y conversión contra un servidor .NET real en IIS Express, con sus errores de negocio y la sesión protegida).
-  - **No se ha hecho:** ver la plantilla en un navegador (el aspecto no se comprobó), una llamada a un servidor real desde la plantilla sin tocar (no tiene DTO ni dominio), el vencimiento real del token, `dotnet publish`, ni la ejecución desde Visual Studio con el perfil `IIS Express`.
+Sigue `ARQUITECTURA_CLIENTE.md` (v1). Si este README y esa arquitectura discrepan, **prevalece la arquitectura**.
 
-> Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `PROJECT.md` **de ese proyecto** (estado real,
-> decisiones, pendientes) y usa este README solo como guía de la estructura y de las recetas.
+- **Lenguaje:** C# 14, `net10.0` (`Nullable` e `ImplicitUsings` habilitados). **Plataforma:** ASP.NET Core 10 (Kestrel o IIS Express). **Interfaz:** controladores MVC + **vistas Razor** (`.cshtml`) escritas a código, sin librerías de UI (ni Bootstrap, ni jQuery, ni framework de JavaScript). **Arquitectura:** capas, con MVC.
+- **Transporte:** `HttpClient` del SDK y `System.Text.Json`; ningún paquete extra. Un solo `HttpClient` de larga vida para toda la aplicación, con tiempo límite de 10 s. El SDK Web ya incluye `System.Net.Http` entre los `using` implícitos (el de WPF no).
+- **El navegador no habla con la API:** quien llama al servidor es el controlador (el servidor del cliente web), nunca JavaScript. Por eso la API no necesita CORS (`ENDPOINTS_REST.md`).
+- **Estilo:** `docs/CLIENT_STYLES_DOTNET.md` (presentación oscura, tipografía, medidas, componentes, disposición). Se aplica con **componentes reutilizables** (*tag helpers* `ui-*`) y un único `wwwroot/css/estilos.css`.
+- **Convención REST:** sigue `docs/CONVENCION_REST.md` (copia en `docs/`). El contrato concreto de cada proyecto (rutas, verbos, cuerpos, autenticación) va en su `docs/ENDPOINTS_REST.md`, que se **escribe o se copia del servidor antes de implementar**. Pruebas: `docs/CONVENCION_PRUEBAS.md`.
+- **Autenticación:** **fuera de la plantilla base.** Cada proyecto define cómo viajan las credenciales o el token (R8, §8) y su sesión; la plantilla no trae ninguna pantalla ni estado de usuario.
+- **Mapeo JSON ↔ DTO:** los DTO no llevan anotaciones; `api/TraductorApi` configura nombres en camelCase, lectura sin distinguir mayúsculas y `Populate` (`ARQUITECTURA_CLIENTE.md` §4.5).
+- **Núcleo:** `dto`, `excepciones`, `servicios/ServicioBase` y `api` (`ConfiguracionApi`, `ITransporte`, `TransporteHttp`, `RespuestaHttp`, `TraductorApi`) son los mismos archivos que la plantilla `rest_dotnet_consola`: un proyecto con consola y web los copia **sin editarlos** (`COMPARTIR_CLIENTE.md`).
+- **Verificada:** `dotnet test` → **110 pruebas** xUnit en verde, sin servidor REST ni navegador: configuración de la URL, armado y lectura de peticiones (`TraductorApi`, con todos los HTTP de error, `RED` y `SRV-000`), el transporte real contra un `HttpMessageHandler` simulado, verificación de la envoltura (`ServicioBase`), excepción del cliente, base de los controladores (`ControladorBase`), **cada componente `ui-*`** (HTML, clases y escape de todo texto dinámico) y **la aplicación arrancada dentro de la prueba** (`PantallasWebPruebas`: rutas, layout en sus dos modos, vistas Razor, tag helpers resueltos, recursos estáticos, página de error y token anti-falsificación). `dotnet build` sin errores ni advertencias. La capa `api` es la del cliente web .NET REST construido sobre esta base, probado a mano en un navegador contra su servidor.
+  **No se ha hecho:** ver la plantilla en un navegador (el aspecto no se comprobó), una llamada a un servidor real (la plantilla no trae dominio ni clientes `…Api`), la presentación clara, `dotnet publish`, ni la ejecución desde Visual Studio con el perfil `IIS Express`.
+
+> Si eres un agente que continúa un proyecto creado desde esta plantilla: lee primero el `docs/PROJECT.md` **de ese proyecto** (estado real, decisiones, pendientes) y usa este README solo como guía de la estructura y de las recetas.
 
 ---
 
 ## 1. Crear un proyecto a partir de la plantilla
 
 1. **Copiar la carpeta** completa a un directorio nuevo, **sin `bin/`, `obj/` ni `.vs/`**.
-2. **Renombrar** `rest_dotnet_web.csproj` y `rest_dotnet_web.slnx`, y corregir en el `.slnx` la ruta del `<Project Path="…csproj" />`. **Además, en `ec/edu/monster/vista/_ViewImports.cshtml` cambiar `@addTagHelper *, rest_dotnet_web` por el nuevo nombre del proyecto** (es el nombre del ensamblado): si no, los componentes `ui-*` salen como texto y las pantallas no se ven bien. El espacio de nombres **`ec.edu.monster`** (`RootNamespace`) es la convención y **no se cambia**.
-3. **Abrir el `.slnx`** en Visual Studio 2026 (o usar `dotnet` desde la carpeta). Requiere el SDK de .NET 10; la primera vez restaura los paquetes de prueba (Internet).
-4. **Configurar el servidor:** en `ec/edu/monster/api/ConfiguracionApi.cs`, `UrlBasePorDefecto` = **URL base de la API** (host, puerto y prefijo, **con «/» final**; p. ej. `http://localhost:57592/api/`).
-5. **Poner el nombre de la aplicación** en `vista/Textos.cs` (`NombreAplicacion`: título de la pestaña y de la pantalla de acceso) y, si se quiere, **sustituir la imagen** `wwwroot/img/fondo_app.png` conservando el nombre (requisitos en `docs/CLIENT_STYLES_DOTNET.md` §6).
-6. **Crear los DTO y el servicio del dominio** (§4) y conectarlos en `Program.cs`.
-7. **Crear `PROJECT.md`** a partir del esqueleto de esta carpeta y mantenerlo al día.
-8. **Probar el servidor** (una petición con curl, §7) y ejecutar (F5 en Visual Studio o `dotnet run --launch-profile http`). Con la plantilla sin tocar abre `http://localhost:5092/`, redirige al acceso y este responde que falta conectar el dominio.
+2. **Renombrar** `rest_dotnet_web.csproj` y `.slnx`, y corregir en el `.slnx` la ruta del `<Project Path="…csproj" />`. **Corregir también `@addTagHelper *, rest_dotnet_web` en `ec/edu/monster/vista/_ViewImports.cshtml`** con el nuevo nombre del proyecto (es el nombre del ensamblado; si no coincide, los `<ui-…>` quedan sin resolver **sin error de compilación**). El espacio de nombres **`ec.edu.monster`** (`RootNamespace`) es la convención y **no se cambia**: es la raíz y cada capa es un espacio de nombres directo bajo ella (`ec.edu.monster.servicios`, `ec.edu.monster.api`…). Las carpetas de código van en minúscula y coinciden con el espacio de nombres (`ec/edu/monster/<capa>/`); `wwwroot/` y `docs/` también; los archivos, en PascalCase.
+3. **Abrir el `.slnx`** en Visual Studio 2026 (o usar `dotnet` desde la carpeta). Requiere el SDK de .NET 10.
+4. **Configurar el servidor:** en `api/ConfiguracionApi.cs`, `UrlBasePorDefecto` = **URL base completa de la API**, con host, puerto, contexto (si lo hay) y prefijo `api`, **con «/» final** (R1). Se sobrescribe sin recompilar con la variable de entorno `API_BASE_URL`. Las rutas de las operaciones se le añaden relativas y sin barra inicial.
+5. **Copiar el contrato del servidor** a `docs/ENDPOINTS_REST.md` (una fila por operación).
+6. **Poner el nombre de la aplicación** en `vista/Textos.cs` (`NombreAplicacion`: título de la pestaña) y, si se quiere, **sustituir la imagen** `wwwroot/img/fondo_app.png` (requisitos en `docs/CLIENT_STYLES_DOTNET.md` §6). La imagen es un **PNG** (admite transparencia); si se cambia por otra, **se conserva el nombre `fondo_app.png`** para no tocar el CSS. Una imagen horizontal se muestra compacta al 60 % de su contenedor (`--margen-imagen: 20%` en `estilos.css`).
+7. **Completar `docs/PROJECT.md`** (viene como esqueleto) y mantenerlo al día.
+8. Con el servidor en marcha, ejecutar (F5 en Visual Studio o `dotnet run`). Con la plantilla sin tocar abre la pantalla `Inicio`.
 
 ## 2. Qué es compartido y qué se adapta
 
 | Parte | Archivos | ¿Se toca? |
 |---|---|---|
-| **Acceso (compartido)** | `controlador/AccesoControlador`, `vista/acceso/Acceder.cshtml`, `modelo/AccesoModelo`, `servicio/IAutenticador` | No; el servicio del dominio implementa `IAutenticador`. Solo la pantalla de destino (`RedirectToAction("Index", "Inicio")`) |
-| **Transporte HTTP/JSON** | `api/ClienteApi`, `api/IClienteApi`, `api/RespuestaHttp` (Bearer por petición, JSON UTF-8, fallos de red → `ServidorNoDisponible`) | No |
-| **URL base** | `api/ConfiguracionApi` (`UrlBasePorDefecto`, variable `API_BASE_URL`, normalización con «/» final, timeout 10 s) | `UrlBasePorDefecto` siempre; el resto no |
-| **Respuesta común** | `dto/RespuestaBaseDto` (`estado`, `codigo`, `mensaje`) | No; los DTO del dominio la extienden |
-| **DTO del dominio** | — (`dto/SolicitudXxxDto`, `dto/RespuestaXxxDto`) | **Se crean** (receta §4) |
-| **Sesión y errores** | `modelo/Sesion` (token), `excepciones/ExcepcionServicio` (`Codigo`, `EstadoHttp`, `ExigeLogin`, `ServidorNoDisponible`) | No |
-| **Base de servicios** | `servicio/ServicioBase` (`EnviarAsync<T>`, `ExigirToken`, decisión por código HTTP, `NormalizarValor`, `HaySesion`, `CerrarSesion`) | No; los servicios del dominio la extienden |
-| **Base web** | `controlador/ControladorBase` (`VolverAlAcceso`), `ConvencionControlador`, `SesionWeb`, `PersistirSesionFiltro`, `ExigirSesionAttribute` | No |
-| **Composición** | `Program.cs` (transporte tipado, sesión, rutas de vistas, filtros, codificación) | Se registra el servicio del dominio (marcado `DOMINIO`) |
-| **Estilos y componentes** | `wwwroot/css/estilos.css`, `wwwroot/js/app.js`, `vista/componentes/Ui*TagHelper.cs`, `vista/compartido/_Layout.cshtml`, `docs/CLIENT_STYLES_DOTNET.md` | Colores solo si se cambia de presentación; **no** se escriben clases ni estilos en las vistas |
-| **Textos comunes** | `vista/Textos` | `NombreAplicacion` |
-| **Marcador de acceso** | `servicio/AutenticadorPendiente` | **Se elimina** al registrar el servicio del dominio |
-| **Pantalla de ejemplo (dominio)** | `controlador/InicioControlador`, `vista/inicio/Index.cshtml` | **Se reemplaza** por las pantallas del dominio (conservar la acción `Error`) |
-| **Pruebas** | `pruebas/` (URL, transporte, `ServicioBase`, doble `ClienteApiFalso`, acceso, componentes, composición, recorrido de la aplicación) | Se conservan; se agregan las del dominio |
-| **Dominio (vacío)** | — | Nuevos `dto/`, `servicio/`, `controlador/`, `vista/`, `modelo/` |
+| **Configuración de la URL** | `api/ConfiguracionApi` (`UrlBase()`, `NormalizarUrl`, `TiempoLimite`) | Solo `UrlBasePorDefecto` |
+| **Transporte** | `api/ITransporte`, `api/TransporteHttp`, `api/RespuestaHttp` (un solo `HttpClient`; la cabecera `Authorization` se pone por petición; un HTTP de error no lanza excepción) | No |
+| **Armado y lectura** | `api/TraductorApi` (`Codificar`, `Cuerpo`, `LlamarAsync<T>`, `Leer<T>`; opciones JSON; `RED` y `SRV-000`) | No |
+| **Interfaz y cliente** | — (`api/IXCliente.cs` y `api/XClienteApi.cs`) | **Se crean** por proyecto, una firma por fila de `ENDPOINTS_REST.md` (§4, paso 1) |
+| **DTO base** | `dto/RespuestaBaseDto` (`Estado`, `Codigo`, `Mensaje`, `EsOk`) | No; se agregan DTO del dominio al lado |
+| **Verificación de la envoltura** | `servicios/ServicioBase` (`Verificar`) | No; los servicios del dominio la extienden |
+| **Errores** | `excepciones/ExcepcionServicio` (código + mensaje; códigos propios `RED` y `SRV-000`) | No |
+| **Composición** | `Program.cs` y `Aplicacion.cs` (`Construir`: antiforgery, codificación, ubicación de las vistas, `TODO` del registro de clientes y servicios) | `Aplicacion` se completa con los clientes y servicios del dominio |
+| **Base de los controladores** | `controlador/ControladorBase` (`Texto`, `Vacio`, `GuardarFlash`/`TomarFlash` para Post/Redirect/Get) | No; los controladores del dominio la extienden |
+| **Layout y vistas base** | `vista/_Layout.cshtml` (dos modos y tres anchos), `_ViewImports.cshtml`, `_ViewStart.cshtml`, `Error.cshtml` | No (`_ViewImports`: el nombre del ensamblado, §1 paso 2) |
+| **Componentes** | `vista/componentes/Ui*TagHelper` (15 *tag helpers* `ui-*`) | No |
+| **Estilos y JavaScript** | `wwwroot/css/estilos.css`, `wwwroot/js/app.js`, `docs/CLIENT_STYLES_DOTNET.md` | Colores solo si se cambia de presentación; **no** se repiten valores en las vistas |
+| **Textos** | `vista/Textos` | `NombreAplicacion` y los textos del dominio |
+| **Pantalla de ejemplo** | `controlador/InicioControlador`, `vista/Inicio.cshtml` | **Se reemplaza** por las pantallas del dominio |
+| **Servicios, controladores, modelos y vistas** | `servicios/`, `controlador/`, `vista/`, `modelo/` | **Se crean** (receta §4) |
 
-Las zonas a adaptar están marcadas con **`DOMINIO`**, **`CAMBIAR`** y **`TODO`** en el código (`grep -rnE "DOMINIO|CAMBIAR|TODO" ec Program.cs`).
+Las zonas a adaptar están marcadas con **`DOMINIO`**, **`CAMBIAR`** y **`TODO`** en el código (`grep -rnE "DOMINIO|CAMBIAR|TODO" ec`).
 
 ## 3. Estructura
 
 ```
-Program.cs                         punto de composición: transporte, sesión, rutas de vistas, filtros y codificación
-docs/CLIENT_STYLES_DOTNET.md       guía de estilos
-CONVENCION_REST.md                 convención común de los servidores REST de la familia
-wwwroot/                           css/estilos.css, js/app.js, img/fondo_app.png    lo único público (se sirve tal cual)
-ec/edu/monster/                    todos los directorios en minúscula; el espacio de nombres coincide con la ruta
-├── modelo/        Sesion, AccesoModelo, ErrorModelo                entidades y modelos de vista: solo propiedades, sin lógica
-├── excepciones/   ExcepcionServicio                                código + mensaje + estado HTTP; ExigeLogin, ServidorNoDisponible
-├── api/           ClienteApi, IClienteApi, RespuestaHttp, ConfiguracionApi     transporte HTTP: URL base, timeout, cabeceras, código + cuerpo
-├── dto/           RespuestaBaseDto (+ los DTO del dominio)         cuerpos JSON del contrato, escritos a mano; no salen de servicio/
-├── servicio/      ServicioBase, IAutenticador, AutenticadorPendiente (+ los servicios del dominio)    única capa que conoce api y dto
-├── controlador/   ControladorBase, AccesoControlador, InicioControlador, ConvencionControlador,
-│                  SesionWeb, PersistirSesionFiltro, ExigirSesionAttribute
-├── vista/         Textos, _ViewImports, _ViewStart,
-│   ├── acceso/        Acceder.cshtml                               una carpeta por controlador, una vista por acción
-│   ├── inicio/        Index.cshtml
-│   ├── compartido/    _Layout.cshtml, Error.cshtml
-│   └── componentes/   UiEncabezado, UiCampo, UiSelector, UiMensaje, UiBoton, UiListaAcciones, UiFormulario, UiCerrarSesion  (tag helpers)
-└── pruebas/       xUnit en el mismo proyecto, sin servidor externo
+Program.cs                      arranca la aplicación (Aplicacion.Construir)
+wwwroot/       css/estilos.css, js/app.js, img/fondo_app.png, favicon.ico     recursos estáticos
+docs/                           CLIENT_STYLES_DOTNET.md, CONVENCION_REST.md y CONVENCION_PRUEBAS.md (copias vigentes), ENDPOINTS_REST.md (del proyecto) y PROJECT.md (esqueleto)
+README.md                       esta guía: el único documento que queda en la raíz
+ec/edu/monster/
+├── Aplicacion.cs               punto de composición (clientes REST, servicios, MVC)
+├── modelo/                     datos propios del cliente que no son de una pantalla; vacía en la plantilla
+├── excepciones/   ExcepcionServicio                       código + mensaje; ServidorNoDisponible, RespuestaIlegible
+├── dto/           RespuestaBaseDto (+ los del dominio)    clases sin atributos de serialización, todos los campos como texto
+├── servicios/     ServicioBase (+ los del dominio)        verifican la envoltura; única capa que conoce dto y la INTERFAZ del cliente
+├── api/           ConfiguracionApi, ITransporte, TransporteHttp, RespuestaHttp, TraductorApi (+ IXCliente y XClienteApi del dominio)
+├── controlador/   ControladorBase, InicioControlador, ErrorControlador (+ uno por pantalla)   rutas con atributos
+├── vista/         _Layout, _ViewImports, _ViewStart, Inicio, Error, Textos, Modelos (+ una vista y un modelo por pantalla)
+│   └── componentes/  Ui*TagHelper                         los componentes ui-*
+└── pruebas/                                               xUnit + Moq, en el mismo proyecto (ver §4, paso 9)
 ```
 
-Dependencias permitidas: `vista (Razor) ← controlador → servicio → api/dto`; `modelo` y `excepciones` no dependen de nadie.
-**Los DTO no salen de `servicio/`**: el servicio los traduce a `modelo` (`record`) o a tipos simples. Los controladores **nunca importan `api` ni `dto`**: hablan con los servicios y entregan a la vista un modelo de `modelo/`. La vista (`.cshtml`) no tiene lógica de negocio ni llama al servidor.
-Si el contrato cambia (rutas, campos, códigos) solo se tocan `servicio`, `api` y `dto`.
+Dependencias permitidas: `vista → controlador → servicios → api`, y `modelo`, `dto` y `excepciones` son transversales (no dependen de nadie).
+**La vista nunca usa `api` ni `dto`**: recibe de su controlador un modelo con el texto ya listo para mostrar y usa `Textos`.
+**`servicios` solo conoce la interfaz del cliente (`IXCliente`), no su implementación**; solo `api` conoce HTTP y JSON. Si el contrato cambia solo se tocan `api`, `dto` y `servicios`. **Quien llama al servidor es el controlador**, nunca el navegador.
 
-**Las vistas no viven en `Views/`** sino en `ec/edu/monster/vista/{controlador}/{vista}.cshtml` y `vista/compartido/` (`Program.cs` configura `RazorViewEngineOptions.ViewLocationFormats`), para respetar los directorios en minúscula de la familia.
-**Los controladores se llaman `XxxControlador`** y la ruta usa `Xxx`: `ConvencionControlador` quita el sufijo y `[Controller]` en `ControladorBase` los hace descubribles.
+## 4. Receta: agregar una operación REST y su pantalla
 
-**Una petición, de punta a punta:** navegador → `UseSession` → filtro global (token anti-falsificación en todo POST) → `[ExigirSesion]` (si la pantalla es protegida) → controlador (`*Controlador`) → servicio (por petición, con la `Sesion` del usuario) → `ClienteApi` (HTTP/JSON, `Authorization: Bearer`) → el controlador entrega un modelo → vista Razor → `PersistirSesionFiltro` guarda el token en la sesión antes de escribir la respuesta.
-El estado del usuario (el token) vive en la **sesión de ASP.NET Core** (`ISession`), cargado en una `Sesion` *scoped*, **nunca** en un servicio *singleton*: lo compartirían todos los usuarios. Por la misma razón el token **no** va en `DefaultRequestHeaders` del `HttpClient` (que es compartido): `ClienteApi` lo pone en cada petición.
+Ejemplo: `GET items` que devuelve una lista. Se sigue **siempre el mismo orden**, de abajo hacia arriba:
 
-**Ciclo de vida en `Program.cs`:** `AddHttpClient<IClienteApi, ClienteApi>` (el `HttpClient` lo gestiona `IHttpClientFactory`, no se crea uno por petición; el cliente es *transient* y sin estado), `Sesion` y el servicio del dominio *scoped*.
-
-## 4. Receta: agregar un endpoint y su pantalla
-
-Ejemplo: `POST /auth/login` (público) y `GET /items` que devuelve una lista (protegido), con su pantalla. Se sigue **siempre el mismo orden**, de abajo hacia arriba.
-
-1. **DTO** — en `dto/`, uno por cuerpo del contrato, con `[JsonPropertyName]` en cada propiedad (el contrato no depende de la política *camelCase*) y tipos que toleren `null`:
+1. **Interfaz y cliente** — `api/IXCliente.cs` (interfaz propia con **un método por fila** de `ENDPOINTS_REST.md`, con el nombre de la operación, retorno `Task<DTO propio?>`) y `api/XClienteApi.cs`, que la implementa con `TraductorApi`. Lo único que ven el servicio y los controladores es la interfaz:
    ```csharp
-   public class SolicitudLoginDto  { [JsonPropertyName("usuario")] public string? Usuario { get; set; }
-                                     [JsonPropertyName("contrasenia")] public string? Contrasenia { get; set; } }
-   public class RespuestaLoginDto : RespuestaBaseDto { [JsonPropertyName("token")] public string? Token { get; set; } }
-   public class RespuestaListaDto : RespuestaBaseDto { [JsonPropertyName("elementos")] public List<string>? Elementos { get; set; } = []; }
-   ```
-2. **Servicio** — `servicio/ServicioXxx : ServicioBase, IAutenticador` (recibe `IClienteApi` y `Sesion`). `EnviarAsync<T>` exige el token, lo envía en la cabecera, decide por el código HTTP y lanza `ExcepcionServicio` en cualquier error. Es la **única** capa que ve los DTO:
-   ```csharp
-   public class ServicioXxx(IClienteApi cliente, Sesion sesion) : ServicioBase(cliente, sesion), IAutenticador
+   public sealed class XClienteApi : IXCliente
    {
-       public async Task IniciarSesionAsync(string usuario, string contrasenia)        // IAutenticador
-       {
-           var r = await EnviarAsync<RespuestaLoginDto>(HttpMethod.Post, "auth/login",
-               new SolicitudLoginDto { Usuario = usuario, Contrasenia = contrasenia }, requiereToken: false);
-           Sesion.Token = !string.IsNullOrEmpty(r.Token) ? r.Token
-               : throw new ExcepcionServicio("El servidor no entregó un token de sesión", "ERR-500", 200);
-       }
+       private readonly ITransporte _transporte;
 
-       public async Task<IReadOnlyList<string>> ObtenerItemsAsync()
-       {
-           var r = await EnviarAsync<RespuestaListaDto>(HttpMethod.Get, "items");
-           return r.Elementos ?? [];     // las listas pueden venir ausentes
-       }
+       public XClienteApi(ITransporte transporte) { _transporte = transporte; }
+
+       public static IXCliente Crear() => new XClienteApi(TransporteHttp.Crear());   // un solo HttpClient para toda la aplicación
+
+       public async Task<RespuestaItemsDto?> ListarItemsAsync() =>
+           await TraductorApi.LlamarAsync<RespuestaItemsDto>(_transporte, "GET", "items", null, null);
+
+       public async Task<RespuestaItemDto?> ConsultarItemAsync(string codigo) =>
+           await TraductorApi.LlamarAsync<RespuestaItemDto>(_transporte, "GET",
+               "items/" + TraductorApi.Codificar(codigo), null, null);      // cada variable de ruta, codificada (R10)
    }
    ```
-   - Aquí van las reglas **del cliente** (campo vacío, formato, `NormalizarValor`: coma decimal → punto); las reglas del dominio las decide el servidor y el cliente muestra su `mensaje`.
-   - Un valor de ruta variable se codifica con `Uri.EscapeDataString` (`$"items/{Uri.EscapeDataString(nombre)}"`).
-3. **Modelo de vista y controlador** — `modelo/ItemsModelo` (solo propiedades) y `controlador/ItemsControlador(ServicioXxx servicio) : ControladorBase` con `[ExigirSesion]` (molde: `AccesoControlador` e `InicioControlador`):
+   Reglas de la capa `api`:
+   - **Se lee la envoltura también con HTTP de error** (400, 401, 404, 422…): el `mensaje` del servidor nunca se descarta. **Nunca `EnsureSuccessStatusCode()`.**
+   - Sin respuesta (servidor caído, red, tiempo agotado) → `RED`; cuerpo vacío o que no es JSON (página de un proxy, `502`) → `SRV-000` (R11, R12). `TraductorApi` ya lo hace.
+   - Todo dato viaja como **texto** (R9); los decimales con punto. Un fallo de programación **no** se disfraza de `RED`.
+2. **DTO propio** — clase `…Dto` en `dto` que extienda `RespuestaBaseDto`, con propiedades `{ get; set; }`, todas texto y `string?`; una lista se inicializa vacía y **sin setter** (`public List<string> Items { get; } = [];`): **nunca nula**. **Sin atributos de JSON**: el nombre JSON es el camelCase del nombre de la propiedad (`CodigoItem` ↔ `codigoItem`); `Populate` (en `TraductorApi`) rellena la lista de solo lectura.
+3. **Servicio** — `servicios/XServicio : ServicioBase` (con sufijo `Async` en lo que llama a la red; los métodos públicos, `virtual`: Moq los necesita):
    ```csharp
-   [ExigirSesion]
-   public class ItemsControlador(ServicioXxx servicio) : ControladorBase
+   public virtual async Task<IReadOnlyList<string>> ItemsAsync()
    {
-       public async Task<IActionResult> Index()
-       {
-           try { return View(new ItemsModelo { Items = await servicio.ObtenerItemsAsync() }); }
-           catch (ExcepcionServicio ex) when (ex.ExigeLogin) { return VolverAlAcceso(ex); }   // token inválido/vencido: vuelve al acceso con el mensaje
-           catch (ExcepcionServicio ex) { return View(new ItemsModelo { Mensaje = ex.Message }); }   // 400, 404, red…: solo el mensaje, nunca el código
-           catch (Exception) { return View(new ItemsModelo { Mensaje = "Ocurrió un error inesperado. Intente de nuevo." }); }
-       }
+       RespuestaItemsDto respuesta = Verificar(await _cliente.ListarItemsAsync());
+       return respuesta.Items;
    }
    ```
-   - Un `POST` valida lo trivial (campo vacío), llama al servicio y vuelve a mostrar **la misma vista** con el resultado o el error, **conservando lo capturado** (devolver los valores en el modelo). El token anti-falsificación se valida solo en todo POST.
-   - Un fallo de red (`ServidorNoDisponible`) o un error de negocio (`400`, `404`) no cierra la aplicación ni la sesión: se muestra el mensaje y la pantalla sigue usable (con «Reintentar» si no hay datos). Si una pantalla necesita recargar un catálogo para volver a dibujarse y no puede, conservar las opciones elegidas por el usuario.
-4. **Vista** — `vista/items/Index.cshtml` (carpeta con el nombre del controlador), **solo con componentes `ui-*`** y `@model`. Sin `class`, sin `style`, sin lógica; muestra lo que dejó el controlador. Moldes: `acceso/Acceder.cshtml` e `inicio/Index.cshtml`.
-   ```html
-   @model ItemsModelo
-   @{ ViewData["Titulo"] = "Elementos"; }
-   <ui-encabezado>Elementos</ui-encabezado>
-   <ui-mensaje mensaje="@Model.Mensaje" />
-   <ui-lista-acciones elementos="@Model.Items" controlador="Detalle" accion="Ver" parametro="clave" />
-   <ui-cerrar-sesion />
-   ```
-   Un formulario es `<ui-formulario accion="Guardar" controlador="Items">…</ui-formulario>`; los enlaces a otras pantallas, `<ui-boton href="@Url.Action(...)">`.
-5. **Composición** — en `Program.cs`, en lugar de `AutenticadorPendiente` (que se elimina):
+   `Verificar(...)` devuelve la respuesta si `EsOk`; si no, lanza `ExcepcionServicio(codigo, mensaje)` del servidor; una respuesta nula es `SRV-000`. **No captura excepciones de red** (ya llegan como `RED`). Aquí van las reglas **del cliente**: preparar los datos de pantalla (recortar; decimales con **punto**, cultura invariante). Las reglas del dominio las decide el servidor y el cliente muestra su mensaje.
+4. **Modelo de la pantalla** — un `record` en `vista/Modelos.cs` con el texto ya listo para mostrar: lo escrito, el mensaje, el campo con error y, si hay resultado, sus datos. Es lo único que la vista recibe.
+5. **Controlador** — `controlador/XControlador : ControladorBase`, con las rutas por atributos (`[HttpGet("consulta")]`, `[HttpPost("consulta")]`) y el servicio por constructor (`ILogger<T>` para registrar lo inesperado). Invariantes (`ARQUITECTURA_CLIENTE.md` §4.6): validar los campos vacíos **antes** de llamar, en el orden de la pantalla (se informa el primero); mostrar solo el mensaje del error, nunca el código; conservar lo escrito ante un error salvo las contraseñas; no conocer la pantalla siguiente:
    ```csharp
-   builder.Services.AddScoped<ServicioXxx>();
-   builder.Services.AddScoped<IAutenticador>(sp => sp.GetRequiredService<ServicioXxx>());
+   [HttpPost("consulta")]
+   public async Task<IActionResult> Consultar([FromForm] string? codigo)
+   {
+       var modelo = Inicial with { Codigo = Texto(codigo) };
+       if (Vacio(modelo.Codigo))
+           return View("Consulta", modelo with { Error = Textos.CampoObligatorio(Textos.Codigo), Invalido = "codigo" });
+       try { modelo = modelo with { Items = await _servicio.ItemsAsync() }; }
+       catch (ExcepcionServicio e) { modelo = modelo with { Error = e.Message }; }
+       catch (Exception e) { _registro.LogError(e, "…"); modelo = modelo with { Error = Textos.ErrorInesperado }; }
+       return View("Consulta", modelo);          // una consulta devuelve la página directamente
+   }
    ```
-   El transporte (`AddHttpClient<IClienteApi, ClienteApi>`) ya está registrado. Cambiar la pantalla de destino del acceso si ya no es `Inicio`, y reemplazar `InicioControlador`/`inicio/Index.cshtml` por las pantallas del dominio (**conservar la acción `Error`**: la usa `UseExceptionHandler`).
-6. **Pruebas** (en `ec/edu/monster/pruebas/`):
-   - El servicio con `ClienteApiFalso` (`Responder` por ruta, `Siempre`, `Ok`, `Error`): `200`, `400`, `401` con `AUTH-002/003`, `404`, error de plataforma, cuerpo que no es JSON, servidor no disponible, coma enviada como punto, sin sesión no se llama a la API.
-   - **Una prueba de recorrido por pantalla** en `PantallasWebPruebas`: reemplazar `IClienteApi` por el doble en `ConfigureServices` (`RemoveAll<IClienteApi>()` + `AddSingleton<IClienteApi>(doble)`) y comprobar el HTML (datos, mensajes sin código, escape, redirección al acceso por token vencido, formulario conservado ante error). **Es la que detecta una vista o un componente inválido**, que compila pero falla al abrir la pantalla.
-   - Los componentes `ui-*` nuevos, en `ComponentesPruebas` (incluido el escape).
+   **Una operación que cambia datos usa Post/Redirect/Get**: el `POST` valida, llama al servicio, `GuardarFlash(modelo)` y `Redirect("~/ruta")`; el `GET` hace `View("…", TomarFlash<Modelo>() ?? Inicial)`. Así F5 no repite la operación y el resultado se lee una sola vez. `GuardarFlash` nunca debe llevar una contraseña. Si el servidor no debe recibir un envío repetido mientras el anterior sigue en curso, el controlador lo descarta (`app.js` solo deshabilita los controles en el navegador).
+6. **Vista** — `vista/Consulta.cshtml` (`@model` del paso 4), solo `ui-*`: sin `class`, `style` ni lógica. `ViewData["Titulo"]` (obligatorio), `["Modo"]` y `["Ancho"]` dan la disposición. Patrón de toda pantalla: `<ui-formulario accion="/consulta" ocupado="@Textos.Consultando">` con `<ui-encabezado>`, los `<ui-campo>` (con `invalido` y `autofocus`), `<ui-fila-botones>` (el principal y `Cancelar` con `cancelar="true"`) y `<ui-mensaje mensaje="@Model.Error">`; el resultado (`<ui-tarjetas>`, `<ui-tabla>`) va **después** del formulario. Ver `Inicio.cshtml` y `docs/CLIENT_STYLES_DOTNET.md` §5 y §7.2.
+7. **Registro** — en `Aplicacion.Construir`: `AddSingleton(_ => XClienteApi.Crear())` y `AddSingleton<XServicio>()`. La ruta ya la declara el controlador.
+8. **Autenticación (si el proyecto la tiene)** — se define en `docs/ENDPOINTS_REST.md` (R8) y se implementa **solo en `api`**: las credenciales siguen siendo parámetros de la interfaz del cliente y `XClienteApi` las coloca donde el contrato diga (p. ej. `Authorization: Basic` por petición: `"Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(usuario + ":" + clave))`, pasado como último argumento de `TraductorApi.LlamarAsync`). Nunca en la URL, nunca en las cabeceras por defecto del `HttpClient`, nunca en un registro. **El `HttpClient` y los clientes `…Api` son únicos para toda la aplicación y no guardan credenciales**; las de cada empleado viven en el servidor web, en un contexto por sesión de servidor (`AddSession` con cookie de solo un identificador), nunca en un objeto compartido: de lo contrario el segundo empleado en entrar reemplazaría las credenciales del primero. Nada de esto está en la plantilla.
+9. **Pruebas** (xUnit + Moq, en `ec/edu/monster/pruebas`, en el mismo proyecto):
+   - **Servicios:** la interfaz del cliente (`IXCliente`) se sustituye con Moq (OK, error de negocio, red, respuesta nula, coma enviada como punto).
+   - **Clientes `…Api`:** con `TransporteFalso` (en `pruebas/`) se comprueba el verbo, la ruta, el cuerpo y la cabecera de cada método, y que un HTTP de error llega como DTO y no como excepción.
+   - **Pantallas:** `ServidorWeb` arranca la aplicación en la prueba, en un puerto libre; `Aplicacion.Construir(args, servicios => …)` permite sustituir el cliente REST por uno simulado (`RemoveAll<IXCliente>()` y `AddSingleton(simulado)`). Se recorre cada ruta con `HttpClient` (`AllowAutoRedirect = false`): éxito, campos vacíos, error de negocio, redirección y resultado de una sola lectura. Un `POST` necesita el token anti-falsificación: se toma del formulario de la página (`__RequestVerificationToken`) y las cookies del mismo `HttpClient`. Revisar también que no quede ningún `<ui-` sin resolver.
+   - El contrato **no** se prueba con código: se verifica a mano contra `docs/ENDPOINTS_REST.md` con `docs/CONVENCION_PRUEBAS.md` §6.3.
 
 Reglas que se repiten en todo dominio:
-- **Se decide por el código HTTP y luego por el código propio.** Nunca `EnsureSuccessStatusCode()`: descartaría el JSON de error. `ServicioBase` ya lo cumple.
-- **El token** vive en `Sesion` (en la sesión de ASP.NET Core, en memoria del servidor web), no se guarda en disco, ni en la cookie (la cookie solo lleva el identificador de la sesión), ni en logs, ni en la página. Ante `AUTH-002`/`AUTH-003` se descarta y se vuelve al acceso; no se cuenta el tiempo en el cliente. Va en `Authorization: Bearer` **por petición**, nunca en `DefaultRequestHeaders`.
-  `[ExigirSesion]` solo comprueba que *haya* token; si el servidor ya lo venció, lo detecta el servicio al llamar.
-- Todo dato viaja como **texto**; los decimales con **punto** (`ServicioBase.NormalizarValor`, o `CultureInfo.InvariantCulture`, nunca `double.Parse` con la cultura actual). El campo numérico de la vista es `type="text"` con `inputmode="decimal"`, no `type="number"`.
-- Mostrar solo el **mensaje** del servidor, nunca el código. Textos propios del cliente **con tildes**.
-- **Escapar todo texto dinámico**: Razor y los componentes ya lo hacen; **no** usar `Html.Raw` con datos del servidor ni del usuario. La contraseña nunca se devuelve a la página.
-- Todo `POST` va con token anti-falsificación (`<ui-formulario>` y `<ui-cerrar-sesion>` lo incluyen; es obligatorio por el filtro global). Cerrar sesión es un `POST`.
-- **Nunca red en el hilo de la petición sin `async/await`.** Un fallo de red no cierra la aplicación.
-- Cada `POST` que cambie algo debería terminar en redirección (Post/Redirect/Get) si el resultado no es la página de respuesta del mismo formulario; el acceso y el cierre de sesión ya lo hacen.
+- **Un error de negocio llega con HTTP 4xx o 5xx y con la envoltura en el cuerpo**; el cliente decide por el `codigo` y muestra el `mensaje`. Solo red, tiempo agotado y cuerpo ilegible son `RED` y `SRV-000`.
+- Todo dato viaja como **texto**; los decimales con **punto** (normalizar la coma antes de enviar, en el servicio).
+- Mostrar solo el **mensaje** del servidor, nunca el código. Textos propios del cliente **con tildes**, centralizados en `Textos` y **los mismos en todos los clientes** del proyecto.
+- Un fallo de red no cierra la aplicación: se muestra el mensaje en la zona de estado de la pantalla.
+- `ERR-404`, `ERR-405` y `ERR-415` (errores de plataforma) se muestran como cualquier otro error, pero indican un defecto del cliente (ruta, verbo o `Content-Type`).
+- Todo texto dinámico sale escapado (`@Modelo.Mensaje`); **nunca** `@Html.Raw` con datos del servidor.
 
 ## 5. Estilos (resumen; detalle en `docs/CLIENT_STYLES_DOTNET.md`)
 
-Las vistas **solo usan los componentes** `ui-*`; no escriben clases, estilos ni colores. Componentes disponibles:
+Las vistas **solo usan los componentes `ui-*`**; no colorean ni dimensionan elementos sueltos.
 
-| Etiqueta | Para qué |
+| Componente | Para qué |
 |---|---|
-| `_Layout` | Estructura de toda página: cabecera HTML, columna de contenido (420, centrada) a la izquierda e imagen a la derecha. `ViewData["Titulo"]` es obligatorio |
-| `<ui-formulario accion controlador>` | Formulario POST con token anti-falsificación; al enviarlo `app.js` deshabilita los controles y muestra el progreso |
-| `<ui-encabezado>` | Título de pantalla (`aplicacion="true"` para el título de la aplicación en el acceso) |
-| `<ui-campo id etiqueta>`, `<ui-selector id etiqueta opciones seleccionada>` | Etiqueta + campo de texto/contraseña, etiqueta + lista desplegable (`invalido="true"` marca el borde de error) |
-| `<ui-mensaje mensaje>` | Mensaje o resultado (`tipo`: `error`, `exito`, `resultado`); no se dibuja si no hay texto |
-| `<ui-boton>` | Botón primario (acción principal) o `tipo="secundario"` (salida o regreso); con `href` es un enlace; `completo` y `salida` ajustan ancho y separación |
-| `<ui-lista-acciones elementos controlador accion parametro>` | Una columna de botones primarios generados con datos del servidor; cada uno enlaza a `controlador/accion?parametro=elemento` |
-| `<ui-cerrar-sesion />` | Botón secundario «Cerrar sesión» (POST) separado 32 |
+| `<ui-formulario accion ocupado>` | Formulario `POST` de una pantalla con el indicador de progreso y el token anti-falsificación |
+| `<ui-encabezado>` | Título de pantalla (`aplicacion="true"`: el de la aplicación, centrado; `plano="true"`: texto grande sin panel) |
+| `<ui-campo>`, `<ui-selector>` | Etiqueta + campo o lista desplegable; `invalido` marca el borde de error |
+| `<ui-boton>` | Primario (acción principal) o secundario; con `href` es un enlace (`cancelar="true"`: lo activa `Esc`), sin él envía el formulario |
+| `<ui-fila-botones>`, `<ui-fila-campos>`, `<ui-campo-con-acciones>` | Disposición: botones centrados, dos campos con una flecha, un campo con sus botones |
+| `<ui-cuadricula-acciones>`, `<ui-lista-acciones>` | Botones grandes en dos columnas; una columna de botones generada con datos del servidor |
+| `<ui-mensaje>` | Mensaje de error, éxito o resultado; no se dibuja vacío |
+| `<ui-tarjetas>`, `<ui-tarjeta>` | Resumen de un cambio de un valor, con los textos ya preparados |
+| `<ui-tabla>` | Tabla con encabezado fijo y columnas numéricas a la derecha |
+| `<ui-progreso>` | Indicador de espera (lo incluye `<ui-formulario>`) |
 
-- **Tema claro** fijo (`<body class="tema-claro">` en `_Layout`); no hay selector. Los tokens son variables CSS en `estilos.css` (valores de `docs/CLIENT_STYLES_DOTNET.md` §2.3). Para la presentación oscura, agregar el bloque `.tema-oscuro` con los valores de §2.2, cambiar la clase del `<body>` y dar a `.zona-imagen` el fondo `#1A1426` de los bordes de la imagen. En la clara, paneles y campos llevan un borde de 1 px (`--borde`, `--campo-borde`) para distinguirlos del fondo.
-- **Disposición:** ventana dividida: **la pantalla a la izquierda** (560, fija; columna de máximo 420, centrada) y **la imagen a la derecha** (el resto, completa y centrada con `contain`, sin deformar); bajo 900 px, columna única sin imagen y sin scroll horizontal. La imagen es del **layout**, no de cada vista. Es la misma disposición que `rest_dotnet_escritorio` (el documento de estilos la define con las zonas invertidas, §7.0).
-- **Las imágenes** van en `wwwroot/img` y se referencian desde el CSS con ruta relativa (`../img/...`). La imagen de ejemplo es un PNG con transparencia: sobre el fondo claro no necesita un color de fondo propio.
-- **Componente nuevo:** crear `vista/componentes/UiXxxTagHelper.cs` (con `AppendHtml`/`TagBuilder`, que **escapan** el texto) y su CSS en `estilos.css`, con tokens (`var(--…)`), nunca con colores sueltos. Agregar su prueba en `ComponentesPruebas` (incluido el escape) y probarlo en un navegador a 1100 px y a menos de 900 px.
-- Una vista o un componente inválido **compila** y falla al abrir la pantalla (HTTP 500) o, si falta el `@addTagHelper`, se ve como etiqueta literal: probar cada pantalla nueva con `PantallasWebPruebas` y abrirla.
+- **Disposición:** dos modos en `_Layout.cshtml`. `ViewData["Modo"] = "acceso"` (por defecto) es dividida: pantalla a la izquierda (columna de 420) e imagen a la derecha. `"aplicacion"` usa el ancho completo y la imagen es una capa fija de fondo: completa, centrada, con opacidad 40 %, con los paneles sobre ella. `ViewData["Ancho"]`: `formulario` (480, por defecto), `amplio` (640) o `completo` (sin máximo; la pantalla con tabla va arriba). Bajo 900 px no hay imagen; bajo 600 px las cuadrículas y las filas pasan a una columna. **La página nunca se desplaza en horizontal**: la tabla se desplaza dentro de su contenedor.
+- **JavaScript:** un único `wwwroot/js/app.js`: al enviar un formulario o pulsar un botón-enlace marca la pantalla como ocupada (controles deshabilitados e indicador visible), la libera al volver con «Atrás» y `Esc` activa `Cancelar`.
+- **Presentación clara:** cambiar la clase del `<body>` en `_Layout.cshtml` a `tema-claro` (la imagen no se usa).
+- Los textos con tildes, «…» y «→» salen sin entidades (`WebEncoderOptions` en `Aplicacion`); `<`, `>`, `&`, las comillas y «+» siguen escapándose.
+- Antes de construir las pantallas de un proyecto conviene especificarlas en su `docs/PANTALLAS.md` (orden de los elementos, anchos, estados y decisiones).
 
 ## 6. Servidor y ejecución
 
-- **Servidor por defecto:** `ConfiguracionApi.UrlBasePorDefecto` (URL base con «/» final). Sin recompilar: variable de entorno `API_BASE_URL`
-  (PowerShell: `$env:API_BASE_URL = "http://<ip>:57592/api/"; dotnet run --launch-profile http`). La barra final se agrega sola si falta.
-- **HTTP y HTTPS:** el esquema de la URL base lo decide todo; no hay binding. **HTTPS exige un certificado de servidor válido y de confianza** (en desarrollo, `dotnet dev-certs https --trust`, y que el nombre al que se conecta, `localhost` o la IP, esté en el certificado).
-  La validación del certificado **no** se desactiva en el cliente. Si falla, el cliente solo muestra «Servidor no disponible, intente más tarde» (la excepción original queda en `InnerException`).
-- **Cambiar de servidor** (por ejemplo, de .NET a Java) es cambiar la URL base, siempre que ambos cumplan `CONVENCION_REST.md`.
-- **Entorno de desarrollo de la familia:** IIS Express por HTTP (`http://localhost:57592/api/`); el perfil `http` (Kestrel) del servidor usa el puerto `5267`. Reglas de red y firewall: `IIS_CONFIG.md` del proyecto del servidor.
-- **Puerto del cliente web:** `5092` (perfil `http` de `Properties/launchSettings.json`); debe ser **distinto** del del servidor (`5267` / `57592`). Cambiarlo ahí si hay otro proyecto abierto a la vez.
-- **Visual Studio:** *Run* (F5) con el perfil `http`. Detener la ejecución antes de compilar desde la terminal (el `.dll` queda bloqueado).
-- **Terminal:** `dotnet run --launch-profile http`, y abrir `http://localhost:5092/`.
-- **Sesión:** la cookie `.Cliente.Sesion` (`HttpOnly`) dura 20 minutos de inactividad (`Program.cs`); es independiente del token del servidor (que vence a su ritmo, 5 minutos en esta familia, y se reconoce por el código `AUTH-003`). Si la aplicación se reinicia, las sesiones en memoria se pierden y el usuario vuelve al acceso.
-- **Publicación:** `dotnet publish -c Release`. **Probarla** antes de darla por buena (las vistas se compilan dentro del ensamblado).
+- **Servidor por defecto:** `ConfiguracionApi.UrlBasePorDefecto` (URL base completa, con «/» final). Sin recompilar: la variable de entorno `API_BASE_URL`. En PowerShell: `$env:API_BASE_URL = 'http://host:5267/api/'` antes de `dotnet run`.
+- **Servidor .NET local:** con el perfil `http` (Kestrel) el puerto por defecto es 5267; con `IIS Express`, 57592 (solo HTTP; ver `context/entornos/IIS_CONFIG.md`). Si el servidor corre en IIS Express, es Visual Studio quien lo mantiene vivo.
+- **Esta aplicación** escucha en `http://localhost:5193` (`Properties/launchSettings.json`, perfil `http`).
+- **Crear el cliente no abre ninguna conexión**: con el servidor apagado la aplicación arranca y el fallo llega al **llamar** una operación, donde `TraductorApi` lo traduce a `RED` («Servidor no disponible, intente más tarde»).
+- **Visual Studio:** *Run* ejecuta el proyecto; **detener la depuración antes de volver a compilar** (si no, `MSB3021`/`MSB3027`: el `.exe` queda bloqueado).
 
 ## 7. Comandos y verificación
 
 ```
-dotnet test                              # pruebas locales (sin servidor ni interacción); detener la aplicación antes
-dotnet run --launch-profile http         # ejecutar contra el servidor configurado
-```
-Probar el servidor sin la aplicación (una ruta protegida sin token debe responder `401` con un JSON, lo que confirma que la API está arriba):
-```
-curl -i http://localhost:57592/api/<ruta-protegida>
-curl -s -X POST http://localhost:57592/api/auth/login -H "Content-Type: application/json" -d '{"usuario":"…","contrasenia":"…"}'
+dotnet test                  # pruebas locales (sin servidor REST ni navegador)
+dotnet build                 # compilar
+dotnet run                   # ejecutar contra el servidor configurado
 ```
 
-Verificación con la aplicación en marcha (la vista se revisa a mano; los controladores y los componentes, con pruebas):
-1. Sin sesión, abrir una ruta protegida (p. ej. `/`): debe redirigir al acceso.
-2. Acceso con credenciales incorrectas: muestra el mensaje del servidor (sin código) y conserva el usuario; correcto: entra a la primera pantalla; «Cerrar sesión» vuelve al acceso y «Atrás» no muestra la pantalla protegida.
-3. Error de negocio (`400`/`404`): se muestra el mensaje y la pantalla sigue usable, con lo capturado y la sesión abierta.
-4. Con el servidor apagado: aparece «Servidor no disponible, intente más tarde» (≈ 10 s) y la aplicación sigue respondiendo.
-5. Token vencido (esperar 5 minutos o reiniciar el servidor con la sesión abierta): vuelve al acceso con el mensaje.
-6. Ventana ancha (≥ 900 px: imagen a la derecha) y estrecha (columna única, sin imagen, sin scroll horizontal); tildes y «ñ» en pantalla.
+Verificación con la aplicación en marcha, en un navegador:
+1. Operación correcta: el resultado se muestra con el formato esperado, y recargar la página (F5) no repite una operación que cambia datos.
+2. Error de negocio: se muestra el mensaje del servidor y se conserva lo escrito.
+3. Con el servidor apagado: aparece «Servidor no disponible, intente más tarde» y la aplicación sigue respondiendo.
+4. Doble clic en una acción: se envía **una** petición (controles deshabilitados mientras espera).
+5. Ventana ancha, intermedia (< 900 px) y estrecha (< 600 px); sin barra de desplazamiento horizontal; tildes y «ñ» en campos y mensajes; `Esc` como `Cancelar`.
+6. Si el proyecto tiene login: dos empleados a la vez desde navegadores distintos no se mezclan, y credenciales inválidas muestran el mensaje del servidor y no inician sesión.
 
-Un agente que no pueda abrir el navegador debe decir explícitamente qué verificó (pruebas, peticiones HTTP con `curl`, contra qué servidor) y que **no vio la aplicación en un navegador real** si es el caso.
-Con `curl` en Windows (Git Bash), los textos con tildes deben enviarse codificados en UTF-8 (`--data-urlencode` o `%C3%B3`…); la consola puede alterarlos y producir falsos errores de «unidad no soportada» o «categoría no soportada».
+Un agente que no pueda abrir un navegador debe decir explícitamente qué verificó (pruebas, recorrido en memoria) y que **no vio la página real** si es el caso.
 
 ## 8. Qué asume la plantilla del servidor
 
-Si el nuevo servidor no cumple alguno de estos puntos, el cambio se limita a `api`, `dto` y `servicio`. Es la convención común de la familia (`CONVENCION_REST.md`):
+Es la convención común de la familia (`docs/CONVENCION_REST.md`). Si el nuevo servidor no cumple alguno de estos puntos, el cambio se limita a `api`, `dto` y `servicios`:
 
-- HTTP + JSON (`application/json; charset=utf-8`), verbos `GET` (consultas) y `POST` (login y operaciones). **La URL base** se recibe completa por configuración; no se asume puerto ni prefijo.
-- Cada respuesta, de éxito o de error, es un objeto con `estado` (`OK`/`ERROR`), `codigo` y `mensaje`, más los datos de la operación. Los errores de la plataforma (ruta inexistente, método no permitido, `Content-Type` incorrecto, error interno) traen **solo** esos tres campos.
-- **Código HTTP + código propio:** `200` éxito; `400` datos inválidos; `401` credenciales (`AUTH-001`) o token (`AUTH-002` inválido / `AUTH-003` vencido); `404` recurso inexistente; `405`/`415` error de programación del cliente; `500` error del servidor.
-- El token viaja en `Authorization: Bearer <token>`, no como parámetro ni cuerpo. Existe un login público (`POST /auth/login`) que devuelve `token`.
-- Los códigos `AUTH-002` / `AUTH-003` significan «token inválido / vencido» (`ExcepcionServicio.ExigeLogin`).
-- Todos los datos viajan como **texto**; los decimales con punto. Los campos que pueden faltar (`token`, listas) llegan `null` o ausentes en un error: no darlos por existentes.
-- Si el servidor usa otro esquema de autenticación (cookies, OAuth/JWT con renovación), ampliar `ClienteApi`/`ServicioBase`.
-- Para un servicio **SOAP** usar `soap_dotnet_web`, no esta (la capa `servicio` es la que cambia).
+- **URL base** con prefijo `api` y «/» final (R1); rutas relativas y sin barra inicial.
+- **JSON UTF-8** en peticiones y respuestas (R3); el cuerpo de las peticiones lleva `Content-Type: application/json`, o el servidor responde `ERR-415`.
+- **Toda respuesta, de éxito o de error, lleva la envoltura** `estado` (`OK`/`ERROR`), `codigo` y `mensaje`, más los campos de la operación (R5). Los campos propios nunca se llaman `estado`, `codigo` ni `mensaje`. Las listas llegan vacías, nunca ausentes.
+- **HTTP por categoría del error** (R7): el cliente decide por el `codigo` de la envoltura, no solo por el HTTP.
+- **Errores de plataforma** (ruta inexistente, verbo no permitido, `Content-Type` incorrecto, JSON mal formado, excepción no prevista) también con la envoltura (R6).
+- **Todo dato como texto** (R9): las respuestas nunca llevan números JSON.
+- **Autenticación:** no la asume la plantilla (R8). Cómo se identifica quien opera lo define cada servidor en su `ENDPOINTS_REST.md` y su cliente lo implementa en `api`, con la sesión en el servidor web.
+- Para un servicio **SOAP** usar la plantilla `soap_dotnet_web`.
 
 ## 9. Problemas frecuentes
 
 | Síntoma | Causa / solución |
 |---|---|
-| Las pantallas salen sin estilo de componentes: se ven `<ui-campo …>` o `asp-append-version` literales en el HTML | Falta o es incorrecto el `@addTagHelper` de `vista/_ViewImports.cshtml`: debe haber uno para `Microsoft.AspNetCore.Mvc.TagHelpers` y otro con **el nombre del ensamblado** (el del `.csproj` renombrado) |
-| 404 en una pantalla recién creada, o «The view … was not found» | La vista no está en `vista/{controlador}/{Acción}.cshtml` (o `vista/compartido/`), o el controlador no termina en `Controlador` ni hereda de `ControladorBase` |
-| Error CS0616 en un tag helper nuevo (`ViewContext` no es una clase de atributos) | Falta `using Microsoft.AspNetCore.Mvc.ViewFeatures;` |
-| 400 al enviar un formulario | Falta el token anti-falsificación: usar `<ui-formulario>`, no un `<form>` a mano |
-| La pantalla protegida vuelve siempre al acceso | La sesión no persistió: `PersistirSesionFiltro` debe estar registrado en `Program.cs` y `UseSession()` antes de los endpoints; las cookies deben estar permitidas |
-| El usuario ve la sesión de otro | El token se guardó en un *singleton*, en un campo estático o en `DefaultRequestHeaders` del `HttpClient`; debe vivir solo en la `Sesion` por petición (`SesionWeb`) y enviarse por petición |
-| `UseExceptionHandler` muestra 405/400 en vez de la página de error | La acción `Error` perdió `[IgnoreAntiforgeryToken]` o se le puso un verbo; se reejecuta con el verbo original |
-| Tildes o «ñ» salen como entidades (`&#xF1;`) | Se quitó la configuración de `WebEncoderOptions` en `Program.cs` |
-| «Servidor no disponible, intente más tarde» | Servidor apagado, URL base distinta de la real, firewall, o (HTTPS) certificado sin confiar/vencido/de otro host. Probar la URL con curl; ver la `InnerException` |
-| Por HTTPS falla y por HTTP funciona | Certificado de desarrollo sin confiar: `dotnet dev-certs https --trust`; consultar por el mismo nombre que figura en el certificado |
-| `400 Invalid Hostname` | IIS Express solo atiende `localhost`: falta el binding comodín |
-| Otro equipo recibe timeout y desde el PC del servidor con la IP funciona | La red está en categoría Pública y la regla de firewall solo vale para el perfil Privado (o el router aísla a los clientes) |
-| Las rutas dan `404` o se concatenan mal | La URL base no termina en «/» (`ConfiguracionApi` lo corrige) o la ruta lleva barra inicial: usar `"auth/login"`, no `"/auth/login"` |
-| Campos `null` en una respuesta correcta | `[JsonPropertyName]` distinto del nombre del contrato, o el servidor cambió el campo |
-| El servidor responde `DATA-001` con un número | Se envió coma decimal: usar `ServicioBase.NormalizarValor` |
-| `415` / `ERR-415` | El cuerpo no se envió como JSON: usar `ClienteApi` (no armar `HttpRequestMessage` en otra clase) |
-| Muestra «El servidor respondió con un error inesperado (HTTP nnn)» | El cuerpo del error no era JSON (página de IIS Express, proxy): revisar la URL y el servidor |
-| `MSB3027`/`MSB3021`: no se puede copiar el `.dll` | Hay una instancia de la aplicación en ejecución: cerrarla antes de compilar |
-| `CS0017` (más de un punto de entrada) al agregar pruebas | Falta `<GenerateProgramFile>false</GenerateProgramFile>` en el `.csproj` |
-| Pruebas: «Solution root could not be located» o `DirectoryNotFoundException` al crear la aplicación | Falta el `.slnx` en la carpeta del proyecto, o la prueba no fija el *content root* (`UseContentRoot` hacia la carpeta del `.csproj`, como en `PantallasWebPruebas` y `ComposicionPruebas`) |
+| Un componente aparece como etiqueta sin resolver (`<ui-campo …>` en el HTML) | `@addTagHelper *, <Proyecto>` de `vista/_ViewImports.cshtml` no coincide con el nombre del ensamblado (§1, paso 2) |
+| `The view '…' was not found` | La vista no está en `ec/edu/monster/vista/` o su nombre no coincide con el de `View("…")`: la aplicación solo busca allí (`ViewLocationFormats`) |
+| El controlador no responde (404) | La clase no deriva de `ControladorBase` (el atributo `[Controller]` se hereda) o la acción no tiene atributo de ruta (`[HttpGet("…")]`) |
+| `POST` con HTTP 400 | Falta el token anti-falsificación: el formulario debe ser un `<ui-formulario>` |
+| Tildes o «…» salen como `&#xF3;` | El texto no pasa por el codificador de `Aplicacion` (no usar `Html.Raw` ni armar HTML a mano) |
+| El resultado de una operación reaparece al recargar | El `POST` devolvió la página en vez de redirigir: usar `GuardarFlash` + `Redirect` (§4, paso 5) |
+| «Servidor no disponible» al llamar una operación | Servidor apagado (con IIS Express, Visual Studio detenido) o `UrlBasePorDefecto` distinta de la real. Probar la URL en el navegador o con `curl` |
+| `SRV-000 … (HTTP 404)` con una página HTML | La URL base no incluye el prefijo `api` o el contexto del servidor; revisar `ConfiguracionApi` |
+| `ERR-404` / `ERR-405` / `ERR-415` en pantalla | Defecto del cliente: ruta mal escrita, verbo equivocado o falta el `Content-Type` (el transporte lo envía en todo cuerpo) |
+| Un campo llega `null` aunque el servidor lo envía | El nombre de la propiedad del DTO no es el camelCase del JSON (`CodigoItem` ↔ `codigoItem`) |
+| Una lista del DTO llega siempre vacía | Debe ser `{ get; } = []` y se rellena con `Populate` (no quitarlo de `TraductorApi.Opciones`) |
+| El servidor rechaza un importe con coma | La coma se normaliza a punto en el **servicio**, no en la vista |
+| Dos empleados ven las credenciales del otro | Las credenciales están en un objeto compartido (singleton) en vez de en un contexto por sesión de servidor (§4, paso 8) |
+| `MSB3021`/`MSB3027`: no se puede copiar `apphost.exe` al compilar | La aplicación sigue en ejecución (p. ej. depurando en Visual Studio): detenerla antes de compilar |
