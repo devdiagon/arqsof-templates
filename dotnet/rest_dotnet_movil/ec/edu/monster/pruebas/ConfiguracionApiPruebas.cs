@@ -1,31 +1,86 @@
 using ec.edu.monster.api;
+using Xunit;
 
 namespace ec.edu.monster.pruebas;
 
-// No se prueba la URL por defecto: depende de DeviceInfo (plataforma y emulador), que solo existe con la app en ejecución.
+/// <summary>
+/// El origen de las variables de entorno y la plataforma se inyectan: las pruebas no tocan el entorno real ni dependen de
+/// <c>DeviceInfo</c> (que solo existe con la aplicación en ejecución). Ninguna fija el valor de <c>Puerto</c> ni de
+/// <c>IpPc</c>: son constantes del proyecto y se cambian sin tocar estas pruebas.
+/// </summary>
 public class ConfiguracionApiPruebas
 {
-    [Fact]
-    public void La_variable_sobrescribe_la_url_por_defecto()
-    {
-        Assert.Equal("http://192.168.1.10:57592/api/", ConfiguracionApi.Resolver("http://192.168.1.10:57592/api/"));
-    }
+    private static readonly string PorDefecto = ConfiguracionApi.UrlPorDefecto(false, false);
 
     [Theory]
-    [InlineData("http://localhost:5267/api", "http://localhost:5267/api/")]
-    [InlineData("http://localhost:5267/api/", "http://localhost:5267/api/")]
-    [InlineData("  http://localhost:8080/Contexto/api  ", "http://localhost:8080/Contexto/api/")]
-    public void La_url_siempre_termina_en_una_sola_barra(string entrada, string esperada)
+    [InlineData("http://h:1/api", "http://h:1/api/")]
+    [InlineData("http://h:1/api/", "http://h:1/api/")]
+    [InlineData("  http://h:1/api///  ", "http://h:1/api/")]
+    public void LaUrlSeNormalizaConUnaSolaBarraFinal(string entrada, string esperado)
     {
-        Assert.Equal(esperada, ConfiguracionApi.Normalizar(entrada));
-        Assert.Equal(esperada, ConfiguracionApi.Resolver(entrada));
+        Assert.Equal(esperado, ConfiguracionApi.NormalizarUrl(entrada));
     }
 
     [Fact]
-    public void Una_ruta_relativa_sin_barra_inicial_se_concatena_a_la_base()
+    public void EnUnaPlataformaQueNoEsAndroidElHostEsLocalhost()
     {
-        using var http = ClienteApi.CrearHttpClient("http://localhost:5267/api/");
+        Assert.Equal($"http://localhost:{ConfiguracionApi.Puerto}/{ConfiguracionApi.Ruta}/",
+            ConfiguracionApi.UrlPorDefecto(false, false));
+        Assert.Equal(ConfiguracionApi.UrlPorDefecto(false, false), ConfiguracionApi.UrlPorDefecto(false, true));
+    }
 
-        Assert.Equal("http://localhost:5267/api/auth/login", new Uri(http.BaseAddress!, "auth/login").ToString());
+    [Fact]
+    public void EnElEmuladorDeAndroidElHostEsElAliasDelPc()
+    {
+        Assert.Equal($"http://10.0.2.2:{ConfiguracionApi.Puerto}/{ConfiguracionApi.Ruta}/",
+            ConfiguracionApi.UrlPorDefecto(true, true));
+    }
+
+    [Fact]
+    public void EnUnTelefonoFisicoElHostEsLaIpDelPc()
+    {
+        Assert.Equal($"http://{ConfiguracionApi.IpPc}:{ConfiguracionApi.Puerto}/{ConfiguracionApi.Ruta}/",
+            ConfiguracionApi.UrlPorDefecto(true, false));
+        Assert.DoesNotContain("10.0.2.2", ConfiguracionApi.UrlPorDefecto(true, false));
+    }
+
+    [Fact]
+    public void LaUrlPorDefectoTerminaEnBarraYLlevaElPrefijoDeLaApi()
+    {
+        Assert.EndsWith($"/{ConfiguracionApi.Ruta}/", PorDefecto);
+        Assert.False(ConfiguracionApi.Ruta.StartsWith('/') || ConfiguracionApi.Ruta.EndsWith('/'));
+    }
+
+    [Fact]
+    public void SinVariableSeUsaLaUrlPorDefectoNormalizada()
+    {
+        Assert.Equal(PorDefecto, ConfiguracionApi.UrlBase(PorDefecto, _ => null));
+    }
+
+    [Fact]
+    public void LaVariableApiBaseUrlSobrescribeLaUrlSinRecompilar()
+    {
+        string? pedida = null;
+
+        string url = ConfiguracionApi.UrlBase(PorDefecto, nombre =>
+        {
+            pedida = nombre;
+            return " http://otro:9/api ";
+        });
+
+        Assert.Equal("API_BASE_URL", pedida);
+        Assert.Equal("http://otro:9/api/", url);
+    }
+
+    [Fact]
+    public void UnaVariableEnBlancoSeIgnora()
+    {
+        Assert.Equal(PorDefecto, ConfiguracionApi.UrlBase(PorDefecto, _ => "   "));
+    }
+
+    [Fact]
+    public void ElTiempoLimiteEsDeDiezSegundos()
+    {
+        Assert.Equal(TimeSpan.FromSeconds(10), ConfiguracionApi.TiempoLimite);
     }
 }

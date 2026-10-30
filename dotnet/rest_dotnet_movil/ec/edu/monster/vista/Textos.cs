@@ -1,9 +1,21 @@
 namespace ec.edu.monster.vista;
 
-/// <summary>Textos comunes de la interfaz. Los textos propios de cada pantalla del dominio se definen en su vista.</summary>
+/// <summary>
+/// Textos de pantalla. Los mismos valores en todos los clientes del proyecto (los define su docs/PROJECT.md);
+/// aquí solo van los genéricos. Los del dominio (títulos, etiquetas, mensajes de validación) se agregan en cada proyecto.
+/// El usuario ve siempre mensajes, nunca códigos.
+/// </summary>
 public static class Textos
 {
-    // CAMBIAR: nombre de la aplicación (título de la pantalla de acceso y del Shell).
-    // El nombre visible en el dispositivo es ApplicationTitle del .csproj: mantenerlos iguales.
-    public const string NombreAplicacion = "Nombre de la aplicación";
+    /// <summary>CAMBIAR: nombre de la aplicación; debe coincidir con <c>ApplicationTitle</c> del .csproj.</summary>
+    public const string NombreAplicacion = "Cliente REST";
+
+    public const string Cancelar = "Cancelar";
+    public const string Procesando = "Procesando…";
+    public const string Consultando = "Consultando…";
+    public const string ErrorInesperado = "Ocurrió un error inesperado, intente nuevamente";
+
+    /// <summary><c>El campo {campo} es obligatorio</c>, con la etiqueta de pantalla en minúscula.</summary>
+    public static string CampoObligatorio(string etiqueta) =>
+        $"El campo {etiqueta.ToLowerInvariant()} es obligatorio";
 }

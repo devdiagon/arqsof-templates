@@ -226,3 +226,18 @@ El servidor se construyó con el núcleo de .NET SOAP copiado byte a byte y la c
 | Consola | La cabecera `Authorization` se añade a cada `HttpRequestMessage` (con `TryAddWithoutValidation`), nunca a `DefaultRequestHeaders`. `StringContent(…, Encoding.UTF8, "application/json")` envía `application/json; charset=utf-8` |
 | Consola | `ITransporte` / `TransporteHttp` separan la red de `TraductorApi`; el transporte se prueba con un `HttpMessageHandler` simulado y los clientes `…Api`, con un transporte falso: ninguna prueba abre red |
 | Ambos | La paridad se cumplió con la regla de siempre: fuera de `api`, el núcleo difiere del par SOAP solo en el `using` de las interfaces y en comentarios que mencionaban SOAP |
+
+### 8.5 Lo aprendido al construir el escritorio, la web y el móvil .NET REST (2026-10-30)
+
+Los tres se construyeron con el núcleo y las pantallas de su par SOAP y la capa `api` de la consola REST copiada sin editar (comprobado con hash); el responsable los probó a mano contra el servidor REST. Hallazgos:
+
+| Cliente | Hallazgo |
+|---|---|
+| Escritorio (WPF) | El SDK de WPF **no** incluye `System.Net.Http` entre los `using` implícitos (el de consola, web y MAUI sí). Se agrega `<Using Include="System.Net.Http" />` al `.csproj` en lugar de editar `api`, que debe quedar idéntica a la de la consola |
+| Web (MVC) | `_ViewImports.cshtml` lleva `@addTagHelper *, <ensamblado>`: al renombrar el proyecto hay que cambiarlo, o los `<ui-…>` quedan sin resolver **sin error de compilación**. Los clientes `…Api` y su `HttpClient` son únicos para toda la aplicación y no guardan credenciales (viajan en cada petición), así que dos empleados a la vez no se mezclan; las credenciales de cada uno viven en el contexto de su sesión de servidor |
+| Web (MVC) | Las pruebas arrancan la aplicación dentro del proceso en un puerto libre con clientes simulados: no necesitan el servidor REST ni red externa |
+| Móvil (MAUI) | `ConfiguracionApi` es **el único archivo de `api` que difiere de la consola**: un móvil no tiene `localhost` ni variables de entorno. Mantiene los miembros que usa `TransporteHttp` (`UrlBase()`, `NormalizarUrl`, `TiempoLimite`) y añade `Puerto`, `IpPc`, `Ruta`, el host por plataforma con `DeviceInfo` en una función `internal` (`UrlPorDefecto(esAndroid, esVirtual)`) y `API_BASE_URL` solo en Windows (`ARQUITECTURA_CLIENTE.md` §4.9) |
+| Móvil (MAUI) | `IpPc` y `Puerto` son constantes del proyecto: las pruebas **no deben fijar su valor** (la prueba que comprobaba el marcador `127.0.0.1` falló al poner la IP real del PC) |
+| Móvil (MAUI) | Una ruta de proyecto larga rompe `aapt2` (`APT2098`/`APT2261`) y el compilador XAML de WinUI (`WMC1006`/`WMC9999`): compilar desde una ruta corta |
+| Móvil (MAUI) | El servidor REST en IIS Express necesita, para el emulador o un teléfono, el binding comodín `*:<puerto>:*` en el `applicationhost.config` **de su propio proyecto**, además del permiso `netsh` y la regla de firewall (`IIS_CONFIG.md` §3) |
+| Móvil (MAUI) | **No verificado:** el emulador, el modo Release (el recorte de código puede afectar a la serialización por reflexión de `System.Text.Json`) y la presentación clara |

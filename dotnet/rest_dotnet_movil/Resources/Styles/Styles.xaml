@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
 <?xaml-comp compile="true" ?>
+<!-- Estilos de CLIENT_STYLES_DOTNET.md §3 a §5 y §7.1. Las páginas solo referencian estos estilos, nunca valores sueltos.
+     Sin sombras, un solo radio (8), tipografía del sistema. -->
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
-
-    <!-- Medidas de CLIENT_STYLES_DOTNET.md §3 y §4 (móvil). Sin sombras, un solo radio (8). -->
 
     <Style TargetType="Page" ApplyToDerivedTypes="True">
         <Setter Property="BackgroundColor" Value="{StaticResource Fondo}" />
@@ -15,85 +15,41 @@
         <Setter Property="FontSize" Value="16" />
     </Style>
 
+    <!-- Tipografía por rol (§3) -->
     <Style x:Key="TituloAplicacion" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Texto}" />
         <Setter Property="FontSize" Value="24" />
         <Setter Property="FontAttributes" Value="Bold" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
-
     <Style x:Key="TituloPantalla" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Texto}" />
         <Setter Property="FontSize" Value="22" />
         <Setter Property="FontAttributes" Value="Bold" />
     </Style>
-
-    <Style x:Key="Etiqueta" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Texto}" />
+    <Style x:Key="EtiquetaCampo" TargetType="Label">
         <Setter Property="FontSize" Value="14" />
         <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="Margin" Value="0,0,0,6" />
     </Style>
-
-    <Style x:Key="Mensaje" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Texto}" />
+    <Style x:Key="TextoMensaje" TargetType="Label">
         <Setter Property="FontSize" Value="14" />
     </Style>
-
-    <Style x:Key="MensajeError" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Error}" />
+    <Style x:Key="TextoAyuda" TargetType="Label">
         <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextColor" Value="{StaticResource TextoSecundario}" />
     </Style>
 
-    <Style x:Key="Resultado" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource Texto}" />
-        <Setter Property="FontSize" Value="18" />
-        <Setter Property="HorizontalTextAlignment" Value="Center" />
-        <Setter Property="VerticalTextAlignment" Value="Center" />
-    </Style>
-
-    <!-- Fondo de toda pantalla: imagen decorativa recortada (AspectFill) sobre «Fondo» (§6, columna única).
-         La imagen es Resources/Images/fondo_app.png; si falta, queda el color plano. -->
-    <ControlTemplate x:Key="PlantillaPagina">
-        <Grid BackgroundColor="{StaticResource Fondo}">
-            <Image Source="fondo_app.png" Aspect="AspectFill" InputTransparent="True" />
-            <ContentPresenter />
-        </Grid>
-    </ControlTemplate>
-
-    <!-- Panel (encabezado, mensaje, resultado): sobre la imagen de fondo usa «PanelSobreImagen» (§6) -->
-    <Style x:Key="Panel" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="{StaticResource PanelSobreImagen}" />
+    <!-- Paneles (§5.1, §5.2): Superficie en el acceso; PanelSobreImagen cuando hay imagen debajo -->
+    <Style x:Key="PanelSuperficie" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource Superficie}" />
         <Setter Property="StrokeThickness" Value="0" />
         <Setter Property="StrokeShape" Value="RoundRectangle 8" />
         <Setter Property="Padding" Value="16" />
     </Style>
-
-    <!-- Campo y selector: Entry/Picker van transparentes dentro de un Border (§7.1) -->
-    <Style x:Key="Campo" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="{StaticResource CampoFondo}" />
-        <Setter Property="StrokeThickness" Value="0" />
-        <Setter Property="StrokeShape" Value="RoundRectangle 8" />
-        <Setter Property="Padding" Value="12,0" />
-        <Setter Property="MinimumHeightRequest" Value="48" />
+    <Style x:Key="PanelSobreImagenEstilo" TargetType="Border" BasedOn="{StaticResource PanelSuperficie}">
+        <Setter Property="BackgroundColor" Value="{StaticResource PanelSobreImagen}" />
     </Style>
 
-    <Style TargetType="Entry">
-        <Setter Property="BackgroundColor" Value="Transparent" />
-        <Setter Property="TextColor" Value="{StaticResource CampoTexto}" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource CampoPlaceholder}" />
-        <Setter Property="FontSize" Value="16" />
-        <Setter Property="MinimumHeightRequest" Value="48" />
-    </Style>
-
-    <Style TargetType="Picker">
-        <Setter Property="BackgroundColor" Value="Transparent" />
-        <Setter Property="TextColor" Value="{StaticResource CampoTexto}" />
-        <Setter Property="TitleColor" Value="{StaticResource CampoPlaceholder}" />
-        <Setter Property="FontSize" Value="16" />
-        <Setter Property="MinimumHeightRequest" Value="48" />
-    </Style>
-
-    <!-- Botones -->
+    <!-- Botones (§5.6, §5.7, §7.1) -->
     <Style x:Key="BotonPrimario" TargetType="Button">
         <Setter Property="BackgroundColor" Value="{StaticResource Primario}" />
         <Setter Property="TextColor" Value="{StaticResource SobreAccion}" />
@@ -120,7 +76,6 @@
             </VisualStateGroupList>
         </Setter>
     </Style>
-
     <Style x:Key="BotonSecundario" TargetType="Button" BasedOn="{StaticResource BotonPrimario}">
         <Setter Property="BackgroundColor" Value="{StaticResource Secundario}" />
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -141,17 +96,38 @@
             </VisualStateGroupList>
         </Setter>
     </Style>
-
-    <Style TargetType="ActivityIndicator">
-        <Setter Property="Color" Value="{StaticResource Acento}" />
-        <Setter Property="HeightRequest" Value="40" />
-        <Setter Property="WidthRequest" Value="40" />
+    <Style x:Key="BotonMenu" TargetType="Button" BasedOn="{StaticResource BotonPrimario}">
+        <Setter Property="MinimumHeightRequest" Value="96" />
     </Style>
 
-    <Style TargetType="Shell" ApplyToDerivedTypes="True">
-        <Setter Property="Shell.BackgroundColor" Value="{StaticResource Fondo}" />
-        <Setter Property="Shell.ForegroundColor" Value="{StaticResource Texto}" />
-        <Setter Property="Shell.TitleColor" Value="{StaticResource Texto}" />
-        <Setter Property="Shell.NavBarHasShadow" Value="False" />
+    <!-- Indicador de progreso (§5.8) -->
+    <Style TargetType="ActivityIndicator">
+        <Setter Property="Color" Value="{StaticResource Acento}" />
+    </Style>
+
+    <!-- Tarjeta de resultado (§5.12, §7.1) -->
+    <Style x:Key="Tarjeta" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource CampoFondo}" />
+        <Setter Property="Stroke" Value="{StaticResource ContornoTarjeta}" />
+        <Setter Property="StrokeThickness" Value="1.5" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 8" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+    <Style x:Key="TarjetaTitulo" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource CampoPlaceholder}" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="HorizontalTextAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="TarjetaTexto" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource CampoTexto}" />
+    </Style>
+    <Style x:Key="TarjetaPie" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource CampoPlaceholder}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="HorizontalTextAlignment" Value="End" />
+    </Style>
+    <Style x:Key="TarjetaDivisor" TargetType="BoxView">
+        <Setter Property="Color" Value="{StaticResource DivisorTarjeta}" />
+        <Setter Property="HeightRequest" Value="1" />
     </Style>
 </ResourceDictionary>

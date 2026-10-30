@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<!-- Solo Android y Windows: iOS y Mac Catalyst requieren un Mac emparejado (ENTORNO_DOTNET.md §2.1) -->
 		<TargetFrameworks>net10.0-android</TargetFrameworks>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
 
@@ -43,25 +44,32 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Transporte REST: HttpClient y System.Text.Json vienen en el SDK; ningún paquete extra -->
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
-		<!-- Transporte REST: ningún paquete (HttpClient y System.Net.Http.Json vienen en el SDK) -->
 	</ItemGroup>
 
-	<!-- Pruebas xUnit (ec.edu.monster.pruebas) en este mismo proyecto. Solo en el destino de Windows: un
-	     proyecto Android no se ejecuta con "dotnet test" y no deben empaquetarse en el APK.
+	<!-- Pruebas xUnit + Moq (ec.edu.monster.pruebas) en este mismo proyecto. Solo en el destino de Windows: un proyecto
+	     Android no se ejecuta con "dotnet test", no deben empaquetarse en el APK y el SDK de pruebas rompe la
+	     compilación de Android (XAPRAS7009).
 	     Ejecutar: dotnet test -f net10.0-windows10.0.19041.0 -->
 	<PropertyGroup>
-		<!-- El punto de entrada lo genera MAUI; evita el Program duplicado de Microsoft.NET.Test.Sdk -->
-		<GenerateProgramFile>false</GenerateProgramFile>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+		<!-- El punto de entrada lo genera MAUI; evita el Program duplicado de Microsoft.NET.Test.Sdk -->
+		<GenerateProgramFile>false</GenerateProgramFile>
+	</PropertyGroup>
+
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
-		<Using Include="Xunit" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+		<PackageReference Include="Moq" Version="4.21.0" />
 		<PackageReference Include="xunit" Version="2.9.3" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">
